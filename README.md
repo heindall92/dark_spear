@@ -6,46 +6,32 @@ https://github.com/user-attachments/assets/1c663f47-4240-4adf-a2bf-fd18078f3828
 
 ![Intro Dark Spear](panel/vendor/splash.mp4)
 
-Plataforma de auditoría de seguridad autorizada: un motor de agente ReAct que ejecuta el pentest (recon → enumeración → explotación → post-explotación, con gate humano en cada paso peligroso) y una consola SecOps que lo dirige y convierte lo que encontró en un informe defendible para el cliente.
+**Plataforma de auditoría de seguridad autorizada.** Un motor de agente ReAct que ejecuta el pentest paso a paso — recon → enumeración → explotación → post-explotación, con gate humano en cada acción peligrosa — y una consola SecOps que lo dirige y convierte lo que encontró en un informe defendible frente al cliente.
 
-No es un scanner automático ni un "auto-pwn". El diferencial es la disciplina de engagement: scope-lock del lado del servidor, fases que se avanzan a mano, cada herramienta peligrosa pasa por aprobación explícita, y cada hallazgo queda con su evidencia y su cadena de hash antes de entrar al informe.
+No es un scanner automático ni un "auto-pwn". El diferencial es la disciplina de engagement: scope-lock del lado del servidor, fases que se avanzan a mano, cada herramienta peligrosa pasa por aprobación explícita del operador, y cada hallazgo queda con su evidencia y su hash de integridad antes de entrar al informe final.
 
-Producto: **Dark Spear**. Interfaz en español e inglés.
-
-Repositorio: [heindall92/dark_spear](https://github.com/heindall92/dark_spear)
+**Producto:** Dark Spear · Interfaz ES/EN · [MIT](LICENSE)
 
 ## Arquitectura
 
-```
-panel/     Consola SecOps (HTML estático + vendor) — el frontend
-backend/   Motor Auditor (Python + JS) — el agente que corre el engagement
-```
+Dos piezas que se integran en un solo producto, no dos proyectos separados:
 
-Son dos piezas que se integran, no dos productos separados:
+| | |
+|---|---|
+| **`backend/`** — el motor | Servidor Python local (`bridge.py`, stdlib + `cryptography`) que ejecuta las herramientas de pentest whitelisteadas contra el target. Scope-lock, gate de 4 fases PTES (Intelligence Gathering → Enumeration & Vuln Analysis → Exploitation → Post-Exploitation, acumulativo, avance manual), pool de API keys de Ollama Cloud cifrado con rotación automática por cuota agotada. El loop ReAct corre en el navegador (`js/agent.js` + `js/ollama.js`) y decide qué comando ejecutar — el servidor nunca confía en el modelo, todo el enforcement de seguridad vive en `bridge.py`. En desarrollo activo: entidad de **Hallazgo** (título/severidad/evidencia/remediación) propuesta por el LLM y revisada por el operador, con evidencia hasheada a disco recién al aceptar — cadena de custodia real, no un volcado del chat. |
+| **`panel/`** — la consola | La interfaz que un consultor de seguridad mostraría frente a un cliente: dashboard, engagement activo, aprobación de herramientas, hallazgos críticos, grafo de ataque, MITRE ATT&CK, OSINT, remediación e informes (JSON/HTML/PDF). |
 
-- **`backend/`** es el motor real: `bridge.py` es un servidor Python local (stdlib, sin dependencias salvo `cryptography` para el keystore) que ejecuta las herramientas de pentest whitelisteadas contra el target, con scope-lock, gate de fases PTES (Intelligence Gathering → Enumeration & Vuln Analysis → Exploitation → Post-Exploitation, acumulativo, avance manual del operador) y pool de API keys de Ollama Cloud cifrado con rotación automática por cuota. El loop ReAct (`js/agent.js` + `js/ollama.js`) corre en el navegador y decide qué comando ejecutar en cada paso — el servidor nunca confía en el modelo, todo el enforcement de seguridad vive del lado de `bridge.py`. En desarrollo activo: una entidad de **Hallazgo** (título/severidad/evidencia/remediación) que el LLM propone y el operador revisa, con evidencia hasheada a disco recién al aceptar (cadena de custodia real, no un volcado del chat).
-- **`panel/`** es la consola que un consultor de seguridad usaría frente a un cliente: dashboard, engagement activo, aprobación de herramientas, hallazgos críticos, grafo de ataque, MITRE ATT&CK, OSINT, remediación e informes (JSON/HTML/PDF).
-
-El historial de diseño y las specs técnicas del motor viven en `backend/docs/superpowers/` (una spec + un plan de implementación por cada pieza construida).
+El historial de diseño técnico del motor (una spec + un plan de implementación por cada pieza construida, con revisión de código en cada paso) vive en `backend/docs/superpowers/`.
 
 ## Arranque rápido
 
 ### Consola (`panel/`)
 
-Sirve la carpeta `panel/` por HTTP (no abras los HTML como `file://`).
-
-**Python**
+Sirve la carpeta por HTTP — no abras los HTML como `file://`.
 
 ```bash
 cd panel
-python3 server.py
-```
-
-**Windows (PowerShell)**
-
-```powershell
-cd panel
-.\servir.ps1
+python3 server.py          # o .\servir.ps1 en Windows PowerShell
 ```
 
 Abre [http://127.0.0.1:8080/](http://127.0.0.1:8080/)
@@ -57,7 +43,7 @@ cd backend
 python3 bridge.py
 ```
 
-Te pide una passphrase (cifra el pool de API keys), imprime una URL con token de sesión — abrí esa URL exacta, no `http://127.0.0.1:8420/` a secas.
+Pide una passphrase (cifra el pool de API keys) e imprime una URL con token de sesión — abrí esa URL exacta que imprime, no `http://127.0.0.1:8420/` a secas.
 
 ## Qué incluye
 
@@ -66,20 +52,44 @@ Te pide una passphrase (cifra el pool de API keys), imprime una URL con token de
 - Reporting (JSON / HTML / PDF), capítulos de informe y RGPD
 - Attack Graph, evidencia de grafo, MITRE ATT&CK, OSINT, activos
 - Perfil de usuario, centro de notificaciones, ajustes (tema e idioma)
-- Intro de arranque a pantalla completa (`panel/vendor/splash.mp4`)
-- Motor de agente ReAct con scope-lock, gate de fases PTES, pool de API keys con rotación, y hallazgos con evidencia hasheada a disco
+- Motor de agente ReAct: scope-lock, gate de fases PTES, pool de API keys con rotación, hallazgos con evidencia hasheada a disco
 
 Tema claro/oscuro e idioma ES/EN se guardan en el navegador (`ds-theme`, `ds-lang`). El menú lateral se retrae a un rail de iconos (`ds-sidebar`).
 
 ## Estructura
 
 ```
-panel/           Consola (HTML estático + vendor)
-backend/         Motor Auditor (bridge.py + keystore.py + js/) + docs/superpowers (specs y planes)
-Sessiones/       Diseños de referencia del frontend
-LICENSE          MIT
+panel/                 Consola SecOps (HTML estático)
+  vendor/               Assets propios + Lucide icons, tokens.css, splash de intro
+backend/                Motor Auditor
+  bridge.py              Servidor: scope-lock, fases, exec de herramientas, keystore, findings
+  keystore.py             Cifrado Fernet/PBKDF2 del pool de API keys
+  js/                     Loop ReAct (browser): agent.js, ollama.js, bridge_client.js, ui.js, db.js
+  index.html, style.css   UI del motor
+  docs/superpowers/       Specs + planes de implementación de cada pieza del motor
+Sessiones/               Diseños de referencia del frontend
+LICENSE                 MIT
 ```
+
+## Atribución
+
+- Iconografía de la consola: [Lucide](https://lucide.dev) (ISC License).
+- Resto de UI, motor, y diseño de producto: propios de este proyecto.
+
+## Aviso legal y ético
+
+Herramienta de uso profesional para auditorías de seguridad **autorizadas**.
+
+- Usalo solo en sistemas propios, laboratorios controlados, o engagements con autorización escrita explícita del cliente.
+- El scope-lock y los gates de confirmación del motor son deliberados — no los desactives para saltarte el alcance acordado.
+- El autor no se hace responsable del uso indebido de este software fuera del alcance autorizado.
 
 ## Licencia
 
-[MIT](LICENSE)
+Distribuido bajo licencia [MIT](LICENSE) · Copyright © 2026 Yoandy Ramírez Delgado.
+
+## Autor
+
+**Yoandy Ramírez Delgado** · Pentester · eJPTv2
+
+[LinkedIn](https://www.linkedin.com/in/yoandyrd92/) · [HackTheBox](https://profile.hackthebox.com/profile/019c5812-b4ca-7315-b12f-14db6d2b42fa)
