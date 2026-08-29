@@ -1,0 +1,114 @@
+const DB_NAME = "auditor";
+const DB_VERSION = 1;
+
+export function initDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      const eng = db.createObjectStore("engagement", { keyPath: "id", autoIncrement: true });
+      eng.createIndex("status", "status");
+      const steps = db.createObjectStore("steps", { keyPath: "id", autoIncrement: true });
+      steps.createIndex("engagementId", "engagementId");
+      const findings = db.createObjectStore("findings", { keyPath: "id", autoIncrement: true });
+      findings.createIndex("engagementId", "engagementId");
+      const axis = db.createObjectStore("axis_ledger", { keyPath: "id", autoIncrement: true });
+      axis.createIndex("engagementId", "engagementId");
+      axis.createIndex("lookup", ["engagementId", "tool", "paramsHash"]);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function tx(db, storeName, mode = "readonly") {
+  return db.transaction(storeName, mode).objectStore(storeName);
+}
+
+export function createEngagement(db, { target, scope }) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "engagement", "readwrite");
+    const req = store.add({ target, scope, startedAt: Date.now(), status: "active" });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function getActiveEngagement(db) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "engagement");
+    const req = store.index("status").getAll("active");
+    req.onsuccess = () => resolve(req.result[0] || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function addStep(db, { engagementId, tool, args, output, stderr, exitCode, verdict }) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "steps", "readwrite");
+    const req = store.add({ engagementId, tool, args, output, stderr, exitCode, verdict, timestamp: Date.now() });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function getSteps(db, engagementId) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "steps");
+    const req = store.index("engagementId").getAll(engagementId);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function addFinding(db, { engagementId, type, value, sourceStepId }) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "findings", "readwrite");
+    const req = store.add({ engagementId, type, value, sourceStepId, timestamp: Date.now() });
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function getFindings(db, engagementId) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "findings");
+    const req = store.index("engagementId").getAll(engagementId);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function getAxisEntry(db, engagementId, tool, paramsHash) {
+  return new Promise((resolve, reject) => {
+    const store = tx(db, "axis_ledger");
+    const req = store.index("lookup").get([engagementId, tool, paramsHash]);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export function upsertAxisEntry(db, entry) {
+  return new Promise(async (resolve, reject) => {
+    const existing = await getAxisEntry(db, entry.engagementId, entry.tool, entry.paramsHash);
+    const store = tx(db, "axis_ledger", "readwrite");
+    const record = existing ? { ...existing, ...entry } : { ...entry };
+    const req = store.put(record);
+    req.onsuccess = () => resolve();
+    req.onerror = () => reject(req.error);
+  });
+}
+
+export async function exportEngagementJSON(db, engagementId) {
+  const [steps, findings] = await Promise.all([
+    getSteps(db, engagementId),
+    getFindings(db, engagementId),
+  ]);
+  const axis = await new Promise((resolve, reject) => {
+    const store = tx(db, "axis_ledger");
+    const req = store.index("engagementId").getAll(engagementId);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+  return { engagementId, steps, findings, axis_ledger: axis };
+}

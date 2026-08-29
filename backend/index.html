@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>Auditor</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <main id="app">
+    <section id="start-panel">
+      <h1>Auditor</h1>
+      <input id="target-input" placeholder="Target (IP/host)" />
+      <input id="scope-input" placeholder="Scope (igual al target en v1)" />
+      <input id="model-input" placeholder="Modelo Ollama (ej. gpt-oss:20b)" value="gpt-oss:20b" />
+      <button id="manage-keys-btn" type="button">Gestionar keys (0 seleccionadas)</button>
+      <input id="endpoint-input" placeholder="Endpoint (default: https://ollama.com/v1/chat/completions)" />
+      <button id="start-btn">Iniciar engagement</button>
+      <p class="hint">Las keys se guardan cifradas en ~/.auditor/keys.enc (Fernet + passphrase), nunca en el navegador ni en IndexedDB.</p>
+    </section>
+    <div id="key-manage-panel" hidden>
+      <h2>API keys de Ollama Cloud</h2>
+      <div id="key-list"></div>
+      <h3>Agregar nueva key</h3>
+      <input id="new-key-label" placeholder="Label (ej. cuenta1)" />
+      <input id="new-key-value" type="password" placeholder="API key" autocomplete="off" />
+      <input id="new-key-window" type="number" step="0.5" placeholder="Ventana de reset en horas (ej. 4, 24, 168)" />
+      <button id="add-key-btn" type="button">Agregar key</button>
+      <button id="close-keys-btn" type="button">Listo</button>
+    </div>
+    <section id="steps-panel" hidden>
+      <div id="phase-bar">
+        <span id="phase-indicator">Fase 1/4: Intelligence Gathering</span>
+        <button id="advance-phase-btn" type="button">Avanzar fase</button>
+      </div>
+      <div id="steps-feed"></div>
+      <button id="export-btn">Export JSON</button>
+    </section>
+    <div id="confirm-modal" hidden>
+      <p id="confirm-text"></p>
+      <button id="confirm-approve">Aprobar</button>
+      <button id="confirm-reject">Rechazar</button>
+    </div>
+  </main>
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
