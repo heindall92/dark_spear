@@ -1,5 +1,7 @@
 # Dark Spear
 
+![Intro Dark Spear](panel/vendor/splash.mp4)
+
 Consola SecOps para auditorías autorizadas: engagement, hallazgos, grafo de ataque, MITRE ATT&CK, OSINT, remediación e informes.
 
 Producto: **Dark Spear**. Interfaz en español e inglés.
