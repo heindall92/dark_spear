@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Vista de Hallazgo Detallado - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c0c7d4",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-container": "#0078d4",
+                        "tertiary": "#006a5c",
+                        "on-secondary-fixed": "#0c1c32",
+                        "on-tertiary-fixed": "#00201b",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-secondary-container": "#54637d",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#404752",
+                        "inverse-on-surface": "#eef1f5",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-bright": "#f7fafe",
+                        "surface": "#f7fafe",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "surface-container": "#ebeef2",
+                        "surface-variant": "#e0e3e7",
+                        "tertiary-container": "#0a8575",
+                        "on-primary-fixed": "#001c39",
+                        "on-secondary-fixed-variant": "#394760",
+                        "secondary": "#505f79",
+                        "on-surface": "#181c1f",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-tint": "#0060ab",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-surface": "#2d3134",
+                        "outline": "#717783",
+                        "primary": "#005faa",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "background": "#f7fafe",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-background": "#181c1f",
+                        "primary-fixed": "#d3e3ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "mono-md": ["jetbrainsMono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono-md { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Glassmorphism utility classes */
+        .glass-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pt-16 pl-0 md:pl-64 relative">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-lg h-16 bg-white/70 dark:bg-surface-dim/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm">
+<div class="flex items-center space-x-md pl-12 md:pl-0">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Auditor</span>
+</div>
+<div class="flex items-center flex-1 max-w-xl px-lg">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-full py-2 pl-10 pr-4 focus:outline-none focus:border-primary-container focus:border-b-2 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant" placeholder="Buscar hallazgos..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-sm">
+<button class="p-2 rounded-full text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="p-2 rounded-full text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors cursor-pointer active:opacity-80 hidden md:block">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant ml-2 object-cover" data-alt="A professional headshot of an auditor in a modern office environment, soft lighting, corporate aesthetic, highly detailed, photorealistic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuArtzDv-bPfd96bdD0sPr-a7ElgHNq7QH2y0OhsVWtxqw5rsgtdNfQQVObKRmWVOwSQKzPbQlMHi27-Ttwt8a1upiI7oHrhHs5DCCawXZY-H6VFk5SGa-dE0Cn0pEPdU2_v2dlCfHix3RD0c02DIt993lzfekvw_DrJZnuzmyU6jaM1tSyvqrTtqeraNu0dXujCeGQL7zLuoAgU0R5NqBDOLUABwOjsqRGYJmEjAFpCuXqTuIP22fA-4A"/>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 flex flex-col py-md bg-surface-container-lowest/70 dark:bg-surface-container/70 backdrop-blur-xl border-r border-outline-variant/20 hidden md:flex transition-all duration-200 ease-in-out z-40">
+<div class="px-md mb-lg">
+<div class="flex items-center space-x-3 mb-2">
+<div class="w-10 h-10 rounded bg-primary-container/10 flex items-center justify-center text-primary font-bold border border-primary/20">ES</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm font-black text-on-surface leading-tight">Enterprise Security</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Global Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto px-sm space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-primary dark:text-primary-fixed-dim bg-primary-container/10 border-r-4 border-primary font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span>Risk Matrix</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+<span>Compliance</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Assets</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span>Audits</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 px-sm border-t border-outline-variant/20 space-y-1">
+<a class="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center space-x-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 font-label-md text-label-md transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span>Account</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 w-full max-w-[1440px] mx-auto p-md md:p-lg lg:p-xl space-y-lg relative">
+<!-- Breadcrumbs -->
+<nav class="flex items-center font-body-sm text-body-sm text-on-surface-variant space-x-2">
+<a class="hover:text-primary-container" href="#">Auditor</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-primary-container" href="#">Reports</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-primary-container" href="#">Q3 Penetration Test</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-semibold">VULN-2023-0891</span>
+</nav>
+<!-- Header Section -->
+<header class="glass-card rounded-xl p-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+<div>
+<div class="flex items-center space-x-3 mb-2">
+<span class="font-mono-md text-mono-md text-secondary">VULN-2023-0891</span>
+<span class="px-2 py-0.5 rounded-full bg-error-container text-on-error-container font-label-md text-label-md flex items-center border border-error/20">
+<span class="material-symbols-outlined text-[14px] mr-1" data-weight="fill">warning</span>
+                        Crítico
+                    </span>
+<span class="px-2 py-0.5 rounded border border-outline-variant bg-surface text-on-surface font-mono-md text-mono-md">
+                        CVSS: 9.8
+                    </span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Inyección SQL en Endpoint de Autenticación</h1>
+</div>
+<div class="flex space-x-3 w-full md:w-auto mt-4 md:mt-0">
+<button class="flex-1 md:flex-none px-4 py-2 rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors font-label-md text-label-md flex items-center justify-center">
+<span class="material-symbols-outlined mr-2">download</span>
+                    Exportar PDF
+                </button>
+<button class="flex-1 md:flex-none px-4 py-2 rounded-lg bg-primary-container text-on-primary-container hover:bg-primary transition-colors font-label-md text-label-md shadow-sm">
+                    Asignar Remediación
+                </button>
+</div>
+</header>
+<!-- Bento Grid Layout for Details -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md lg:gap-lg">
+<!-- Left Column: Technical Details (2/3 width) -->
+<div class="lg:col-span-2 space-y-md lg:space-y-lg">
+<!-- Description -->
+<section class="glass-card rounded-xl p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center mb-4 border-b border-outline-variant/30 pb-2">
+<span class="material-symbols-outlined mr-2 text-primary">description</span>
+                        Descripción Técnica
+                    </h2>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed mb-4">
+                        Se identificó una vulnerabilidad de Inyección SQL (SQLi) basada en errores en el parámetro <code class="font-mono-md bg-surface-container px-1 py-0.5 rounded border border-outline-variant/50">username</code> del endpoint de inicio de sesión (<code class="font-mono-md bg-surface-container px-1 py-0.5 rounded border border-outline-variant/50">/api/v1/auth/login</code>). La falta de sanitización adecuada en la entrada del usuario permite a un atacante no autenticado inyectar consultas SQL arbitrarias directamente en el motor de la base de datos PostgreSQL subyacente.
+                    </p>
+</section>
+<!-- Proof of Concept -->
+<section class="glass-card rounded-xl p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center mb-4 border-b border-outline-variant/30 pb-2">
+<span class="material-symbols-outlined mr-2 text-primary">bug_report</span>
+                        Prueba de Concepto (PoC)
+                    </h2>
+<p class="font-body-md text-body-md text-on-surface-variant mb-3">La siguiente solicitud HTTP demuestra la extracción exitosa de la versión de la base de datos:</p>
+<div class="bg-inverse-surface text-inverse-on-surface rounded-lg p-4 overflow-x-auto relative shadow-inner">
+<div class="absolute top-2 right-2 text-outline text-xs font-mono-md">HTTP Request</div>
+<pre class="font-mono-md text-mono-md">POST /api/v1/auth/login HTTP/1.1
+Host: api.enterprise-target.com
+Content-Type: application/json
+
+{
+    "username": "admin' OR 1=CAST((SELECT version()) AS int)--",
+    "password": "Password123!"
+}</pre>
+</div>
+</section>
+<!-- Remediation -->
+<section class="glass-card rounded-xl p-lg border-l-4 border-l-tertiary">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center mb-4 border-b border-outline-variant/30 pb-2">
+<span class="material-symbols-outlined mr-2 text-tertiary">build</span>
+                        Pasos de Remediación
+                    </h2>
+<ol class="list-decimal list-inside font-body-md text-body-md text-on-surface-variant space-y-3">
+<li><strong>Implementar Consultas Preparadas (Parameterized Queries):</strong> Evitar la concatenación dinámica de cadenas. Utilizar frameworks ORM o bibliotecas de base de datos que manejen la parametrización de forma nativa.</li>
+<li><strong>Validación de Entrada:</strong> Aplicar una lista blanca estricta (allowlist) para los caracteres permitidos en el campo <code class="font-mono-md">username</code>.</li>
+<li><strong>Principio de Mínimo Privilegio:</strong> Asegurar que la cuenta de la aplicación que se conecta a la base de datos solo tenga permisos de lectura/escritura en las tablas estrictamente necesarias, denegando accesos a esquemas del sistema.</li>
+</ol>
+<div class="mt-4 bg-surface-container p-4 rounded-lg border border-outline-variant/50">
+<h4 class="font-label-md text-label-md text-on-surface mb-2">Ejemplo de Código Corregido (Node.js/pg):</h4>
+<pre class="font-mono-md text-mono-md text-sm text-on-surface-variant overflow-x-auto">// Vulnerable:
+// const query = `SELECT * FROM users WHERE username = '${req.body.username}'`;
+
+// Corregido:
+const query = 'SELECT * FROM users WHERE username = $1';
+const values = [req.body.username];
+const res = await db.query(query, values);
+</pre>
+</div>
+</section>
+<!-- Evidence Section -->
+<section class="glass-card rounded-xl p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center mb-4 border-b border-outline-variant/30 pb-2">
+<span class="material-symbols-outlined mr-2 text-primary">image</span>
+                        Evidencia
+                    </h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="border border-outline-variant rounded-lg p-2 bg-surface">
+<img alt="Terminal Execution PoC" class="w-full h-auto rounded border border-outline-variant/50" data-alt="A screenshot showing a command line interface executing a SQL injection attack via a python script, dark terminal background, green syntax highlighting, technical corporate aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCM31ZDgeM-eWUow57udt3fyv7PrAi4MAWVFmxiagTmECQgfbE3raGy1lBw_ZvSSBZXzlwADFm6bGrMkuOdoeRU9bjahydoOqoZJc-xw1TSiFiPps__yk6RIxufNOP1dcrOhO3dauzykEwaGWZ5lr1HpAVUUkXBQY8KB696Sgypw-q8XsR9Ev3OWfmYJ45ddSQ3kN8nUz9duhDX6q3orrhXpsvqt5EMlrJdvsssLDxW4_q1xaZ8Skhu1w"/>
+<p class="font-body-sm text-body-sm text-center text-on-surface-variant mt-2">Fig 1. Ejecución del script automatizado de PoC.</p>
+</div>
+<div class="border border-outline-variant rounded-lg p-2 bg-surface">
+<img alt="Burp Suite Request/Response" class="w-full h-auto rounded border border-outline-variant/50" data-alt="A screenshot of a Burp Suite HTTP history tab, showing a malicious POST request and an internal server error response containing SQL syntax errors, technical cyber security aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCzbXIP-IgNWdOEz6RlLm5CFa2LdGsMWJ4Xq7QuLeWbZlKBjLFM0DL0rk0Va_wfqEB7Xna5RLKXbyISxT6GXCU94B9_YVYWhJy9-wCQ9OUwqx-7Ayp4K9RyrY3w97nfJ1oP0mYXXMB7LF2cZ4fST3p6PvRLA2vqEPv0iXAkEeG8i83dcmTRtDidcWNbbyMYuoMLkJTU3JT3sK6WuzKX_jX97wVFVFoOPzg5sYU0bCbwd3azB8b37rQOdg"/>
+<p class="font-body-sm text-body-sm text-center text-on-surface-variant mt-2">Fig 2. Respuesta HTTP revelando detalles de la base de datos.</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Meta & Impact (1/3 width) -->
+<div class="space-y-md lg:space-y-lg">
+<!-- Business Impact -->
+<section class="glass-card rounded-xl p-lg bg-error-container/20 border-error/30">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center mb-3">
+<span class="material-symbols-outlined mr-2 text-error">trending_down</span>
+                        Impacto al Negocio
+                    </h2>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                        La explotación exitosa de esta vulnerabilidad permite la <strong>exfiltración completa de la base de datos</strong>, incluyendo credenciales de usuarios, PII (Información Personal Identificable) de clientes y datos financieros. Además, en ciertas configuraciones, podría conducir a la Ejecución Remota de Código (RCE) en el servidor de base de datos, comprometiendo totalmente la infraestructura.
+                    </p>
+</section>
+<!-- Root Cause -->
+<section class="glass-card rounded-xl p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center mb-3">
+<span class="material-symbols-outlined mr-2 text-primary">psychology</span>
+                        Causa Raíz
+                    </h2>
+<ul class="font-body-md text-body-md text-on-surface-variant space-y-2 list-disc list-inside">
+<li>Falta de validación de entrada en el lado del servidor.</li>
+<li>Uso de concatenación de cadenas para construir consultas SQL en lugar de ORM o consultas preparadas.</li>
+<li>Manejo inadecuado de excepciones que filtra mensajes de error de la base de datos al cliente.</li>
+</ul>
+</section>
+<!-- Metadata Info -->
+<section class="glass-card rounded-xl p-lg">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-4 border-b border-outline-variant/30 pb-2">Información del Hallazgo</h3>
+<div class="space-y-3">
+<div class="flex justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant">Estado</span>
+<span class="font-label-md text-label-md text-on-surface bg-surface-container px-2 py-0.5 rounded border border-outline-variant/50">Abierto</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant">Reportado por</span>
+<span class="font-body-md text-body-md text-on-surface font-medium">SecTeam Alpha</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant">Fecha Descubrimiento</span>
+<span class="font-mono-md text-mono-md text-on-surface">2023-10-24</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant">SLA Remediación</span>
+<span class="font-mono-md text-mono-md text-error font-semibold">24 Horas</span>
+</div>
+<div class="flex justify-between">
+<span class="font-body-md text-body-md text-on-surface-variant">CWE</span>
+<a class="font-mono-md text-mono-md text-primary hover:underline" href="#">CWE-89</a>
+</div>
+</div>
+</section>
+<!-- Environment Scope -->
+<section class="glass-card rounded-xl p-lg">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-4 border-b border-outline-variant/30 pb-2">Alcance / Entorno</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 rounded-md bg-surface-container-high border border-outline-variant/50 font-mono-md text-mono-md text-[11px] text-on-surface">Producción</span>
+<span class="px-2 py-1 rounded-md bg-surface-container-high border border-outline-variant/50 font-mono-md text-mono-md text-[11px] text-on-surface">api.enterprise-target.com</span>
+<span class="px-2 py-1 rounded-md bg-surface-container-high border border-outline-variant/50 font-mono-md text-mono-md text-[11px] text-on-surface">PostgreSQL 14</span>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Centro de Notificaciones - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#005046",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-secondary-container": "#54637d",
+                        "surface-tint": "#0060ab",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#ffffff",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#ebeef2",
+                        "on-secondary-fixed-variant": "#394760",
+                        "surface-container-low": "#f1f4f8",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "secondary-container": "#d1e0ff",
+                        "on-secondary-fixed": "#0c1c32",
+                        "surface": "#f7fafe",
+                        "primary-container": "#0078d4",
+                        "inverse-surface": "#2d3134",
+                        "background": "#f7fafe",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#ffffff",
+                        "surface-dim": "#d7dade",
+                        "on-tertiary-fixed": "#00201b",
+                        "tertiary-container": "#0a8575",
+                        "tertiary-fixed": "#91f4e1",
+                        "on-primary-fixed-variant": "#004883",
+                        "primary": "#005faa",
+                        "primary-fixed": "#d3e3ff",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "outline": "#717783",
+                        "on-surface": "#181c1f",
+                        "surface-container-high": "#e5e8ec",
+                        "on-background": "#181c1f",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f7fafe",
+                        "surface-container-highest": "#e0e3e7",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-variant": "#e0e3e7",
+                        "on-surface-variant": "#404752",
+                        "outline-variant": "#c0c7d4",
+                        "tertiary": "#006a5c",
+                        "secondary": "#505f79"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "container-max": "1440px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "mono-md": ["JetBrains Mono"],
+                        "headline-xl": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .acrylic {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        body {
+            background-color: #f7fafe;
+        }
+    </style>
+</head>
+<body class="text-on-surface antialiased overflow-x-hidden">
+<!-- TopNavBar -->
+<nav class="bg-surface/70 backdrop-blur-[20px] shadow-sm border-b border-outline-variant/30 flex justify-between items-center w-full px-6 py-2 sticky top-0 z-50">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">Auditor</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden md:flex items-center">
+<span class="material-symbols-outlined absolute left-2 text-outline" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="pl-8 pr-4 py-1 rounded border border-outline-variant/50 focus:border-primary focus:border-b-2 bg-surface-container-lowest outline-none font-body-sm text-body-sm w-64 transition-all" placeholder="Buscar..." type="text"/>
+</div>
+<!-- Actions -->
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 text-primary border-b-2 border-primary pb-1 relative">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-surface-container-low transition-colors cursor-pointer active:scale-95 text-on-secondary-container hover:text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+<!-- Profile -->
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A clean, modern corporate headshot of a professional, smiling slightly, set against a light grey background. The lighting is bright and even, typical of high-quality business portraits. This is used for a user profile avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7S7LP1J6SgH6wBUjpF42E00Ykd5Dy80V31uPglIt885pvuyMLAn95QXUpg6kKbsiI3RAXh4WqpUsg1OEUx9sR8esI9-EUQUyvndrxcbenqaww-h1Twxq3pIvVV1SoEvCPqiM49J04t7fngltHuDXS7rlZ0hafqas3rBKGSu8oIK7YRVJr7c1XKffrFFWXDjSObeSdF--KR1Fv-UJzd5w7y_nObL6lR8SihjUu2S-EJHeJ-sZ4wDSVhw"/>
+</div>
+</div>
+</nav>
+<div class="flex h-[calc(100vh-56px)]">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-full p-4 space-y-2 bg-surface-container-low/70 backdrop-blur-[20px] border-r border-outline-variant/30 fixed left-0 top-[56px] w-64 z-40">
+<div class="flex items-center gap-3 mb-6 px-2">
+<div class="w-10 h-10 rounded bg-primary-container flex items-center justify-center text-on-primary-container">
+<span class="material-symbols-outlined">security</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-label-md font-bold text-primary">Security Console</h2>
+<p class="font-body-sm text-[10px] text-secondary">Enterprise Edition</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                    Dashboard
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">radar</span>
+                    Active Scans
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">security</span>
+                    Vulnerabilities
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                    Assets
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">public</span>
+                    OSINT
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+                    Attack Graph
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">grid_view</span>
+                    MITRE ATT&amp;CK
+                </a>
+</nav>
+<div class="mt-auto space-y-1 pt-4 border-t border-outline-variant/30">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">help_outline</span>
+                    Support
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary hover:bg-surface-container-high rounded-lg group cursor-pointer transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]">manage_accounts</span>
+                    Account
+                </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-4 md:p-8 overflow-y-auto w-full max-w-container-max mx-auto">
+<div class="mb-lg flex justify-between items-end">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-2">Centro de Notificaciones</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Revisa las últimas alertas de seguridad y actualizaciones del sistema.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 bg-surface-container-highest text-on-surface font-label-md text-label-md rounded border border-outline-variant/50 hover:bg-surface-variant transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">done_all</span>
+                        Marcar todo como leído
+                    </button>
+<button class="p-2 bg-surface-container-highest text-on-surface rounded border border-outline-variant/50 hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+</button>
+</div>
+</div>
+<!-- Notifications List -->
+<div class="space-y-4">
+<!-- Notification Item - Critical -->
+<div class="acrylic rounded-lg p-md flex gap-md items-start hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group border-l-4 border-l-error">
+<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-error-container" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface">Intento de acceso no autorizado detectado</h3>
+<span class="font-mono-md text-mono-md text-outline text-xs">Hace 5 min</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-3">Múltiples intentos fallidos de inicio de sesión desde una dirección IP desconocida (192.168.1.105) hacia el servidor principal de base de datos.</p>
+<div class="flex items-center gap-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-md text-[10px] bg-error/10 text-error border border-error/20">
+                                Crítico
+                            </span>
+<button class="font-label-md text-label-md text-primary hover:underline flex items-center gap-1">
+                                Ver hallazgo <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Notification Item - High -->
+<div class="acrylic rounded-lg p-md flex gap-md items-start hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group border-l-4 border-l-tertiary-container">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed-dim/20 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-tertiary-container" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface">Vulnerabilidad CVE-2024-XXXX identificada</h3>
+<span class="font-mono-md text-mono-md text-outline text-xs">Hace 2 horas</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-3">El escaneo automatizado detectó una vulnerabilidad de severidad alta en la biblioteca 'lib-auth-v2' utilizada por el portal de clientes.</p>
+<div class="flex items-center gap-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-md text-[10px] bg-tertiary-container/10 text-tertiary-container border border-tertiary-container/20">
+                                Alto
+                            </span>
+<button class="font-label-md text-label-md text-primary hover:underline flex items-center gap-1">
+                                Ver detalles de vulnerabilidad
+                            </button>
+</div>
+</div>
+</div>
+<!-- Notification Item - Medium -->
+<div class="acrylic rounded-lg p-md flex gap-md items-start hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group border-l-4 border-l-[#F59E0B]">
+<div class="w-10 h-10 rounded-full bg-[#F59E0B]/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[#F59E0B]">info</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface">Cambio de configuración en Firewall</h3>
+<span class="font-mono-md text-mono-md text-outline text-xs">Ayer, 14:30</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-3">Se ha detectado una modificación en las reglas de entrada del Firewall perimetral (Regla ID: FW-402).</p>
+<div class="flex items-center gap-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-md text-[10px] bg-[#F59E0B]/10 text-[#D97706] border border-[#F59E0B]/20">
+                                Medio
+                            </span>
+<button class="font-label-md text-label-md text-secondary hover:text-primary transition-colors flex items-center gap-1">
+                                Marcar como leído
+                            </button>
+</div>
+</div>
+</div>
+<!-- Notification Item - Info -->
+<div class="acrylic rounded-lg p-md flex gap-md items-start hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group border-l-4 border-l-primary opacity-70">
+<div class="w-10 h-10 rounded-full bg-primary-container/10 flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-primary">update</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-1">
+<h3 class="font-headline-md text-body-lg font-semibold text-on-surface">Actualización del sistema completada</h3>
+<span class="font-mono-md text-mono-md text-outline text-xs">Ayer, 03:00</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-3">Los agentes de auditoría han sido actualizados a la versión 4.2.0 exitosamente en todos los nodos.</p>
+<div class="flex items-center gap-4">
+<span class="inline-flex items-center px-2 py-0.5 rounded font-label-md text-[10px] bg-primary/10 text-primary border border-primary/20">
+                                Info
+                            </span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

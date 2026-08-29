@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dark Spear — Evidencia de grafo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script src="vendor/lucide.min.js"></script>
+<link rel="icon" type="image/png" href="vendor/logo.png"/>
+<link rel="apple-touch-icon" href="vendor/logo.png"/>
+<link href="vendor/tokens.css" rel="stylesheet"/>
+<script src="vendor/prefs-boot.js"></script>
+<script src="vendor/i18n.js" defer></script>
+<script src="vendor/export.js" defer></script>
+<script src="vendor/splash.js" defer></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary-fixed": "#d3e3ff", "background": "#f7fafe", "inverse-primary": "#a3c9ff",
+                "surface-container-lowest": "#ffffff", "on-secondary-container": "#54637d",
+                "on-tertiary-fixed-variant": "#005046", "surface-tint": "#0060ab", "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a", "on-tertiary-fixed": "#00201b", "inverse-on-surface": "#eef1f5",
+                "primary-fixed-dim": "#a3c9ff", "on-surface-variant": "#404752", "tertiary-container": "#0a8575",
+                "on-primary": "#ffffff", "surface-bright": "#f7fafe", "secondary": "#505f79",
+                "surface-container": "#ebeef2", "on-secondary-fixed-variant": "#394760", "on-surface": "#181c1f",
+                "secondary-fixed-dim": "#b8c7e5", "secondary-fixed": "#d5e3ff", "tertiary-fixed": "#91f4e1",
+                "surface-variant": "#e0e3e7", "inverse-surface": "#2d3134", "on-error": "#ffffff", "error": "#ba1a1a",
+                "surface-dim": "#d7dade", "secondary-container": "#d1e0ff", "tertiary": "#006a5c",
+                "surface-container-highest": "#e0e3e7", "surface-container-low": "#f1f4f8", "outline": "#717783",
+                "surface-container-high": "#e5e8ec", "on-background": "#181c1f", "on-primary-fixed": "#001c39",
+                "on-primary-container": "#ffffff", "primary": "#005faa", "error-container": "#ffdad6",
+                "on-secondary-fixed": "#0c1c32", "tertiary-fixed-dim": "#75d8c5", "on-secondary": "#ffffff",
+                "primary-container": "#0078d4", "surface": "#f7fafe", "on-primary-fixed-variant": "#004883",
+                "on-tertiary-container": "#ffffff", "outline-variant": "#c0c7d4"
+              },
+              borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+              spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
+              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontSize: {
+                "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        [data-lucide], svg.lucide { width: 20px; height: 20px; stroke-width: 1.75; flex-shrink: 0; }
+        .icon-sm { width: 16px !important; height: 16px !important; }
+        .icon-md { width: 18px !important; height: 18px !important; }
+        .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
+        .dot-grid {
+          background-color: #f7fafe;
+          background-image: radial-gradient(#c0c7d4 1px, transparent 1px);
+          background-size: 18px 18px;
+        }
+        #graph-stage { transform-origin: center center; transition: transform 0.15s ease; }
+        .ev-tab.active { color: #005faa; border-bottom: 2px solid #005faa; background: #f1f4f8; }
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
+        .skip-link:focus { left: 8px; top: 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<a class="skip-link" href="#main-content" data-i18n="skip">Saltar al contenido</a>
+<nav data-app-nav class="bg-white fixed left-0 top-0 h-screen w-64 border-r border-outline-variant/30 shadow-sm flex flex-col py-md z-50">
+<button type="button" class="sidebar-edge-toggle" data-sidebar-toggle aria-expanded="true" data-i18n-aria="aria.sidebarHide"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<div class="px-md mb-xl flex items-center gap-sm" data-brand-row>
+<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="brand-copy">
+<p class="font-headline-md text-headline-md font-bold text-primary leading-tight" data-i18n="brand">Dark Spear</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight" data-i18n="brand.tagline">Consola SecOps</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="attack-graph.html" aria-current="page"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+</div>
+<div class="mt-auto px-md flex flex-col gap-md">
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<div class="sidebar-prefs">
+<div class="ios-row">
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+<div class="ios-row">
+<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+</div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+</div>
+</div>
+</nav>
+
+<div data-app-shell class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
+<div class="relative w-96">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+</div>
+</div>
+</header>
+
+<main id="main-content" class="flex-1 mt-16 p-lg flex gap-md overflow-hidden min-h-0">
+<div class="flex-1 glass-panel rounded-xl flex flex-col relative overflow-hidden min-h-0">
+<div class="p-sm border-b border-outline-variant/30 flex justify-between items-center bg-white shrink-0">
+<div class="flex items-center gap-sm flex-wrap">
+<a href="attack-graph.html" class="px-sm py-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary font-label-md hover:bg-surface-container-low flex items-center gap-xs"><i data-lucide="arrow-left" class="icon-sm"></i> <span data-i18n="nav.graph">Attack Graph</span></a>
+<span class="font-body-sm text-secondary">Path #77A-92 · evidencia forense (no es el grafo de perímetro)</span>
+</div>
+<div class="flex gap-xs">
+<button class="min-h-[44px] min-w-[44px] p-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="zoom-in" title="Acercar" aria-label="Acercar"><i data-lucide="zoom-in" class="icon-md"></i></button>
+<button class="min-h-[44px] min-w-[44px] p-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="zoom-out" title="Alejar" aria-label="Alejar"><i data-lucide="zoom-out" class="icon-md"></i></button>
+<button class="min-h-[44px] min-w-[44px] p-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="zoom-fit" title="Restablecer vista" aria-label="Restablecer vista"><i data-lucide="maximize" class="icon-md"></i></button>
+</div>
+</div>
+<figure class="flex-1 relative overflow-hidden dot-grid min-h-[420px] m-0" role="region" aria-label="Evidencia Path 77A-92. Nodos: 10.0.4.12, app-server-01, db-cluster. Capa forense, no el grafo de perímetro.">
+<div id="graph-stage" class="absolute inset-0">
+<svg class="absolute inset-0 w-full h-full" aria-hidden="true">
+<line stroke="#ba1a1a" stroke-dasharray="5 5" stroke-width="2" x1="22%" x2="50%" y1="32%" y2="52%"></line>
+<line stroke="#ba1a1a" stroke-width="3.5" x1="54%" x2="76%" y1="50%" y2="40%"></line>
+</svg>
+<button class="absolute left-[15%] top-[22%] flex flex-col items-center" type="button" data-node="attacker">
+<div class="h-12 w-12 rounded-full bg-surface-container-highest border-2 border-error flex items-center justify-center shadow-sm"><i data-lucide="globe" class="text-error"></i></div>
+<span class="mt-xs font-label-md bg-white/90 px-xs rounded">10.0.4.12</span>
+<span class="text-[10px] text-error font-bold mt-xs bg-error-container px-xs rounded">Vuln: RCE</span>
+</button>
+<button class="absolute left-[44%] top-[42%] flex flex-col items-center" type="button" data-node="host" id="node-host">
+<div class="h-14 w-14 rounded-lg bg-white border-2 border-primary flex items-center justify-center shadow-md ring-4 ring-primary-fixed/60"><i data-lucide="terminal" class="text-primary"></i></div>
+<span class="mt-xs font-label-md font-bold bg-white/90 px-xs rounded border border-outline-variant">app-server-01</span>
+<span class="text-[10px] text-on-surface-variant mt-xs">Sesión activa</span>
+</button>
+<button class="absolute left-[70%] top-[30%] flex flex-col items-center" type="button" data-node="db">
+<div class="h-12 w-12 rounded-lg bg-white border-2 border-error flex items-center justify-center shadow-sm"><i data-lucide="database" class="text-error"></i></div>
+<span class="mt-xs font-label-md bg-white/90 px-xs rounded">db-cluster</span>
+<span class="text-[10px] text-on-surface-variant mt-xs">Target</span>
+</button>
+</div>
+<div class="absolute bottom-sm left-sm bg-white/90 backdrop-blur-md p-sm rounded-lg border border-outline-variant flex gap-md">
+<div class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-error"></span><span class="font-body-sm text-secondary">Ruta crítica</span></div>
+<div class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-outline-variant"></span><span class="font-body-sm text-secondary">Conexión segura</span></div>
+<div class="flex items-center gap-xs"><span class="w-4 h-4 rounded border-2 border-primary"></span><span class="font-body-sm text-secondary">Nodo seleccionado</span></div>
+</div>
+</figure>
+</div>
+
+<aside class="w-80 shrink-0 glass-panel rounded-xl flex flex-col overflow-hidden" id="detail-panel">
+<div class="p-md border-b border-outline-variant/30 flex justify-between items-start">
+<div>
+<div class="flex items-center gap-xs mb-xs"><i data-lucide="terminal" class="text-primary"></i><h2 class="font-headline-md font-bold">app-server-01</h2></div>
+<p class="font-mono-md text-secondary">IP: 192.168.10.45 · N-8842-AX</p>
+</div>
+<button class="text-secondary hover:text-on-surface" type="button" id="close-panel" aria-label="Cerrar"><i data-lucide="x"></i></button>
+</div>
+<div class="flex-1 overflow-y-auto p-md flex flex-col gap-md min-h-0">
+<div class="bg-surface-container-low rounded-lg p-sm border border-error/30 flex items-center justify-between">
+<div>
+<p class="font-label-md text-secondary">Severidad</p>
+<div class="flex items-baseline gap-xs mt-xs"><span class="font-headline-md text-error uppercase tracking-wider">Crítico</span></div>
+</div>
+<div class="h-12 w-12 rounded-full bg-error-container flex items-center justify-center"><i data-lucide="triangle-alert" class="text-error"></i></div>
+</div>
+<div>
+<h3 class="font-label-md mb-sm border-b border-outline-variant/30 pb-xs">Host</h3>
+<div class="flex flex-col gap-xs font-body-sm">
+<div class="flex justify-between"><span class="text-secondary">OS</span><span>Ubuntu 22.04 LTS</span></div>
+<div class="flex justify-between"><span class="text-secondary">CVE asociado</span><span class="font-mono-md text-error">CVE-2021-44228</span></div>
+<div class="flex justify-between"><span class="text-secondary">Compromiso</span><span class="font-mono-md">2023-10-27 14:32 UTC</span></div>
+</div>
+</div>
+<div>
+<h3 class="font-label-md mb-sm border-b border-outline-variant/30 pb-xs">Contexto de ruta</h3>
+<p class="font-body-sm text-secondary mb-xs">Origen: <span class="px-sm py-xs rounded bg-surface-container font-label-md">10.0.4.12</span></p>
+<p class="font-body-sm text-secondary">Destino potencial: <span class="text-error font-semibold">db-cluster</span></p>
+</div>
+<div class="flex flex-col min-h-0 flex-1">
+<div class="flex border-b border-outline-variant mb-sm" role="tablist">
+<button class="ev-tab active flex-1 py-xs font-label-md text-label-md text-secondary" data-ev="logs" type="button">Raw Logs</button>
+<button class="ev-tab flex-1 py-xs font-label-md text-label-md text-secondary hover:bg-surface-container-low" data-ev="payloads" type="button">Payloads</button>
+<button class="ev-tab flex-1 py-xs font-label-md text-label-md text-secondary hover:bg-surface-container-low" data-ev="shots" type="button">Screenshots</button>
+</div>
+<div id="ev-logs" class="bg-[#1e1e1e] p-sm rounded-lg overflow-y-auto font-mono-md text-[11px] leading-relaxed text-[#d4d4d4] min-h-[140px] max-h-[220px]">
+<p class="text-[#569cd6] mb-sm"># Sesión en app-server-01. Artefactos en vault.</p>
+<p class="mb-xs"><span class="text-[#4ec9b0]">root@app-server-01</span>$ [redacted — vault]</p>
+<p class="text-[#c586c0] opacity-80 mb-sm">sshd: Failed password from [redacted — vault]</p>
+<p class="text-[#569cd6] mb-xs"># Transferencia de artefacto en vault.</p>
+<p class="text-error mb-sm">[+] Explotación confirmada. Canal C2 en vault.</p>
+<p class="mb-xs">[redacted — vault]</p>
+<p class="mb-sm">[redacted — vault]</p>
+<p class="text-[#569cd6]"># Secretos en memoria: [redacted — vault]</p>
+</div>
+<div id="ev-payloads" class="hidden">
+<p class="font-body-sm text-on-surface-variant mb-sm">Binarios no se sirven. Metadatos en vault.</p>
+<ul class="flex flex-col gap-sm font-body-sm">
+<li class="bg-white border border-outline-variant rounded p-sm"><span class="font-label-md">SHA-256</span><p class="font-mono-md text-secondary mt-xs break-all">[redacted — vault]</p></li>
+<li class="bg-white border border-outline-variant rounded p-sm"><span class="font-label-md">Origen</span><p class="text-secondary mt-xs">10.0.4.12 · Path #77A-92</p></li>
+</ul>
+</div>
+<div id="ev-shots" class="hidden">
+<div class="flex flex-col gap-sm">
+<div class="border border-outline-variant rounded-lg p-sm bg-surface-container-low min-h-[80px] flex flex-col items-center justify-center gap-xs text-on-surface-variant">
+<i data-lucide="image" class="icon-md"></i>
+<p class="font-body-sm text-center">Fig 1. Consola — vault.</p>
+</div>
+<div class="border border-outline-variant rounded-lg p-sm bg-surface-container-low min-h-[80px] flex flex-col items-center justify-center gap-xs text-on-surface-variant">
+<i data-lucide="monitor" class="icon-md"></i>
+<p class="font-body-sm text-center">Fig 2. Timeline — vault.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-md border-t border-outline-variant/30 flex flex-col gap-sm">
+<button class="w-full py-sm rounded-lg border border-outline-variant font-label-md text-label-md text-secondary hover:bg-surface-container-low" type="button" data-export="evidence">Exportar evidencia</button>
+<a href="remediation-detail.html" class="w-full py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary text-center">Ver detalles de mitigación</a>
+</div>
+</aside>
+</main>
+</div>
+<script>
+        var scale = 1;
+        var stage = document.getElementById("graph-stage");
+        function applyScale() { stage.style.transform = "scale(" + scale + ")"; }
+        document.getElementById("zoom-in").addEventListener("click", function () { scale = Math.min(1.6, scale + 0.15); applyScale(); });
+        document.getElementById("zoom-out").addEventListener("click", function () { scale = Math.max(0.7, scale - 0.15); applyScale(); });
+        document.getElementById("zoom-fit").addEventListener("click", function () { scale = 1; applyScale(); });
+        document.getElementById("close-panel").addEventListener("click", function () {
+            document.getElementById("detail-panel").classList.add("hidden");
+        });
+        document.getElementById("node-host").addEventListener("click", function () {
+            document.getElementById("detail-panel").classList.remove("hidden");
+        });
+        document.querySelectorAll(".ev-tab").forEach(function (tab) {
+            tab.addEventListener("click", function () {
+                document.querySelectorAll(".ev-tab").forEach(function (t) { t.classList.remove("active"); });
+                tab.classList.add("active");
+                var id = tab.getAttribute("data-ev");
+                document.getElementById("ev-logs").classList.toggle("hidden", id !== "logs");
+                document.getElementById("ev-payloads").classList.toggle("hidden", id !== "payloads");
+                document.getElementById("ev-shots").classList.toggle("hidden", id !== "shots");
+            });
+        });
+        lucide.createIcons();
+    </script>
+</body>
+</html>

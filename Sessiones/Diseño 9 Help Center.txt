@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Help Center - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        /* Fallback fonts if Inter/JetBrains aren't locally available for the preview */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#ffffff",
+                        "on-background": "#181c1f",
+                        "outline": "#717783",
+                        "surface-bright": "#f7fafe",
+                        "primary": "#005faa",
+                        "surface-container": "#ebeef2",
+                        "tertiary": "#006a5c",
+                        "on-tertiary-fixed": "#00201b",
+                        "outline-variant": "#c0c7d4",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "primary-container": "#0078d4",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004883",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-variant": "#e0e3e7",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-surface": "#181c1f",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f1f4f8",
+                        "inverse-surface": "#2d3134",
+                        "on-surface-variant": "#404752",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ffffff",
+                        "primary-fixed": "#d3e3ff",
+                        "surface-dim": "#d7dade",
+                        "tertiary-container": "#0a8575",
+                        "on-secondary-container": "#54637d",
+                        "secondary-container": "#d1e0ff",
+                        "on-primary-fixed": "#001c39",
+                        "background": "#f7fafe",
+                        "surface-tint": "#0060ab",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface": "#f7fafe",
+                        "secondary-fixed": "#d5e3ff",
+                        "on-secondary-fixed": "#0c1c32",
+                        "surface-container-highest": "#e0e3e7",
+                        "secondary": "#505f79",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary-fixed-variant": "#394760",
+                        "on-tertiary-fixed-variant": "#005046"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"],
+                        "mono-md": ["jetbrainsMono", "monospace"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar (Shared Component) -->
+<nav class="w-64 h-screen fixed left-0 top-0 border-r border-outline-variant/30 flat bg-surface-container-low dark:bg-surface-dim flex flex-col py-lg gap-sm z-50">
+<!-- Header -->
+<div class="px-lg pb-md mb-sm flex items-center gap-md">
+<div class="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-lg">A</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary dark:text-primary-fixed-dim leading-none">Auditor</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Enterprise Security</p>
+</div>
+</div>
+<!-- Main Tabs -->
+<div class="px-md flex flex-col gap-xs font-label-md text-label-md font-body-sm text-body-sm">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-md py-sm hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-lg transition-all active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-md py-sm hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-lg transition-all active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">radar</span>
+                Active Scans
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-md py-sm hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-lg transition-all active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">security</span>
+                Vulnerabilities
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-md py-sm hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-lg transition-all active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">assessment</span>
+                Reporting
+            </a>
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-md py-sm hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-lg transition-all active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+                Assets
+            </a>
+</div>
+<div class="flex-1"></div>
+<!-- Footer Tabs -->
+<div class="px-md flex flex-col gap-xs font-label-md text-label-md font-body-sm text-body-sm">
+<a class="flex items-center gap-md text-on-surface-variant dark:text-on-secondary-fixed-variant px-md py-sm hover:bg-surface-container-high dark:hover:bg-surface-container-highest rounded-lg transition-all active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                Settings
+            </a>
+<!-- Active State Applied Here due to Help Center Context -->
+<a class="flex items-center gap-md bg-secondary-container dark:bg-on-secondary-fixed-variant text-on-secondary-container dark:text-secondary-fixed rounded-lg px-md py-sm active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined filled text-[20px]">contact_support</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="flex-1 ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface/70 dark:bg-surface-container/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm dark:shadow-none flex justify-between items-center px-lg max-w-container-max mx-auto font-headline-md text-headline-md font-body-md text-body-md text-primary dark:text-primary-fixed-dim">
+<div class="flex items-center gap-md w-1/3">
+<!-- Search Bar on Left as per JSON -->
+<div class="relative w-full max-w-sm">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full h-10 pl-[36px] pr-sm rounded bg-surface-container-lowest border border-outline-variant/50 text-body-md focus:outline-none focus:border-b-2 focus:border-b-primary-container transition-all text-on-surface placeholder-on-surface-variant/70" placeholder="Quick search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high/50 transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-primary-container hover:bg-surface-container-high/50 transition-colors active:opacity-80 bg-secondary-container/30">
+<span class="material-symbols-outlined filled text-[22px]">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-outline-variant/50 overflow-hidden ml-sm cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A professional corporate headshot of a person looking forward slightly smiling, in a bright modern office setting, well lit, high quality photography, soft white and blue tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD_ReitS4kJ3ROqhDBKsBAIPBnxq-ggPqBYCur9Uh7H_FwqNOWBCf4X5zV1uwWgkL7hMRAx5zvHaJh5qT2b63YldG59ZSICdqsR2IYHvAHqr5ZVx1xnKsKuPUpsQXKaXVQPjyJOa4vNFHRyT7Bc5DwATkftDTUCibLG8aqYS1tIR7ZzYaNwtWYcABICmKu1rosn8gW6ujdAsSVTfYEYTQ4uVBxqECsTFS1cuzkuZD0e4AQdjXa4mKolhw"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 p-lg lg:p-xl max-w-container-max mx-auto w-full overflow-y-auto">
+<!-- Hero Search Section -->
+<section class="mb-xl flex flex-col items-center justify-center text-center py-xl relative rounded-xl bg-surface-container-lowest/70 backdrop-blur-xl border border-outline-variant/30 overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-tertiary/5 opacity-50"></div>
+<div class="relative z-10 w-full max-w-2xl px-lg">
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-sm">How can we help you?</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-lg">Search our knowledge base, documentation, and troubleshooting guides.</p>
+<div class="relative w-full shadow-sm rounded-lg">
+<span class="material-symbols-outlined absolute left-md top-1/2 -translate-y-1/2 text-primary-container text-[28px]">search</span>
+<input class="w-full h-16 pl-[56px] pr-md rounded-lg bg-surface-container-lowest border border-outline-variant/50 font-body-lg text-body-lg text-on-surface focus:outline-none focus:border-b-2 focus:border-b-primary-container transition-all shadow-sm" placeholder="e.g., 'How to configure Azure AD SSO'" type="text"/>
+</div>
+</div>
+</section>
+<!-- Categorized Support Cards (Bento Grid) -->
+<section class="mb-xl">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Browse Topics</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- Card 1 -->
+<a class="flex flex-col p-lg rounded-lg bg-surface-container-lowest/80 backdrop-blur-[20px] border border-outline-variant/30 hover:border-primary/40 hover:shadow-sm transition-all group" href="#">
+<div class="w-12 h-12 rounded-lg bg-secondary-container/50 flex items-center justify-center text-primary-container mb-md group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[28px]">rocket_launch</span>
+</div>
+<h4 class="font-headline-md text-[18px] text-on-surface mb-xs">Getting Started</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex-1">Initial setup, platform navigation, and basic configurations for new users.</p>
+<div class="mt-md font-label-md text-label-md text-primary-container flex items-center gap-xs">
+                            View Guide <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</a>
+<!-- Card 2 -->
+<a class="flex flex-col p-lg rounded-lg bg-surface-container-lowest/80 backdrop-blur-[20px] border border-outline-variant/30 hover:border-primary/40 hover:shadow-sm transition-all group" href="#">
+<div class="w-12 h-12 rounded-lg bg-secondary-container/50 flex items-center justify-center text-primary-container mb-md group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[28px]">radar</span>
+</div>
+<h4 class="font-headline-md text-[18px] text-on-surface mb-xs">Scanning Guides</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex-1">In-depth tutorials on configuring, scheduling, and optimizing vulnerability scans.</p>
+<div class="mt-md font-label-md text-label-md text-primary-container flex items-center gap-xs">
+                            View Guide <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</a>
+<!-- Card 3 -->
+<a class="flex flex-col p-lg rounded-lg bg-surface-container-lowest/80 backdrop-blur-[20px] border border-outline-variant/30 hover:border-primary/40 hover:shadow-sm transition-all group" href="#">
+<div class="w-12 h-12 rounded-lg bg-secondary-container/50 flex items-center justify-center text-primary-container mb-md group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[28px]">api</span>
+</div>
+<h4 class="font-headline-md text-[18px] text-on-surface mb-xs">API Documentation</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex-1">Endpoints, authentication methods, and integration examples for developers.</p>
+<div class="mt-md font-label-md text-label-md text-primary-container flex items-center gap-xs">
+                            View Docs <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</a>
+<!-- Card 4 -->
+<a class="flex flex-col p-lg rounded-lg bg-surface-container-lowest/80 backdrop-blur-[20px] border border-outline-variant/30 hover:border-primary/40 hover:shadow-sm transition-all group" href="#">
+<div class="w-12 h-12 rounded-lg bg-secondary-container/50 flex items-center justify-center text-primary-container mb-md group-hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[28px]">description</span>
+</div>
+<h4 class="font-headline-md text-[18px] text-on-surface mb-xs">Reporting Templates</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex-1">Learn how to customize, export, and automate security compliance reports.</p>
+<div class="mt-md font-label-md text-label-md text-primary-container flex items-center gap-xs">
+                            View Templates <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</div>
+</a>
+</div>
+</section>
+<!-- Bottom Section: Updates & Contact -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg mb-xl">
+<!-- Recent Updates (Left 2 cols on wide screens) -->
+<section class="lg:col-span-2 rounded-xl bg-surface-container-lowest/70 backdrop-blur-xl border border-outline-variant/30 p-lg">
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary-container">update</span>
+                            Release Notes
+                        </h3>
+<a class="font-label-md text-label-md text-primary-container hover:underline" href="#">View All</a>
+</div>
+<div class="flex flex-col gap-sm">
+<!-- Update Item -->
+<div class="flex flex-col sm:flex-row sm:items-start gap-md p-md rounded-lg hover:bg-surface-container-low/50 transition-colors cursor-pointer border border-transparent hover:border-outline-variant/20">
+<div class="min-w-[100px] font-mono-md text-mono-md text-on-surface-variant pt-[2px]">v2.4.1</div>
+<div>
+<h4 class="font-body-lg text-[15px] font-semibold text-on-surface mb-xs">Enhanced Kubernetes Scanning</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Added support for automatic discovery and deeper vulnerability assessment of AKS and EKS clusters.</p>
+</div>
+</div>
+<!-- Update Item -->
+<div class="flex flex-col sm:flex-row sm:items-start gap-md p-md rounded-lg hover:bg-surface-container-low/50 transition-colors cursor-pointer border border-transparent hover:border-outline-variant/20">
+<div class="min-w-[100px] font-mono-md text-mono-md text-on-surface-variant pt-[2px]">v2.4.0</div>
+<div>
+<h4 class="font-body-lg text-[15px] font-semibold text-on-surface mb-xs">New Executive Reporting Dashboards</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Introduced high-level summary dashboards tailored for CISO and compliance officer reviews.</p>
+</div>
+</div>
+<!-- Update Item -->
+<div class="flex flex-col sm:flex-row sm:items-start gap-md p-md rounded-lg hover:bg-surface-container-low/50 transition-colors cursor-pointer border border-transparent hover:border-outline-variant/20">
+<div class="min-w-[100px] font-mono-md text-mono-md text-on-surface-variant pt-[2px]">v2.3.8</div>
+<div>
+<h4 class="font-body-lg text-[15px] font-semibold text-on-surface mb-xs">Performance Improvements</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Optimized database queries reducing report generation time by up to 30% for large asset inventories.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Contact Support -->
+<section class="rounded-xl bg-surface-container-low border border-outline-variant/30 p-lg flex flex-col">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Still need help?</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-lg">Our security experts are available 24/7 to assist you with critical issues.</p>
+<div class="flex flex-col gap-md mt-auto">
+<!-- Action: Live Chat -->
+<button class="w-full flex items-center justify-center gap-sm py-sm px-md rounded bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary-fixed-variant transition-colors active:opacity-90 shadow-sm">
+<span class="material-symbols-outlined text-[20px]">chat</span>
+                            Start Live Chat
+                        </button>
+<!-- Action: Email -->
+<button class="w-full flex items-center justify-center gap-sm py-sm px-md rounded bg-surface-container-lowest border border-outline-variant/50 text-secondary font-label-md text-label-md hover:bg-surface-bright transition-colors active:opacity-90">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+                            Email Support
+                        </button>
+</div>
+<div class="mt-lg pt-md border-t border-outline-variant/20 text-center">
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+                            Premium Support SLA applies.<br/>
+                            Current wait time: <span class="font-semibold text-tertiary-container">&lt; 5 mins</span>
+</p>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>

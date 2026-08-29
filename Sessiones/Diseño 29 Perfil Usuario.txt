@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Configuración de Perfil - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#005046",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-secondary-container": "#54637d",
+                        "surface-tint": "#0060ab",
+                        "on-primary-fixed": "#001c39",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#ffffff",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container": "#ebeef2",
+                        "on-secondary-fixed-variant": "#394760",
+                        "surface-container-low": "#f1f4f8",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "secondary-container": "#d1e0ff",
+                        "on-secondary-fixed": "#0c1c32",
+                        "surface": "#f7fafe",
+                        "primary-container": "#0078d4",
+                        "inverse-surface": "#2d3134",
+                        "background": "#f7fafe",
+                        "error-container": "#ffdad6",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#ffffff",
+                        "surface-dim": "#d7dade",
+                        "on-tertiary-fixed": "#00201b",
+                        "tertiary-container": "#0a8575",
+                        "tertiary-fixed": "#91f4e1",
+                        "on-primary-fixed-variant": "#004883",
+                        "primary": "#005faa",
+                        "primary-fixed": "#d3e3ff",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "outline": "#717783",
+                        "on-surface": "#181c1f",
+                        "surface-container-high": "#e5e8ec",
+                        "on-background": "#181c1f",
+                        "on-error-container": "#93000a",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f7fafe",
+                        "surface-container-highest": "#e0e3e7",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-variant": "#e0e3e7",
+                        "on-surface-variant": "#404752",
+                        "outline-variant": "#c0c7d4",
+                        "tertiary": "#006a5c",
+                        "secondary": "#505f79"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "xl": "32px",
+                        "container-max": "1440px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter", "sans-serif"],
+                        "mono-md": ["jetbrainsMono", "monospace"],
+                        "headline-xl": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .fluent-input {
+            transition: border-bottom-color 0.2s ease, border-bottom-width 0.2s ease;
+        }
+        .fluent-input:focus {
+            border-bottom-width: 2px;
+            border-bottom-color: #0078d4; /* primary-container */
+            outline: none;
+            box-shadow: none;
+        }
+        .acrylic-card {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col md:flex-row antialiased">
+<!-- Mobile TopNavBar -->
+<header class="md:hidden flex justify-between items-center w-full px-6 py-2 sticky top-0 z-50 bg-surface/70 dark:bg-surface-dark/70 backdrop-blur-[20px] shadow-sm border-b border-outline-variant/30 dark:border-outline-variant/10">
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">
+            Auditor
+        </div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed cursor-pointer transition-all duration-200 active:scale-95 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-full p-1" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed cursor-pointer transition-all duration-200 active:scale-95 hover:bg-surface-container-low dark:hover:bg-surface-container-highest rounded-full p-1" data-icon="settings">settings</span>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-outline-variant object-cover" data-alt="A small, professional headshot avatar of a corporate user, well-lit studio photography, neutral background, conveying trust and competence in a business setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDx0HqTevlrYYCc8dbk3BlrRTFuNk2vLeXYsg32wDO-NnuQ8ijY-piyoV0TJe-dzMVHnu7OXh8LLtRIJxzd62TGZ0INvxANGb_hS2u8NpURXF0AzmwGl6hSPGbwXc_rMdpCMBAXkCZdyWDka2-4PEXun-kFFKbHFrkarHHST9vSGnnIK26zqZysApBEErAkJ124k3OsS8sgqZIwB28etqJX1OOqC45QMCZ_wa2zCu_rof3Rl6hOj3OwGw"/>
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface-container-low/70 dark:bg-surface-container-highest/70 backdrop-blur-[20px] border-r border-outline-variant/30 dark:border-outline-variant/10 flex-col p-4 space-y-2 z-40">
+<div class="flex items-center gap-3 mb-8 px-2 mt-4">
+<span class="material-symbols-outlined text-primary text-3xl">security</span>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary dark:text-primary-fixed leading-tight">Security Console</h1>
+<p class="font-label-md text-label-md text-secondary">Enterprise Edition</p>
+</div>
+</div>
+<div class="flex-1 space-y-1">
+<!-- Inactive Tabs -->
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="radar">radar</span>
+<span>Active Scans</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span>Vulnerabilities</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>Assets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="public">public</span>
+<span>OSINT</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="hub">hub</span>
+<span>Attack Graph</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span>MITRE ATT&amp;CK</span>
+</a>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant/30 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 text-secondary dark:text-secondary-fixed-dim hover:bg-surface-container-high dark:hover:bg-surface-variant rounded-lg transition-all group cursor-pointer font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span>Support</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-3 py-2 bg-primary-container text-on-primary-container dark:bg-primary-fixed-dim dark:text-on-primary-fixed rounded-lg group cursor-pointer font-label-md text-label-md shadow-sm" href="#">
+<span class="material-symbols-outlined" data-icon="manage_accounts">manage_accounts</span>
+<span>Account</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-4 md:p-8 max-w-container-max mx-auto w-full">
+<!-- Header -->
+<div class="mb-8 flex items-center justify-between">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-background">Configuración de Perfil</h1>
+<p class="font-body-md text-body-md text-secondary mt-1">Gestione su información personal, seguridad y preferencias del sistema.</p>
+</div>
+<div class="hidden md:flex gap-3">
+<button class="px-4 py-2 border border-[#D8E3F0] rounded text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors">Cancelar</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded font-label-md text-label-md hover:bg-primary transition-colors ambient-shadow">Guardar Cambios</button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Column 1: Personal Info & Avatar -->
+<div class="lg:col-span-2 space-y-6">
+<!-- Personal Info Card -->
+<section class="acrylic-card rounded-xl p-6 md:p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">person</span>
+                        Información Personal
+                    </h2>
+<div class="flex flex-col sm:flex-row gap-8 items-start">
+<!-- Avatar Section -->
+<div class="flex flex-col items-center gap-3">
+<div class="relative group">
+<img alt="Avatar actual" class="w-32 h-32 rounded-full object-cover border-4 border-surface shadow-sm" data-alt="A detailed, professional studio portrait of a corporate executive used as a profile picture, clean background, sharp focus, modern business attire." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDQUnitjYwWxn19DLx1LgSJyY3nAPYNAyfT2si-wlkaGU49bswEgAGPDLjCC9ixkbkYWpQXqMPWuWuj1f6_0BImH1v_VMZw21oE5kCO0-32bIzVD1BEMPOSpF51aHWNM4sHazvpz4AJpA-p0QSuoEpAxcJf5TmN1t_SAvG66VfBV3-x2S8U3k3TCm-cX9rzQ5ivSXRJeW5U1bj4sZ707iErxVOxd1pLjmTT6d4pNefM9V2ErRcSJ_nKCQ"/>
+<div class="absolute inset-0 bg-inverse-surface/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+<span class="material-symbols-outlined text-on-primary">photo_camera</span>
+</div>
+</div>
+<button class="text-primary font-label-md text-label-md hover:underline">Cambiar foto</button>
+</div>
+<!-- Form Fields -->
+<div class="flex-1 w-full space-y-5">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-1">Nombre</label>
+<input class="fluent-input w-full bg-surface-container-lowest border border-outline-variant border-b-2 rounded-t px-3 py-2 font-body-md text-body-md text-on-surface" type="text" value="Elena"/>
+</div>
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-1">Apellidos</label>
+<input class="fluent-input w-full bg-surface-container-lowest border border-outline-variant border-b-2 rounded-t px-3 py-2 font-body-md text-body-md text-on-surface" type="text" value="Rodríguez"/>
+</div>
+</div>
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-1">Correo Electrónico</label>
+<input class="fluent-input w-full bg-surface-container-lowest border border-outline-variant border-b-2 rounded-t px-3 py-2 font-body-md text-body-md text-on-surface" disabled="" type="email" value="elena.rodriguez@auditor.enterprise.com"/>
+<span class="font-body-sm text-body-sm text-secondary mt-1">El correo electrónico está gestionado por el administrador de TI.</span>
+</div>
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-1">Cargo / Rol</label>
+<input class="fluent-input w-full bg-surface-container-lowest border border-outline-variant border-b-2 rounded-t px-3 py-2 font-body-md text-body-md text-on-surface" type="text" value="Auditor Jefe de Seguridad"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Preferences Card -->
+<section class="acrylic-card rounded-xl p-6 md:p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">tune</span>
+                        Preferencias del Sistema
+                    </h2>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<!-- Language -->
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-2">Idioma de la Interfaz</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 font-body-md text-body-md text-on-surface appearance-none focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container">
+<option>Español (España)</option>
+<option>English (US)</option>
+<option>Français</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-2.5 text-secondary pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Theme -->
+<div class="flex flex-col">
+<label class="font-label-md text-label-md text-on-surface-variant mb-2">Tema Visual</label>
+<div class="flex gap-4">
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="text-primary-container focus:ring-primary-container" name="theme" type="radio"/>
+<span class="font-body-md text-body-md text-on-surface">Claro (Predeterminado)</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input class="text-primary-container focus:ring-primary-container" disabled="" name="theme" type="radio"/>
+<span class="font-body-md text-body-md text-secondary">Oscuro (Próximamente)</span>
+</label>
+</div>
+</div>
+<!-- Notifications -->
+<div class="sm:col-span-2 mt-2">
+<label class="flex items-start gap-3 cursor-pointer p-3 bg-surface-container-low rounded-lg border border-outline-variant/50 hover:bg-surface-container transition-colors">
+<input checked="" class="mt-1 text-primary-container focus:ring-primary-container rounded" type="checkbox"/>
+<div>
+<span class="block font-label-md text-label-md text-on-surface">Resumen Semanal de Auditoría</span>
+<span class="block font-body-sm text-body-sm text-secondary">Recibir un informe consolidado de los escaneos activos y vulnerabilidades cada lunes.</span>
+</div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- Column 2: Security & Session -->
+<div class="space-y-6">
+<!-- Security Card -->
+<section class="acrylic-card rounded-xl p-6 md:p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-error">lock</span>
+                        Seguridad
+                    </h2>
+<div class="space-y-6">
+<!-- Password -->
+<div>
+<h3 class="font-label-md text-label-md text-on-surface mb-2">Contraseña</h3>
+<p class="font-body-sm text-body-sm text-secondary mb-3">Último cambio hace 45 días. Se recomienda cambiarla cada 90 días.</p>
+<button class="w-full px-4 py-2 border border-[#D8E3F0] rounded text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-sm">key</span>
+                                Cambiar Contraseña
+                            </button>
+</div>
+<hr class="border-outline-variant/30"/>
+<!-- 2FA -->
+<div>
+<div class="flex justify-between items-start mb-2">
+<h3 class="font-label-md text-label-md text-on-surface">Autenticación de 2 Factores</h3>
+<span class="bg-tertiary-container/20 text-tertiary-container font-label-md text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">Activo</span>
+</div>
+<p class="font-body-sm text-body-sm text-secondary mb-3">Proteja su cuenta con un código adicional al iniciar sesión.</p>
+<div class="flex items-center gap-3 p-3 bg-surface-container-low rounded border border-outline-variant/50">
+<span class="material-symbols-outlined text-primary">smartphone</span>
+<div class="flex-1">
+<span class="block font-body-sm text-body-sm text-on-surface">Aplicación de Autenticación</span>
+</div>
+<button class="text-primary font-label-md text-label-md hover:underline">Configurar</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Active Sessions -->
+<section class="acrylic-card rounded-xl p-6 md:p-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">devices</span>
+                        Sesiones Activas
+                    </h2>
+<ul class="space-y-4">
+<li class="flex items-start gap-3 pb-4 border-b border-outline-variant/30 last:border-0 last:pb-0">
+<span class="material-symbols-outlined text-secondary mt-0.5">laptop_mac</span>
+<div>
+<span class="block font-label-md text-label-md text-on-surface">Mac OS • Chrome</span>
+<span class="block font-body-sm text-body-sm text-tertiary-container">Sesión Actual</span>
+<span class="block font-body-sm text-body-sm text-secondary">Madrid, España • IP: 192.168.1.45</span>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-secondary mt-0.5">phone_iphone</span>
+<div class="flex-1">
+<span class="block font-label-md text-label-md text-on-surface">iOS 16 • Safari</span>
+<span class="block font-body-sm text-body-sm text-secondary">Hace 2 horas</span>
+<span class="block font-body-sm text-body-sm text-secondary">Barcelona, España</span>
+</div>
+<button class="text-error hover:text-on-error-container p-1 rounded-full hover:bg-error-container/20 transition-colors" title="Cerrar sesión">
+<span class="material-symbols-outlined text-lg">logout</span>
+</button>
+</li>
+</ul>
+</section>
+</div>
+</div>
+<!-- Mobile Action Buttons (Sticky Bottom) -->
+<div class="md:hidden fixed bottom-0 left-0 w-full bg-surface/90 backdrop-blur-md p-4 border-t border-outline-variant/30 flex gap-3 z-50">
+<button class="flex-1 px-4 py-2 border border-[#D8E3F0] rounded text-secondary font-label-md text-label-md bg-surface hover:bg-surface-container-low transition-colors">Cancelar</button>
+<button class="flex-1 px-4 py-2 bg-primary-container text-on-primary-container rounded font-label-md text-label-md shadow-md active:scale-95 transition-all">Guardar</button>
+</div>
+</main>
+</body></html>

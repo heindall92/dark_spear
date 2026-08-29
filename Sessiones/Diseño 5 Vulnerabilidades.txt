@@ -1,0 +1,354 @@
+!DOCTYPE html
+
+html lang=enhead
+meta charset=utf-8
+meta content=width=device-width, initial-scale=1.0 name=viewport
+titleVulnerabilities - Auditortitle
+script src=httpscdn.tailwindcss.complugins=forms,container-queriesscript
+link href=httpsfonts.googleapis.comcss2family=Material+Symbols+Outlinedwght,FILL@100..700,0..1&amp;display=swap rel=stylesheet
+link href=httpsfonts.googleapis.com rel=preconnect
+link crossorigin= href=httpsfonts.gstatic.com rel=preconnect
+link href=httpsfonts.googleapis.comcss2family=Interwght@400;600;700&amp;family=JetBrains+Monowght@400&amp;display=swap rel=stylesheet
+link href=httpsfonts.googleapis.comcss2family=Material+Symbols+Outlinedwght,FILL@100..700,0..1&amp;display=swap rel=stylesheet
+script id=tailwind-config
+        tailwind.config = {
+            darkMode class,
+            theme {
+                extend {
+                    colors {
+                        surface-variant #e0e3e7,
+                        error #ba1a1a,
+                        surface-container-low #f1f4f8,
+                        surface-dim #d7dade,
+                        secondary-fixed #d5e3ff,
+                        background #f7fafe,
+                        secondary-container #d1e0ff,
+                        tertiary #006a5c,
+                        primary-container #0078d4,
+                        surface-tint #0060ab,
+                        on-background #181c1f,
+                        primary-fixed #d3e3ff,
+                        on-tertiary #ffffff,
+                        inverse-surface #2d3134,
+                        tertiary-container #0a8575,
+                        on-surface #181c1f,
+                        on-primary-container #ffffff,
+                        outline-variant #c0c7d4,
+                        on-primary #ffffff,
+                        on-secondary #ffffff,
+                        secondary #505f79,
+                        surface-container-high #e5e8ec,
+                        tertiary-fixed #91f4e1,
+                        on-primary-fixed #001c39,
+                        error-container #ffdad6,
+                        surface-bright #f7fafe,
+                        on-tertiary-container #ffffff,
+                        secondary-fixed-dim #b8c7e5,
+                        tertiary-fixed-dim #75d8c5,
+                        primary-fixed-dim #a3c9ff,
+                        surface-container-highest #e0e3e7,
+                        outline #717783,
+                        on-primary-fixed-variant #004883,
+                        surface-container #ebeef2,
+                        on-secondary-container #54637d,
+                        on-error #ffffff,
+                        surface #f7fafe,
+                        surface-container-lowest #ffffff,
+                        on-surface-variant #404752,
+                        on-secondary-fixed-variant #394760,
+                        primary #005faa,
+                        on-secondary-fixed #0c1c32,
+                        inverse-on-surface #eef1f5,
+                        on-tertiary-fixed #00201b,
+                        inverse-primary #a3c9ff,
+                        on-tertiary-fixed-variant #005046,
+                        on-error-container #93000a
+                    },
+                    borderRadius {
+                        DEFAULT 0.25rem,
+                        lg 0.5rem,
+                        xl 0.75rem,
+                        full 9999px
+                    },
+                    spacing {
+                        base 4px,
+                        sm 8px,
+                        xl 32px,
+                        container-max 1440px,
+                        lg 24px,
+                        xs 4px,
+                        md 16px,
+                        gutter 16px
+                    },
+                    fontFamily {
+                        label-md [Inter],
+                        headline-lg [Inter],
+                        body-sm [Inter],
+                        headline-xl [Inter],
+                        body-md [Inter],
+                        mono-md [jetbrainsMono],
+                        headline-md [Inter],
+                        body-lg [Inter]
+                    },
+                    fontSize {
+                        label-md [12px, { lineHeight 16px, letterSpacing 0.05em, fontWeight 600 }],
+                        headline-lg [24px, { lineHeight 32px, fontWeight 600 }],
+                        body-sm [12px, { lineHeight 16px, fontWeight 400 }],
+                        headline-xl [32px, { lineHeight 40px, letterSpacing -0.02em, fontWeight 700 }],
+                        body-md [14px, { lineHeight 20px, fontWeight 400 }],
+                        mono-md [13px, { lineHeight 20px, fontWeight 400 }],
+                        headline-md [20px, { lineHeight 28px, fontWeight 600 }],
+                        body-lg [16px, { lineHeight 24px, fontWeight 400 }]
+                    }
+                }
+            }
+        }
+    script
+style
+        body { background-color theme('colors.background'); }
+         Ambient shadow for highest elevation elements if needed 
+        .ambient-shadow { box-shadow 0px 8px 32px rgba(27, 42, 65, 0.08); }
+    style
+head
+body class=font-body-md text-on-surface h-screen overflow-hidden flex bg-background
+!-- TopNavBar --
+header class=fixed top-0 w-full z-50 bg-white70 darkbg-black70 backdrop-blur-xl border-b border-outline-variant30 shadow-sm
+div class=flex justify-between items-center px-lg h-16 w-full max-w-container-max mx-auto
+div class=flex items-center gap-md
+span class=font-headline-md text-headline-md font-bold text-primary darktext-primary-fixedAuditorspan
+!-- Search Bar (on_left) --
+div class=relative ml-xl hidden mdflex items-center
+span class=material-symbols-outlined absolute left-3 text-outline text-[20px] data-icon=searchsearchspan
+input class=pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant30 rounded-lg text-body-sm focusoutline-none focusborder-primary focusborder-b-2 transition-all w-64 bg-white50 backdrop-blur-sm placeholder=Search vulnerabilities... type=text
+div
+div
+div class=flex items-center gap-sm
+button class=p-2 text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-low darkhoverbg-surface-dim transition-colors rounded-full activeopacity-80 transition-opacity
+span class=material-symbols-outlined data-icon=notificationsnotificationsspan
+button
+button class=p-2 text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-low darkhoverbg-surface-dim transition-colors rounded-full activeopacity-80 transition-opacity
+span class=material-symbols-outlined data-icon=settingssettingsspan
+button
+button class=p-2 text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-low darkhoverbg-surface-dim transition-colors rounded-full activeopacity-80 transition-opacity
+span class=material-symbols-outlined data-icon=helphelpspan
+button
+div class=ml-sm h-8 w-8 rounded-full bg-surface-container-high border border-outline-variant30 overflow-hidden ml-2 flex items-center justify-center
+img alt=User profile class=object-cover w-full h-full data-alt=A professional headshot of a corporate user, neutral lighting, modern office background, clean and trustworthy aesthetic. src=httpslh3.googleusercontent.comaida-publicAB6AXuCpkCJ7579hLW_rX8X5cRSmI1AEpV63DAguuMaic6J612ssONHpDFRh-qvotBmg5_Tl_uXux-GIyDhjN5QS_hlojLNJEJauGpmCkt3SyTNJH-_ZimV8u7LpeEX-ixq9FNe5bURh20a6jM4kG_DDej9ciJ0l_EZ7QaLTBuiX0Rd9BRPddTMDHfGrwzv3hPMwPRV-TggDCOTVk0kmc-TyhHpIM2nZeNQ5m8Grm0-vqc59H45SmHFBd4xtIA
+div
+div
+div
+header
+!-- SideNavBar --
+nav class=fixed left-0 top-0 h-full w-64 z-40 bg-white70 darkbg-black70 backdrop-blur-xl border-r border-outline-variant30 shadow-sm flex flex-col pt-16
+div class=flex flex-col h-full p-md gap-sm
+!-- Main Tabs --
+div class=flex flex-col gap-1 flex-1 mt-md
+a class=flex items-center gap-3 px-3 py-2 rounded-lg text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-high50 transition-all activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=dashboarddashboardspan
+                    Dashboard
+                a
+a class=flex items-center gap-3 px-3 py-2 rounded-lg text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-high50 transition-all activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=radarradarspan
+                    Active Scans
+                a
+a class=flex items-center gap-3 px-3 py-2 bg-primary-container text-on-primary-container font-semibold rounded-lg activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=securitysecurityspan
+                    Vulnerabilities
+                a
+a class=flex items-center gap-3 px-3 py-2 rounded-lg text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-high50 transition-all activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=assessmentassessmentspan
+                    Reporting
+                a
+a class=flex items-center gap-3 px-3 py-2 rounded-lg text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-high50 transition-all activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=inventory_2inventory_2span
+                    Assets
+                a
+div
+!-- Footer Tabs --
+div class=flex flex-col gap-1 mt-auto border-t border-outline-variant30 pt-md
+a class=flex items-center gap-3 px-3 py-2 rounded-lg text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-high50 transition-all activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=settingssettingsspan
+                    Settings
+                a
+a class=flex items-center gap-3 px-3 py-2 rounded-lg text-secondary darktext-secondary-fixed-dim hoverbg-surface-container-high50 transition-all activescale-95 transition-transform font-label-md text-label-md href=#
+span class=material-symbols-outlined text-[20px] data-icon=contact_supportcontact_supportspan
+                    Support
+                a
+div
+div
+nav
+!-- Main Content Area --
+main class=flex-1 ml-64 pt-16 h-full overflow-y-auto bg-background
+div class=max-w-container-max mx-auto p-xl
+!-- Page Header --
+div class=flex justify-between items-end mb-lg
+div
+h1 class=font-headline-xl text-headline-xl text-on-surface mb-1Vulnerabilitiesh1
+p class=font-body-md text-body-md text-on-surface-variantManage and track security findings across your enterprise assets.p
+div
+div class=flex gap-sm
+button class=flex items-center gap-2 px-4 py-2 border border-outline-variant bg-surface-container-lowest text-on-surface-variant rounded-DEFAULT hoverbg-surface-container-low transition-colors font-label-md text-label-md
+span class=material-symbols-outlined text-[18px] data-icon=filter_listfilter_listspan
+                        Filter
+                    button
+button class=flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded-DEFAULT hoverbg-surface-tint transition-colors font-label-md text-label-md
+span class=material-symbols-outlined text-[18px] data-icon=downloaddownloadspan
+                        Export Report
+                    button
+div
+div
+!-- Acrylic Panel for Data Table --
+div class=bg-white70 backdrop-blur-xl border border-outline-variant30 rounded-lg shadow-sm overflow-hidden
+!-- Table Toolbar --
+div class=p-md border-b border-outline-variant30 flex justify-between items-center bg-surface-container-lowest50
+div class=flex gap-2
+span class=font-label-md text-label-md text-on-surface px-2 py-1 bg-surface-variant roundedAll (1,245)span
+span class=font-label-md text-label-md text-on-surface-variant px-2 py-1 hoverbg-surface-container-low rounded cursor-pointer transition-colorsCritical (12)span
+span class=font-label-md text-label-md text-on-surface-variant px-2 py-1 hoverbg-surface-container-low rounded cursor-pointer transition-colorsHigh (84)span
+div
+div class=relative
+span class=material-symbols-outlined absolute left-2 top-1.5 text-outline text-[16px] data-icon=searchsearchspan
+input class=pl-8 pr-3 py-1.5 bg-white border border-outline-variant50 rounded text-body-sm focusoutline-none focusborder-primary focusborder-b-2 transition-all w-48 placeholder=Filter findings... type=text
+div
+div
+!-- Data Table --
+div class=overflow-x-auto
+table class=w-full text-left border-collapse
+thead
+tr class=border-b border-outline-variant30 bg-surface-container-lowest30
+th class=py-3 px-4 font-label-md text-label-md text-secondarySeverityth
+th class=py-3 px-4 font-label-md text-label-md text-secondaryVulnerability Nameth
+th class=py-3 px-4 font-label-md text-label-md text-secondaryTarget Assetth
+th class=py-3 px-4 font-label-md text-label-md text-secondaryDate Discoveredth
+th class=py-3 px-4 font-label-md text-label-md text-secondaryStatusth
+th class=py-3 px-4 font-label-md text-label-md text-secondary text-rightActionsth
+tr
+thead
+tbody class=font-body-md text-body-md text-on-surface
+!-- Row 1 Critical --
+tr class=border-b border-outline-variant20 hoverbg-surface-container-low50 transition-colors
+td class=py-3 px-4
+span class=inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-error text-on-errorCriticalspan
+td
+td class=py-3 px-4 font-semibold text-primarySQL Injection in Login Portaltd
+td class=py-3 px-4 font-mono-md text-mono-md text-on-surface-variantauth.enterprise-prod.comtd
+td class=py-3 px-4 text-on-surface-variantOct 24, 2023td
+td class=py-3 px-4
+span class=inline-flex items-center gap-1 text-error
+span class=material-symbols-outlined text-[14px] data-icon=errorerrorspan
+                                        Open
+                                    span
+td
+td class=py-3 px-4 text-right
+button class=text-secondary hovertext-primary transition-colorsspan class=material-symbols-outlined text-[18px] data-icon=more_vertmore_vertspanbutton
+td
+tr
+!-- Row 2 High --
+tr class=border-b border-outline-variant20 hoverbg-surface-container-low50 transition-colors
+td class=py-3 px-4
+span class=inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#ffe0b2] text-[#e65100]Highspan
+td
+td class=py-3 px-4 font-semibold text-primaryUnauthenticated API Accesstd
+td class=py-3 px-4 font-mono-md text-mono-md text-on-surface-variantapi.v2.internal-servicetd
+td class=py-3 px-4 text-on-surface-variantOct 22, 2023td
+td class=py-3 px-4
+span class=inline-flex items-center gap-1 text-[#e65100]
+span class=material-symbols-outlined text-[14px] data-icon=pendingpendingspan
+                                        In Progress
+                                    span
+td
+td class=py-3 px-4 text-right
+button class=text-secondary hovertext-primary transition-colorsspan class=material-symbols-outlined text-[18px] data-icon=more_vertmore_vertspanbutton
+td
+tr
+!-- Row 3 Medium --
+tr class=border-b border-outline-variant20 hoverbg-surface-container-low50 transition-colors
+td class=py-3 px-4
+span class=inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-variant text-on-surface-variantMediumspan
+td
+td class=py-3 px-4 font-semibold text-primaryWeak SSLTLS Ciphers Enabledtd
+td class=py-3 px-4 font-mono-md text-mono-md text-on-surface-variantlegacy-portal.corp.localtd
+td class=py-3 px-4 text-on-surface-variantOct 15, 2023td
+td class=py-3 px-4
+span class=inline-flex items-center gap-1 text-on-surface-variant
+span class=material-symbols-outlined text-[14px] data-icon=errorerrorspan
+                                        Open
+                                    span
+td
+td class=py-3 px-4 text-right
+button class=text-secondary hovertext-primary transition-colorsspan class=material-symbols-outlined text-[18px] data-icon=more_vertmore_vertspanbutton
+td
+tr
+!-- Row 4 High --
+tr class=border-b border-outline-variant20 hoverbg-surface-container-low50 transition-colors
+td class=py-3 px-4
+span class=inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#ffe0b2] text-[#e65100]Highspan
+td
+td class=py-3 px-4 font-semibold text-primaryCross-Site Scripting (Reflected)td
+td class=py-3 px-4 font-mono-md text-mono-md text-on-surface-variantsupport-desk.external.comtd
+td class=py-3 px-4 text-on-surface-variantOct 12, 2023td
+td class=py-3 px-4
+span class=inline-flex items-center gap-1 text-tertiary
+span class=material-symbols-outlined text-[14px] data-icon=check_circlecheck_circlespan
+                                        Remediated
+                                    span
+td
+td class=py-3 px-4 text-right
+button class=text-secondary hovertext-primary transition-colorsspan class=material-symbols-outlined text-[18px] data-icon=more_vertmore_vertspanbutton
+td
+tr
+!-- Row 5 Low --
+tr class=border-b border-outline-variant20 hoverbg-surface-container-low50 transition-colors
+td class=py-3 px-4
+span class=inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-tertiary-container text-on-tertiary-containerLowspan
+td
+td class=py-3 px-4 font-semibold text-primaryInformation Disclosure via Headerstd
+td class=py-3 px-4 font-mono-md text-mono-md text-on-surface-variantmarketing-site.publictd
+td class=py-3 px-4 text-on-surface-variantOct 05, 2023td
+td class=py-3 px-4
+span class=inline-flex items-center gap-1 text-on-surface-variant
+span class=material-symbols-outlined text-[14px] data-icon=errorerrorspan
+                                        Open
+                                    span
+td
+td class=py-3 px-4 text-right
+button class=text-secondary hovertext-primary transition-colorsspan class=material-symbols-outlined text-[18px] data-icon=more_vertmore_vertspanbutton
+td
+tr
+!-- Row 6 Medium --
+tr class=border-b border-outline-variant20 hoverbg-surface-container-low50 transition-colors
+td class=py-3 px-4
+span class=inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-surface-variant text-on-surface-variantMediumspan
+td
+td class=py-3 px-4 font-semibold text-primaryOutdated Third-Party Librarytd
+td class=py-3 px-4 font-mono-md text-mono-md text-on-surface-variantpayment-gateway.internaltd
+td class=py-3 px-4 text-on-surface-variantSep 28, 2023td
+td class=py-3 px-4
+span class=inline-flex items-center gap-1 text-[#e65100]
+span class=material-symbols-outlined text-[14px] data-icon=pendingpendingspan
+                                        In Progress
+                                    span
+td
+td class=py-3 px-4 text-right
+button class=text-secondary hovertext-primary transition-colorsspan class=material-symbols-outlined text-[18px] data-icon=more_vertmore_vertspanbutton
+td
+tr
+tbody
+table
+div
+!-- Pagination --
+div class=p-4 border-t border-outline-variant30 bg-surface-container-lowest30 flex justify-between items-center
+span class=font-body-sm text-body-sm text-on-surface-variantShowing 1 to 6 of 1,245 entriesspan
+div class=flex gap-1
+button class=px-2 py-1 border border-outline-variant50 rounded text-secondary hoverbg-surface-container-low disabledopacity-50span class=material-symbols-outlined text-[16px] data-icon=chevron_leftchevron_leftspanbutton
+button class=px-3 py-1 bg-primary-container text-on-primary-container rounded font-label-md text-label-md1button
+button class=px-3 py-1 border border-outline-variant50 rounded text-secondary hoverbg-surface-container-low font-label-md text-label-md2button
+button class=px-3 py-1 border border-outline-variant50 rounded text-secondary hoverbg-surface-container-low font-label-md text-label-md3button
+span class=px-2 py-1 text-secondary...span
+button class=px-2 py-1 border border-outline-variant50 rounded text-secondary hoverbg-surface-container-lowspan class=material-symbols-outlined text-[16px] data-icon=chevron_rightchevron_rightspanbutton
+div
+div
+div
+div
+main
+bodyhtml

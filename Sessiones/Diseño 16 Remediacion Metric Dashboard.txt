@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Remediation Metrics Dashboard - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface": "#f7fafe",
+                      "secondary-fixed": "#d5e3ff",
+                      "surface-container-highest": "#e0e3e7",
+                      "on-primary-container": "#ffffff",
+                      "tertiary-container": "#0a8575",
+                      "on-tertiary": "#ffffff",
+                      "inverse-surface": "#2d3134",
+                      "inverse-on-surface": "#eef1f5",
+                      "primary": "#005faa",
+                      "outline-variant": "#c0c7d4",
+                      "outline": "#717783",
+                      "on-tertiary-container": "#ffffff",
+                      "on-surface-variant": "#404752",
+                      "on-background": "#181c1f",
+                      "secondary-container": "#d1e0ff",
+                      "surface-container": "#ebeef2",
+                      "surface-tint": "#0060ab",
+                      "on-tertiary-fixed-variant": "#005046",
+                      "error": "#ba1a1a",
+                      "tertiary": "#006a5c",
+                      "on-secondary-fixed": "#0c1c32",
+                      "inverse-primary": "#a3c9ff",
+                      "on-error": "#ffffff",
+                      "tertiary-fixed-dim": "#75d8c5",
+                      "on-tertiary-fixed": "#00201b",
+                      "surface-variant": "#e0e3e7",
+                      "on-surface": "#181c1f",
+                      "tertiary-fixed": "#91f4e1",
+                      "primary-fixed": "#d3e3ff",
+                      "error-container": "#ffdad6",
+                      "surface-bright": "#f7fafe",
+                      "on-primary": "#ffffff",
+                      "on-secondary-container": "#54637d",
+                      "secondary-fixed-dim": "#b8c7e5",
+                      "on-primary-fixed": "#001c39",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#394760",
+                      "background": "#f7fafe",
+                      "primary-fixed-dim": "#a3c9ff",
+                      "primary-container": "#0078d4",
+                      "surface-dim": "#d7dade",
+                      "surface-container-high": "#e5e8ec",
+                      "surface-container-low": "#f1f4f8",
+                      "secondary": "#505f79",
+                      "on-primary-fixed-variant": "#004883",
+                      "on-secondary": "#ffffff",
+                      "surface-container-lowest": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "md": "16px",
+                      "xl": "32px",
+                      "xs": "4px",
+                      "gutter": "16px",
+                      "sm": "8px",
+                      "container-max": "1440px",
+                      "base": "4px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "mono-md": [
+                              "jetbrainsMono"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "mono-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-xl": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .acrylic-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 0,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24
+        }
+        [data-weight="fill"] .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md h-screen overflow-hidden flex selection:bg-primary selection:text-white">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col bg-surface/70 dark:bg-inverse-surface/70 backdrop-blur-xl docked left-0 h-screen w-64 border-r border-outline-variant dark:border-outline flat no shadows p-md gap-sm z-40 transition-colors duration-150 shrink-0">
+<div class="flex items-center gap-sm mb-xl mt-sm">
+<div class="w-10 h-10 rounded-lg bg-primary text-white flex items-center justify-center shrink-0">
+<span class="font-headline-sm text-headline-sm font-black">A</span>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim leading-none">Auditor</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Enterprise Security</span>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-xs font-label-md text-label-md">
+<a class="flex items-center gap-md px-md py-sm bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary font-bold rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-on-surface-variant/20 rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="radar">radar</span>
+                Active Scans
+            </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-on-surface-variant/20 rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="security">security</span>
+                Vulnerabilities
+            </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-on-surface-variant/20 rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="inventory_2">inventory_2</span>
+                Assets
+            </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-on-surface-variant/20 rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="assessment">assessment</span>
+                Reports
+            </a>
+</div>
+<div class="flex flex-col gap-xs font-label-md text-label-md mt-auto pt-md border-t border-outline-variant/30">
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-on-surface-variant/20 rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help">help</span>
+                Help Center
+            </a>
+<a class="flex items-center gap-md px-md py-sm text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high dark:hover:bg-on-surface-variant/20 rounded-lg group transition-colors duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="logout">logout</span>
+                Log Out
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+<!-- TopNavBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center px-lg py-sm w-full sticky top-0 z-50 bg-surface/70 dark:bg-inverse-surface/70 backdrop-blur-xl border-b border-outline-variant dark:border-outline shadow-sm transition-all duration-200 ease-in-out font-body-md text-body-md text-primary dark:text-primary-fixed-dim docked full-width">
+<div class="flex items-center gap-sm">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">Auditor</span>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-on-surface-variant/10 transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant dark:text-outline-variant hover:bg-surface-container dark:hover:bg-on-surface-variant/10 transition-all duration-200 ease-in-out">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile" class="w-8 h-8 rounded-full ml-2 object-cover border border-outline-variant" data-alt="A small, professional headshot of an IT administrator, neutral lighting, corporate modern style, circular crop, 50x50 resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBhN1asA8m8TRxw3Wk-4ziMQvGHBosRXff7CMnWTR59tavdZ-N_UH98u0OQJ6anEoJ8yL9uKm94FtBSsxV7beaxGtT6v00rx_wMCJU_Run2uthJohdqzf35e9oO6EZx6-OUay-t6YhiWQIb0qF-UAUBu9xeaI8eTZZ1fJRZ2Qr4w0vIjADsM7L1iISWamkU1O4QFnC1ae7tWNwM60edShHrFdHWUfdJuPWWFbZzoYpNkIoo6w_tEiLnHw"/>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto p-md md:p-lg lg:p-xl">
+<div class="max-w-[1440px] mx-auto space-y-xl pb-24">
+<!-- Page Header -->
+<div class="flex flex-col gap-sm">
+<nav class="flex text-on-surface-variant font-body-sm text-body-sm items-center gap-xs">
+<a class="hover:text-primary transition-colors" href="#">Dashboard</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-medium">Remediation Metrics</span>
+</nav>
+<div>
+<h1 class="font-headline-xl text-headline-xl font-bold text-on-surface mb-xs">Remediation Metrics</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Monitor remediation performance and SLA compliance across the organization.</p>
+</div>
+</div>
+<!-- High-Level Metrics Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+<!-- MTTR Card -->
+<div class="acrylic-panel rounded-xl p-md flex flex-col justify-between">
+<div class="flex justify-between items-start mb-md">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Avg MTTR</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">timelapse</span>
+</div>
+</div>
+<div>
+<div class="font-headline-xl text-headline-xl font-bold text-on-surface">14.2 Days</div>
+<div class="flex items-center gap-xs mt-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+<span class="font-body-sm text-body-sm font-medium">-2.4 days from last month</span>
+</div>
+</div>
+</div>
+<!-- SLA Compliance -->
+<div class="acrylic-panel rounded-xl p-md flex flex-col justify-between">
+<div class="flex justify-between items-start mb-md">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">SLA Compliance</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+</div>
+</div>
+<div>
+<div class="font-headline-xl text-headline-xl font-bold text-on-surface">94%</div>
+<div class="flex items-center gap-xs mt-xs text-on-surface-variant">
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden mt-1">
+<div class="bg-primary h-full rounded-full" style="width: 94%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Remediated Total -->
+<div class="acrylic-panel rounded-xl p-md flex flex-col justify-between">
+<div class="flex justify-between items-start mb-md">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Remediated (Current Month)</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">task_alt</span>
+</div>
+</div>
+<div>
+<div class="font-headline-xl text-headline-xl font-bold text-on-surface">1,248</div>
+<div class="flex items-center gap-xs mt-xs text-tertiary">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+<span class="font-body-sm text-body-sm font-medium">+12% vs previous month</span>
+</div>
+</div>
+</div>
+<!-- Open Vuln Aging -->
+<div class="acrylic-panel rounded-xl p-md flex flex-col justify-between">
+<div class="flex justify-between items-start mb-md">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Avg Open Aging</span>
+<div class="w-8 h-8 rounded-full bg-error/10 flex items-center justify-center text-error">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</div>
+</div>
+<div>
+<div class="font-headline-xl text-headline-xl font-bold text-on-surface">42 Days</div>
+<div class="flex items-center gap-xs mt-xs text-error">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span class="font-body-sm text-body-sm font-medium">Action required for 90+ days</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Chart & Severity Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<!-- Remediation Trends Chart -->
+<div class="lg:col-span-2 acrylic-panel rounded-xl p-lg flex flex-col h-[400px]">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Remediation Trends</h2>
+<div class="flex gap-2">
+<select class="bg-surface border border-outline-variant text-on-surface font-body-sm text-body-sm rounded-md px-3 py-1.5 focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+<option>Last 6 Months</option>
+<option>Last 3 Months</option>
+<option>Year to Date</option>
+</select>
+</div>
+</div>
+<div class="flex-1 relative flex items-end justify-between px-md gap-2 mt-4">
+<!-- Faux Chart Bars (New vs Closed) -->
+<div class="w-full flex justify-between h-full items-end pb-8 relative group">
+<div class="absolute bottom-0 w-full flex justify-between text-on-surface-variant font-label-md text-[10px] uppercase">
+<span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+</div>
+<div class="absolute left-0 bottom-8 h-[calc(100%-2rem)] w-full flex flex-col justify-between border-l border-b border-outline-variant/30 text-on-surface-variant font-mono-md text-[10px] pl-2 z-0">
+<span class="absolute -left-6 top-0">1k</span>
+<span class="absolute -left-6 top-1/2 -translate-y-1/2">500</span>
+<span class="absolute -left-4 bottom-0">0</span>
+</div>
+<!-- Bar Pairs -->
+<div class="flex gap-1 h-full items-end z-10 w-12 mx-auto justify-center">
+<div class="w-4 bg-outline-variant/50 rounded-t-sm" style="height: 40%"></div>
+<div class="w-4 bg-primary rounded-t-sm" style="height: 30%"></div>
+</div>
+<div class="flex gap-1 h-full items-end z-10 w-12 mx-auto justify-center">
+<div class="w-4 bg-outline-variant/50 rounded-t-sm" style="height: 60%"></div>
+<div class="w-4 bg-primary rounded-t-sm" style="height: 55%"></div>
+</div>
+<div class="flex gap-1 h-full items-end z-10 w-12 mx-auto justify-center">
+<div class="w-4 bg-outline-variant/50 rounded-t-sm" style="height: 45%"></div>
+<div class="w-4 bg-primary rounded-t-sm" style="height: 65%"></div>
+</div>
+<div class="flex gap-1 h-full items-end z-10 w-12 mx-auto justify-center">
+<div class="w-4 bg-outline-variant/50 rounded-t-sm" style="height: 70%"></div>
+<div class="w-4 bg-primary rounded-t-sm" style="height: 60%"></div>
+</div>
+<div class="flex gap-1 h-full items-end z-10 w-12 mx-auto justify-center">
+<div class="w-4 bg-outline-variant/50 rounded-t-sm" style="height: 50%"></div>
+<div class="w-4 bg-primary rounded-t-sm" style="height: 80%"></div>
+</div>
+<div class="flex gap-1 h-full items-end z-10 w-12 mx-auto justify-center">
+<div class="w-4 bg-outline-variant/50 rounded-t-sm" style="height: 80%"></div>
+<div class="w-4 bg-primary rounded-t-sm" style="height: 90%"></div>
+</div>
+</div>
+</div>
+<div class="flex justify-center gap-md mt-md font-body-sm text-body-sm text-on-surface-variant">
+<div class="flex items-center gap-xs"><div class="w-3 h-3 bg-outline-variant/50 rounded-sm"></div> New Findings</div>
+<div class="flex items-center gap-xs"><div class="w-3 h-3 bg-primary rounded-sm"></div> Closed Findings</div>
+</div>
+</div>
+<!-- Performance by Severity -->
+<div class="acrylic-panel rounded-xl p-lg flex flex-col h-[400px]">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface mb-md">SLA by Severity</h2>
+<div class="flex flex-col gap-md flex-1 justify-center">
+<!-- Critical -->
+<div>
+<div class="flex justify-between items-center mb-xs font-body-sm text-body-sm">
+<div class="flex items-center gap-sm">
+<div class="px-2 py-0.5 rounded bg-error/10 text-error font-label-md text-[10px] uppercase border border-error/20">Critical</div>
+<span class="text-on-surface">Target: 48h</span>
+</div>
+<span class="font-medium">98% SLA</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full" style="width: 98%"></div>
+</div>
+</div>
+<!-- High -->
+<div>
+<div class="flex justify-between items-center mb-xs font-body-sm text-body-sm">
+<div class="flex items-center gap-sm">
+<div class="px-2 py-0.5 rounded bg-[#B93815]/10 text-[#B93815] font-label-md text-[10px] uppercase border border-[#B93815]/20">High</div>
+<span class="text-on-surface">Target: 7d</span>
+</div>
+<span class="font-medium">92% SLA</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-[#B93815] h-full rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<!-- Medium -->
+<div>
+<div class="flex justify-between items-center mb-xs font-body-sm text-body-sm">
+<div class="flex items-center gap-sm">
+<div class="px-2 py-0.5 rounded bg-[#B26B00]/10 text-[#B26B00] font-label-md text-[10px] uppercase border border-[#B26B00]/20">Medium</div>
+<span class="text-on-surface">Target: 30d</span>
+</div>
+<span class="font-medium">85% SLA</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-[#B26B00] h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Low -->
+<div>
+<div class="flex justify-between items-center mb-xs font-body-sm text-body-sm">
+<div class="flex items-center gap-sm">
+<div class="px-2 py-0.5 rounded bg-primary/10 text-primary font-label-md text-[10px] uppercase border border-primary/20">Low</div>
+<span class="text-on-surface">Target: 90d</span>
+</div>
+<span class="font-medium">99% SLA</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 99%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom Row: Teams Table & Aging Dist -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-md">
+<!-- Top Teams -->
+<div class="acrylic-panel rounded-xl p-md lg:p-lg flex flex-col">
+<div class="flex justify-between items-center mb-md">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface">Top Remediation Teams</h2>
+<button class="text-primary font-label-md text-label-md hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/50 font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">
+<th class="py-2 px-3 font-semibold">Team</th>
+<th class="py-2 px-3 font-semibold text-right">Closed</th>
+<th class="py-2 px-3 font-semibold text-right">Avg MTTR</th>
+<th class="py-2 px-3 font-semibold text-right">SLA %</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm divide-y divide-outline-variant/30">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3 flex items-center gap-sm font-medium text-on-surface">
+<div class="w-6 h-6 rounded bg-primary-container text-white flex items-center justify-center font-bold text-[10px]">IN</div>
+                                            Infrastructure Ops
+                                        </td>
+<td class="py-3 px-3 text-right">452</td>
+<td class="py-3 px-3 text-right">8.4d</td>
+<td class="py-3 px-3 text-right text-tertiary font-medium">99%</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3 flex items-center gap-sm font-medium text-on-surface">
+<div class="w-6 h-6 rounded bg-[#B93815] text-white flex items-center justify-center font-bold text-[10px]">DB</div>
+                                            Database Admin
+                                        </td>
+<td class="py-3 px-3 text-right">310</td>
+<td class="py-3 px-3 text-right">12.1d</td>
+<td class="py-3 px-3 text-right text-tertiary font-medium">96%</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3 flex items-center gap-sm font-medium text-on-surface">
+<div class="w-6 h-6 rounded bg-[#B26B00] text-white flex items-center justify-center font-bold text-[10px]">WE</div>
+                                            Web Frontend
+                                        </td>
+<td class="py-3 px-3 text-right">285</td>
+<td class="py-3 px-3 text-right">15.5d</td>
+<td class="py-3 px-3 text-right text-on-surface">91%</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="py-3 px-3 flex items-center gap-sm font-medium text-on-surface">
+<div class="w-6 h-6 rounded bg-secondary text-white flex items-center justify-center font-bold text-[10px]">BE</div>
+                                            Backend Services
+                                        </td>
+<td class="py-3 px-3 text-right">198</td>
+<td class="py-3 px-3 text-right">22.0d</td>
+<td class="py-3 px-3 text-right text-error font-medium">82%</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Aging Distribution -->
+<div class="acrylic-panel rounded-xl p-md lg:p-lg flex flex-col">
+<h2 class="font-headline-md text-headline-md font-semibold text-on-surface mb-md">Vulnerability Aging Distribution</h2>
+<div class="flex-1 flex items-end gap-sm h-48 mt-4 relative pb-6 border-b border-outline-variant/30 px-sm">
+<!-- 0-30 Days -->
+<div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+<div class="w-full max-w-[48px] bg-primary rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer" style="height: 75%;">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-body-sm text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">750 Findings</div>
+</div>
+<span class="absolute -bottom-6 font-label-md text-[11px] text-on-surface-variant whitespace-nowrap">0-30 Days</span>
+</div>
+<!-- 31-60 Days -->
+<div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+<div class="w-full max-w-[48px] bg-[#B26B00] rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer" style="height: 45%;">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-body-sm text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">450 Findings</div>
+</div>
+<span class="absolute -bottom-6 font-label-md text-[11px] text-on-surface-variant whitespace-nowrap">31-60 Days</span>
+</div>
+<!-- 61-90 Days -->
+<div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+<div class="w-full max-w-[48px] bg-[#B93815] rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer" style="height: 25%;">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-body-sm text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">250 Findings</div>
+</div>
+<span class="absolute -bottom-6 font-label-md text-[11px] text-on-surface-variant whitespace-nowrap">61-90 Days</span>
+</div>
+<!-- 90+ Days -->
+<div class="flex-1 flex flex-col items-center justify-end h-full group relative">
+<div class="w-full max-w-[48px] bg-error rounded-t-md transition-all duration-300 hover:opacity-80 cursor-pointer" style="height: 15%;">
+<div class="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface font-body-sm text-[10px] px-2 py-1 rounded whitespace-nowrap transition-opacity">150 Findings</div>
+</div>
+<span class="absolute -bottom-6 font-label-md text-[11px] text-on-surface-variant font-bold text-error whitespace-nowrap">90+ Days</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

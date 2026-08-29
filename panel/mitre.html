@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dark Spear — MITRE ATT&amp;CK</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script src="vendor/lucide.min.js"></script>
+<link rel="icon" type="image/png" href="vendor/logo.png"/>
+<link rel="apple-touch-icon" href="vendor/logo.png"/>
+<link href="vendor/tokens.css" rel="stylesheet"/>
+<script src="vendor/prefs-boot.js"></script>
+<script src="vendor/i18n.js" defer></script>
+<script src="vendor/export.js" defer></script>
+<script src="vendor/splash.js" defer></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary-fixed": "#d3e3ff", "background": "#f7fafe", "inverse-primary": "#a3c9ff",
+                "surface-container-lowest": "#ffffff", "on-secondary-container": "#54637d",
+                "on-tertiary-fixed-variant": "#005046", "surface-tint": "#0060ab", "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a", "on-tertiary-fixed": "#00201b", "inverse-on-surface": "#eef1f5",
+                "primary-fixed-dim": "#a3c9ff", "on-surface-variant": "#404752", "tertiary-container": "#0a8575",
+                "on-primary": "#ffffff", "surface-bright": "#f7fafe", "secondary": "#505f79",
+                "surface-container": "#ebeef2", "on-secondary-fixed-variant": "#394760", "on-surface": "#181c1f",
+                "secondary-fixed-dim": "#b8c7e5", "secondary-fixed": "#d5e3ff", "tertiary-fixed": "#91f4e1",
+                "surface-variant": "#e0e3e7", "inverse-surface": "#2d3134", "on-error": "#ffffff", "error": "#ba1a1a",
+                "surface-dim": "#d7dade", "secondary-container": "#d1e0ff", "tertiary": "#006a5c",
+                "surface-container-highest": "#e0e3e7", "surface-container-low": "#f1f4f8", "outline": "#717783",
+                "surface-container-high": "#e5e8ec", "on-background": "#181c1f", "on-primary-fixed": "#001c39",
+                "on-primary-container": "#ffffff", "primary": "#005faa", "error-container": "#ffdad6",
+                "on-secondary-fixed": "#0c1c32", "tertiary-fixed-dim": "#75d8c5", "on-secondary": "#ffffff",
+                "primary-container": "#0078d4", "surface": "#f7fafe", "on-primary-fixed-variant": "#004883",
+                "on-tertiary-container": "#ffffff", "outline-variant": "#c0c7d4"
+              },
+              borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+              spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
+              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontSize: {
+                "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        [data-lucide], svg.lucide { width: 20px; height: 20px; stroke-width: 1.75; flex-shrink: 0; }
+        .icon-sm { width: 16px !important; height: 16px !important; }
+        .icon-md { width: 18px !important; height: 18px !important; }
+        .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
+        .tab-btn.active { background: #fff; color: #004883; box-shadow: 0 1px 2px rgba(27,42,65,0.08); border-color: #c0c7d4; }
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
+        .skip-link:focus { left: 8px; top: 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<a class="skip-link" href="#main-content" data-i18n="skip">Saltar al contenido</a>
+<nav data-app-nav class="bg-white fixed left-0 top-0 h-screen w-64 border-r border-outline-variant/30 shadow-sm flex flex-col py-md z-50">
+<button type="button" class="sidebar-edge-toggle" data-sidebar-toggle aria-expanded="true" data-i18n-aria="aria.sidebarHide"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<div class="px-md mb-xl flex items-center gap-sm" data-brand-row>
+<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="brand-copy">
+<p class="font-headline-md text-headline-md font-bold text-primary leading-tight" data-i18n="brand">Dark Spear</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight" data-i18n="brand.tagline">Consola SecOps</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="mitre.html" aria-current="page"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+</div>
+<div class="mt-auto px-md flex flex-col gap-md">
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<div class="sidebar-prefs">
+<div class="ios-row">
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+<div class="ios-row">
+<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+</div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+</div>
+</div>
+</nav>
+
+<div data-app-shell class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
+<div class="relative w-96">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+</div>
+</div>
+</header>
+
+<main id="main-content" class="flex-1 mt-16 p-lg overflow-hidden flex flex-col max-w-container-max mx-auto w-full">
+<div class="glass-panel rounded-xl p-md mb-md flex flex-col gap-md shrink-0">
+<div class="flex justify-between items-start lg:items-center flex-col lg:flex-row gap-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Matriz MITRE ATT&amp;CK</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enterprise Security • v14.1</p>
+</div>
+<div class="flex flex-wrap items-center gap-sm">
+<div class="flex bg-surface-container rounded-lg p-[2px] border border-outline-variant" role="tablist">
+<button class="tab-btn active px-md py-xs rounded-md font-label-md text-label-md text-on-surface-variant border border-transparent" data-tab="cobertura" type="button">Cobertura</button>
+<button class="tab-btn px-md py-xs rounded-md font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low border border-transparent" data-tab="inteligencia" type="button">Inteligencia</button>
+<button class="tab-btn px-md py-xs rounded-md font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low border border-transparent" data-tab="observadas" type="button">Observadas</button>
+</div>
+<div class="relative group">
+<button class="flex items-center gap-xs px-md py-sm rounded-lg border border-[#D8E3F0] bg-transparent text-secondary font-label-md text-label-md hover:bg-surface-container-low" type="button"><i data-lucide="download" class="icon-md"></i> Exportar <i data-lucide="chevron-down" class="icon-sm"></i></button>
+<div class="absolute right-0 top-full mt-xs w-32 bg-white border border-outline-variant rounded-lg shadow-lg hidden group-hover:block z-10 py-xs">
+<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="json">JSON</a>
+<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="svg">SVG</a>
+<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="pdf">PDF</a>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-md border-t border-outline-variant pt-md flex-wrap">
+<span class="font-label-md text-on-surface-variant">Leyenda:</span>
+<div class="flex items-center gap-xs"><div class="w-4 h-4 rounded-[2px] bg-primary"></div><span class="font-body-sm">Alta cobertura</span></div>
+<div class="flex items-center gap-xs"><div class="w-4 h-4 rounded-[2px] bg-secondary-fixed"></div><span class="font-body-sm">Cobertura parcial</span></div>
+<div class="flex items-center gap-xs"><div class="w-4 h-4 rounded-[2px] bg-surface-container-high border border-outline-variant"></div><span class="font-body-sm">Sin cobertura</span></div>
+</div>
+</div>
+
+<div id="view-cobertura" class="glass-panel rounded-xl flex-1 overflow-hidden flex flex-col min-h-0">
+<div class="flex shrink-0 border-b border-outline-variant bg-surface-container/50 overflow-x-auto">
+<div class="flex-1 min-w-[180px] p-sm border-r border-outline-variant"><h3 class="font-label-md">Initial Access</h3><span class="font-body-sm text-on-surface-variant">9 técnicas</span></div>
+<div class="flex-1 min-w-[180px] p-sm border-r border-outline-variant"><h3 class="font-label-md">Execution</h3><span class="font-body-sm text-on-surface-variant">14 técnicas</span></div>
+<div class="flex-1 min-w-[180px] p-sm border-r border-outline-variant"><h3 class="font-label-md">Persistence</h3><span class="font-body-sm text-on-surface-variant">20 técnicas</span></div>
+<div class="flex-1 min-w-[180px] p-sm border-r border-outline-variant"><h3 class="font-label-md">Privilege Escalation</h3><span class="font-body-sm text-on-surface-variant">14 técnicas</span></div>
+<div class="flex-1 min-w-[180px] p-sm"><h3 class="font-label-md">Defense Evasion</h3><span class="font-body-sm text-on-surface-variant">43 técnicas</span></div>
+</div>
+<div class="flex-1 overflow-auto flex p-sm gap-sm">
+<div class="flex-1 min-w-[168px] flex flex-col gap-xs">
+<div class="bg-primary text-on-primary rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1189</span></div><span class="font-body-sm leading-tight block">Drive-by Compromise</span></div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1190</span></div><span class="font-body-sm leading-tight block">Exploit Public-Facing Application</span></div>
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant"><div class="flex justify-between mb-xs"><span class="font-label-md text-on-surface">T1133</span></div><span class="font-body-sm leading-tight block">External Remote Services</span></div>
+<div class="bg-primary text-on-primary rounded-md p-xs"><div class="flex justify-between mb-xs items-start"><span class="font-label-md">T1566</span><i data-lucide="layers" class="icon-sm"></i></div><span class="font-body-sm leading-tight block">Phishing</span></div>
+</div>
+<div class="flex-1 min-w-[168px] flex flex-col gap-xs">
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1059</span></div><span class="font-body-sm leading-tight block">Command and Scripting Interpreter</span></div>
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant"><div class="flex justify-between mb-xs"><span class="font-label-md text-on-surface">T1203</span></div><span class="font-body-sm leading-tight block">Exploitation for Client Execution</span></div>
+<div class="bg-primary text-on-primary rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1053</span></div><span class="font-body-sm leading-tight block">Scheduled Task/Job</span></div>
+</div>
+<div class="flex-1 min-w-[168px] flex flex-col gap-xs">
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant"><div class="flex justify-between mb-xs"><span class="font-label-md text-on-surface">T1098</span></div><span class="font-body-sm leading-tight block">Account Manipulation</span></div>
+<div class="bg-primary text-on-primary rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1197</span></div><span class="font-body-sm leading-tight block">BITS Jobs</span></div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1543</span></div><span class="font-body-sm leading-tight block">Create or Modify System Process</span></div>
+</div>
+<div class="flex-1 min-w-[168px] flex flex-col gap-xs">
+<div class="bg-primary text-on-primary rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1548</span></div><span class="font-body-sm leading-tight block">Abuse Elevation Control Mechanism</span></div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1134</span></div><span class="font-body-sm leading-tight block">Access Token Manipulation</span></div>
+</div>
+<div class="flex-1 min-w-[168px] flex flex-col gap-xs">
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant"><div class="flex justify-between mb-xs"><span class="font-label-md text-on-surface">T1548</span></div><span class="font-body-sm leading-tight block">Abuse Elevation Control Mechanism</span></div>
+<div class="bg-primary text-on-primary rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1140</span></div><span class="font-body-sm leading-tight block">Deobfuscate/Decode Files or Information</span></div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1070</span></div><span class="font-body-sm leading-tight block">Indicator Removal</span></div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs"><div class="flex justify-between mb-xs"><span class="font-label-md">T1202</span></div><span class="font-body-sm leading-tight block">Indirect Command Execution</span></div>
+</div>
+</div>
+</div>
+
+<div id="view-inteligencia" class="glass-panel rounded-xl flex-1 overflow-y-auto p-md hidden">
+<h3 class="font-headline-md mb-sm">Inteligencia de cobertura</h3>
+<p class="font-body-md text-on-surface-variant mb-md">Fuentes mapeadas contra ATT&amp;CK Enterprise v14.1 para Target_Alpha_Main. No es un playbook de ataque: solo el hueco de detección.</p>
+<ul class="flex flex-col gap-sm">
+<li class="bg-surface-container-low rounded-lg p-md border border-outline-variant/40"><span class="font-label-md text-primary">T1190</span> — cobertura parcial: WAF en perímetro, sin instrumentación en API interna. Ver <a class="text-primary hover:underline" href="attack-graph.html">Attack Graph</a>.</li>
+<li class="bg-surface-container-low rounded-lg p-md border border-outline-variant/40"><span class="font-label-md text-primary">T1059</span> — cobertura parcial: telemetría de proceso en endpoints, hueco en servidores Linux.</li>
+<li class="bg-surface-container-low rounded-lg p-md border border-outline-variant/40"><span class="font-label-md text-primary">T1566</span> — alta: gateway de correo y sandbox. Subtécnicas en vault.</li>
+<li class="bg-surface-container-low rounded-lg p-md border border-outline-variant/40"><span class="font-label-md text-primary">T1133</span> — sin cobertura: VPN sin MFA privilegiado. Relacionado con Path #77A-92.</li>
+</ul>
+</div>
+
+<div id="view-observadas" class="glass-panel rounded-xl flex-1 overflow-y-auto p-md hidden">
+<h3 class="font-headline-md mb-sm">Técnicas observadas</h3>
+<p class="font-body-md text-on-surface-variant mb-md">Confirmadas en el engagement. Cadena completa en <a class="text-primary hover:underline" href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>.</p>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead><tr class="border-b border-outline-variant font-label-md text-on-surface-variant"><th class="py-sm pr-md">ID</th><th class="py-sm pr-md">Técnica</th><th class="py-sm pr-md">Táctica</th><th class="py-sm">Evidencia</th></tr></thead>
+<tbody class="font-body-sm">
+<tr class="border-b border-outline-variant/40"><td class="py-sm font-mono-md">T1190</td><td>Exploit Public-Facing Application</td><td>Initial Access</td><td><a class="text-primary hover:underline" href="graph-evidence.html">Path #77A-92</a></td></tr>
+<tr class="border-b border-outline-variant/40"><td class="py-sm font-mono-md">T1059</td><td>Command and Scripting Interpreter</td><td>Execution</td><td>Sesión en app-server-01 (vault)</td></tr>
+<tr class="border-b border-outline-variant/40"><td class="py-sm font-mono-md">T1078</td><td>Valid Accounts</td><td>Privilege Escalation</td><td><a class="text-primary hover:underline" href="finding-detail.html">F-001</a></td></tr>
+<tr class="border-b border-outline-variant/40"><td class="py-sm font-mono-md">T1003</td><td>OS Credential Dumping</td><td>Credential Access</td><td>LSASS — vault</td></tr>
+<tr><td class="py-sm font-mono-md">T1550</td><td>Use Alternate Authentication Material</td><td>Lateral Movement</td><td><a class="text-primary hover:underline" href="attack-graph.html">Grafo AD</a></td></tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</div>
+<script>
+        document.querySelectorAll(".tab-btn").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
+                btn.classList.add("active");
+                var id = btn.getAttribute("data-tab");
+                ["cobertura", "inteligencia", "observadas"].forEach(function (name) {
+                    document.getElementById("view-" + name).classList.toggle("hidden", name !== id);
+                });
+            });
+        });
+        lucide.createIcons();
+    </script>
+</body>
+</html>

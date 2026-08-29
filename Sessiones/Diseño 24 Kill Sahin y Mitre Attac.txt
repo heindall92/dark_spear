@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mapeo de Cadena de Muerte y MITRE ATT&amp;CK - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c0c7d4",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-container": "#0078d4",
+                        "tertiary": "#006a5c",
+                        "on-secondary-fixed": "#0c1c32",
+                        "on-tertiary-fixed": "#00201b",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-secondary-container": "#54637d",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#404752",
+                        "inverse-on-surface": "#eef1f5",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-bright": "#f7fafe",
+                        "surface": "#f7fafe",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "surface-container": "#ebeef2",
+                        "surface-variant": "#e0e3e7",
+                        "tertiary-container": "#0a8575",
+                        "on-primary-fixed": "#001c39",
+                        "on-secondary-fixed-variant": "#394760",
+                        "secondary": "#505f79",
+                        "on-surface": "#181c1f",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-tint": "#0060ab",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-surface": "#2d3134",
+                        "outline": "#717783",
+                        "primary": "#005faa",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "background": "#f7fafe",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-background": "#181c1f",
+                        "primary-fixed": "#d3e3ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "mono-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .acrylic {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .acrylic-darker {
+            background-color: rgba(245, 248, 252, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        
+        /* Fluent Input Focus */
+        .fluent-input:focus {
+            border-bottom: 2px solid #0078d4;
+            outline: none;
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest/70 dark:bg-surface-container/70 backdrop-blur-xl border-r border-outline-variant/20 hidden md:flex flex-col py-md w-64 h-full z-40 relative">
+<div class="px-md mb-xl flex items-center gap-sm">
+<img alt="Organization Logo" class="w-8 h-8 rounded-full object-cover" data-alt="A small, stylized corporate logo icon for an enterprise security platform. The design is modern, abstract, and uses sharp geometric shapes in shades of deep blue and crisp white, conveying trust and precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxVWewpqIntCIQeyYFlPk74A0ptM-Apwt8EcQF2XNZsfLXXyna5DjNc4ggIRSGqrtinrgyS2QNyQNj1Xp8dWI7DkDCJPHlxM3YC7DqqQEXBfGUgGx7vcOGFT9sxXEM2xnA28dEPHYKd1jPdsqtfuXV4_pdemcnUex_Jl3ZtWPcKG8835BbbF6H7qK4Vq9IVgRUfgv5s--qUymHkGZKVcHvUgD49XlRMbEPw8NuTkERH3wEZIPbO7z1dQ"/>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface">Enterprise Security</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Global Console</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-sm space-y-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">assessment</span>
+<span>Reports</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-primary bg-primary-container/10 border-r-4 border-primary transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span>Risk Matrix</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">verified_user</span>
+<span>Compliance</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+<span>Assets</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">fact_check</span>
+<span>Audits</span>
+</a>
+</div>
+<div class="px-sm mt-auto space-y-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">help_outline</span>
+<span>Help Center</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">person</span>
+<span>Account</span>
+</a>
+</div>
+</nav>
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+<!-- TopNavBar -->
+<header class="bg-white/70 dark:bg-surface-dim/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm w-full h-16 flex justify-between items-center px-lg z-50 shrink-0">
+<div class="flex items-center gap-lg">
+<!-- Mobile Menu Button -->
+<button class="md:hidden text-on-surface-variant">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+                    Auditor
+                </div>
+<!-- Desktop Nav Links -->
+<nav class="hidden md:flex items-center gap-gutter ml-xl font-body-md text-body-md">
+<!-- Contextual highlight based on page intent -->
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors cursor-pointer active:opacity-80" href="#">General</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 cursor-pointer active:opacity-80" href="#">Análisis de Amenazas</a>
+<a class="text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors cursor-pointer active:opacity-80" href="#">Investigaciones</a>
+</nav>
+</div>
+<!-- Search Bar (on_left configuration usually implies left of trailing actions) -->
+<div class="flex-1 max-w-md mx-gutter hidden lg:block">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/30 rounded-full py-[6px] pl-xl pr-md text-body-sm font-body-sm text-on-surface placeholder:text-on-surface-variant/70 fluent-input transition-all" placeholder="Buscar CVE, técnica, o IP..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="text-secondary hover:text-primary-container transition-colors p-xs rounded-full hover:bg-surface-container-low cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="text-secondary hover:text-primary-container transition-colors p-xs rounded-full hover:bg-surface-container-low cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+<button class="text-secondary hover:text-primary-container transition-colors p-xs rounded-full hover:bg-surface-container-low cursor-pointer active:opacity-80 hidden sm:block">
+<span class="material-symbols-outlined text-[20px]">help</span>
+</button>
+<div class="w-8 h-8 rounded-full ml-sm overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate user, neutral expression, soft studio lighting, light gray background, wearing a smart casual dark blue shirt. The image is cropped in a tight circle." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9J4eJ9HXiA-wRnJh-tvTOnuHbhITzdVHpG0z6jxi_0aEgUrxtsxrpN_lj4tccJwRQCpRYMmyQRPahjDFe8d7DbmVHxAVjOh1B05-suJPh7DyegGonlWbb7o-VivELcf03wmey2c5Dmtz0d5lhg0DWK8uOWWLfI0pNdpAs8nGyOattfX3dFO1641OyOXGGkzEhiZ77157OAW24uO1isN6L7h9bFEKKCJs2JOWWjUhp3O98JYBR6nNnPg"/>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-gutter md:p-xl bg-surface">
+<div class="max-w-[1440px] mx-auto space-y-lg">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+<div>
+<nav class="flex items-center gap-xs text-on-surface-variant/70 font-body-sm text-body-sm mb-xs">
+<a class="hover:text-primary transition-colors" href="#">Risk Matrix</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Incidentes</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface">INC-2023-11-04</span>
+</nav>
+<h2 class="font-headline-xl text-headline-xl text-on-surface">Análisis Kill Chain: Operación "Marea Silenciosa"</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Mapeo detallado de la progresión del ataque y técnicas MITRE ATT&amp;CK identificadas.</p>
+</div>
+<div class="flex items-center gap-sm">
+<button class="px-md py-sm rounded-DEFAULT border border-outline-variant text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors bg-white">
+                            Exportar PDF
+                        </button>
+<button class="px-md py-sm rounded-DEFAULT bg-primary-container text-on-primary-container font-label-md text-label-md hover:opacity-90 transition-opacity">
+                            Mitigar Amenazas (3)
+                        </button>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-gutter lg:gap-lg">
+<!-- Left Column: Kill Chain Narrative (2/3 width on LG) -->
+<div class="lg:col-span-2 space-y-gutter lg:space-y-lg">
+<!-- Narrative Acrylic Card -->
+<div class="acrylic rounded-lg p-md lg:p-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">route</span>
+                                Narrativa del Ataque
+                            </h3>
+<div class="relative border-l-2 border-outline-variant/30 ml-sm pl-gutter space-y-lg">
+<!-- Step 1: Descubrimiento -->
+<div class="relative">
+<div class="absolute -left-[25px] bg-white border-2 border-outline-variant w-3 h-3 rounded-full mt-1.5"></div>
+<div class="flex items-start justify-between gap-md mb-xs">
+<h4 class="font-headline-lg text-headline-lg text-on-surface">1. Descubrimiento y Preparación</h4>
+<span class="px-sm py-[2px] rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px] uppercase tracking-wider">04 Nov, 02:15Z</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">El adversario realizó un escaneo activo de puertos expuestos en el perímetro de la red de la oficina de Madrid, identificando un servicio VPN vulnerable (CVE-2023-XXXX).</p>
+<div class="bg-surface-container-low rounded-DEFAULT p-sm border border-outline-variant/20">
+<div class="flex items-center gap-sm text-on-surface-variant mb-xs">
+<span class="material-symbols-outlined text-[16px]">bug_report</span>
+<span class="font-label-md text-label-md">Hallazgos Técnicos</span>
+</div>
+<ul class="font-mono-md text-mono-md text-on-surface space-y-1">
+<li><span class="text-secondary">IP Origen:</span> 185.199.108.153 (ASN: XXXX)</li>
+<li><span class="text-secondary">Técnica:</span> Escaneo de Red T1046</li>
+<li><span class="text-secondary">Evidencia:</span> Logs de Firewall FW-MAD-01 (Ver ID: Log-8842)</li>
+</ul>
+</div>
+</div>
+<!-- Step 2: Infiltración -->
+<div class="relative">
+<div class="absolute -left-[25px] bg-primary-container border-2 border-primary-container w-3 h-3 rounded-full mt-1.5 shadow-[0_0_8px_rgba(0,120,212,0.4)]"></div>
+<div class="flex items-start justify-between gap-md mb-xs">
+<h4 class="font-headline-lg text-headline-lg text-on-surface">2. Infiltración y Acceso Inicial</h4>
+<span class="px-sm py-[2px] rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px] uppercase tracking-wider">04 Nov, 03:42Z</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">Explotación exitosa de la vulnerabilidad en el gateway VPN, permitiendo eludir la autenticación multifactor (MFA) y establecer una sesión válida.</p>
+<div class="bg-surface-container-low rounded-DEFAULT p-sm border border-outline-variant/20">
+<div class="flex items-center gap-sm text-error mb-xs">
+<span class="material-symbols-outlined text-[16px]">warning</span>
+<span class="font-label-md text-label-md">Severidad Alta</span>
+</div>
+<ul class="font-mono-md text-mono-md text-on-surface space-y-1">
+<li><span class="text-secondary">Cuenta Comprometida:</span> svc_vpn_backup</li>
+<li><span class="text-secondary">Técnica:</span> Explotación de Aplicación T1190</li>
+<li><span class="text-secondary">Indicador:</span> Petición HTTP POST anómala a /auth/vpn/login.cgi</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<!-- MITRE Heatmap Acrylic Card -->
+<div class="acrylic rounded-lg p-md lg:p-lg overflow-hidden flex flex-col">
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-tertiary">grid_on</span>
+                                    Matriz MITRE ATT&amp;CK
+                                </h3>
+<span class="text-body-sm font-body-sm text-on-surface-variant">Tácticas Observadas: 4</span>
+</div>
+<!-- Heatmap Table (Simplified for UI representation) -->
+<div class="overflow-x-auto pb-sm">
+<table class="w-full min-w-[600px] border-collapse text-left">
+<thead>
+<tr class="border-b border-outline-variant/30">
+<th class="py-sm px-xs font-label-md text-label-md text-secondary">Initial Access</th>
+<th class="py-sm px-xs font-label-md text-label-md text-secondary">Execution</th>
+<th class="py-sm px-xs font-label-md text-label-md text-secondary">Persistence</th>
+<th class="py-sm px-xs font-label-md text-label-md text-secondary">Lateral Movement</th>
+</tr>
+</thead>
+<tbody class="align-top font-body-sm text-body-sm">
+<tr>
+<td class="p-xs">
+<div class="bg-error-container/50 border border-error/30 text-on-surface p-sm rounded-[4px] mb-xs">
+<div class="font-mono-md text-[11px] text-error mb-[2px]">T1190</div>
+                                                    Exploit Public-Facing App
+                                                </div>
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface-variant p-sm rounded-[4px] opacity-60">
+<div class="font-mono-md text-[11px] mb-[2px]">T1078</div>
+                                                    Valid Accounts
+                                                </div>
+</td>
+<td class="p-xs">
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface-variant p-sm rounded-[4px] mb-xs opacity-60">
+<div class="font-mono-md text-[11px] mb-[2px]">T1059</div>
+                                                    Command and Script
+                                                </div>
+<div class="bg-tertiary-container/20 border border-tertiary/30 text-on-surface p-sm rounded-[4px]">
+<div class="font-mono-md text-[11px] text-tertiary mb-[2px]">T1047</div>
+                                                    WMI
+                                                </div>
+</td>
+<td class="p-xs">
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface-variant p-sm rounded-[4px] opacity-60">
+<div class="font-mono-md text-[11px] mb-[2px]">T1098</div>
+                                                    Account Manipulation
+                                                </div>
+</td>
+<td class="p-xs">
+<div class="bg-error-container/50 border border-error/30 text-on-surface p-sm rounded-[4px] mb-xs">
+<div class="font-mono-md text-[11px] text-error mb-[2px]">T1021</div>
+                                                    Remote Services
+                                                </div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column: Impact & Details (1/3 width on LG) -->
+<div class="space-y-gutter lg:space-y-lg">
+<!-- Impact Visualization -->
+<div class="acrylic rounded-lg p-md lg:p-lg ambient-shadow">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md flex items-center gap-sm">
+<span class="material-symbols-outlined text-error">crisis_alert</span>
+                                Impacto de Exfiltración
+                            </h3>
+<div class="flex flex-col items-center justify-center py-lg border-b border-outline-variant/20 mb-md">
+<div class="w-24 h-24 rounded-full border-4 border-error-container flex items-center justify-center relative mb-sm">
+<div class="absolute inset-0 rounded-full border-4 border-error" style="clip-path: polygon(0 0, 100% 0, 100% 70%, 0 70%);"></div>
+<span class="font-headline-xl text-headline-xl text-on-surface font-black">70%</span>
+</div>
+<p class="font-label-md text-label-md text-secondary text-center">Probabilidad de Fuga de Datos Confidenciales</p>
+</div>
+<div class="space-y-sm">
+<div class="flex justify-between items-center font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Volumen Estimado:</span>
+<span class="font-mono-md text-on-surface font-bold">1.2 GB</span>
+</div>
+<div class="flex justify-between items-center font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Destino:</span>
+<span class="font-mono-md text-on-surface">45.33.22.11 (RU)</span>
+</div>
+<div class="flex justify-between items-center font-body-sm text-body-sm">
+<span class="text-on-surface-variant">Activos Afectados:</span>
+<span class="text-on-surface font-bold">DB-FIN-PROD-01</span>
+</div>
+</div>
+</div>
+<!-- Technical Context Snippet -->
+<div class="acrylic-darker rounded-lg p-md">
+<h4 class="font-label-md text-label-md text-secondary mb-sm uppercase tracking-wider">Contexto del Entorno</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">
+                                El ataque se centró en la zona desmilitarizada (DMZ) antes de pivotar hacia la red de servidores financieros mediante robo de credenciales en memoria (T1003).
+                            </p>
+<button class="w-full py-sm rounded-DEFAULT border border-outline-variant text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">travel_explore</span>
+                                Ver Grafo de Red
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

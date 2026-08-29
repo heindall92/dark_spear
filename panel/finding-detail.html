@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dark Spear — Hallazgo detallado</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script src="vendor/lucide.min.js"></script>
+<link rel="icon" type="image/png" href="vendor/logo.png"/>
+<link rel="apple-touch-icon" href="vendor/logo.png"/>
+<link href="vendor/tokens.css" rel="stylesheet"/>
+<script src="vendor/prefs-boot.js"></script>
+<script src="vendor/i18n.js" defer></script>
+<script src="vendor/export.js" defer></script>
+<script src="vendor/splash.js" defer></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary-fixed": "#d3e3ff", "background": "#f7fafe", "inverse-primary": "#a3c9ff",
+                "surface-container-lowest": "#ffffff", "on-secondary-container": "#54637d",
+                "on-tertiary-fixed-variant": "#005046", "surface-tint": "#0060ab", "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a", "on-tertiary-fixed": "#00201b", "inverse-on-surface": "#eef1f5",
+                "primary-fixed-dim": "#a3c9ff", "on-surface-variant": "#404752", "tertiary-container": "#0a8575",
+                "on-primary": "#ffffff", "surface-bright": "#f7fafe", "secondary": "#505f79",
+                "surface-container": "#ebeef2", "on-secondary-fixed-variant": "#394760", "on-surface": "#181c1f",
+                "secondary-fixed-dim": "#b8c7e5", "secondary-fixed": "#d5e3ff", "tertiary-fixed": "#91f4e1",
+                "surface-variant": "#e0e3e7", "inverse-surface": "#2d3134", "on-error": "#ffffff", "error": "#ba1a1a",
+                "surface-dim": "#d7dade", "secondary-container": "#d1e0ff", "tertiary": "#006a5c",
+                "surface-container-highest": "#e0e3e7", "surface-container-low": "#f1f4f8", "outline": "#717783",
+                "surface-container-high": "#e5e8ec", "on-background": "#181c1f", "on-primary-fixed": "#001c39",
+                "on-primary-container": "#ffffff", "primary": "#005faa", "error-container": "#ffdad6",
+                "on-secondary-fixed": "#0c1c32", "tertiary-fixed-dim": "#75d8c5", "on-secondary": "#ffffff",
+                "primary-container": "#0078d4", "surface": "#f7fafe", "on-primary-fixed-variant": "#004883",
+                "on-tertiary-container": "#ffffff", "outline-variant": "#c0c7d4"
+              },
+              borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+              spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
+              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontSize: {
+                "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        [data-lucide], svg.lucide { width: 20px; height: 20px; stroke-width: 1.75; flex-shrink: 0; }
+        .icon-sm { width: 16px !important; height: 16px !important; }
+        .icon-md { width: 18px !important; height: 18px !important; }
+        .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
+        .chap-nav { background: #ebeef2; border: 1px solid rgba(192,199,212,0.55); border-radius: 10px; padding: 4px; }
+        .chap-nav a { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #181c1f; }
+        .chap-nav a.active { background: #0078d4; color: #ffffff; box-shadow: 0 1px 3px rgba(27,42,65,0.12); }
+        .chap-nav a:not(.active):hover { color: #005faa; }
+        .font-mono-md { font-family: 'JetBrains Mono', monospace; }
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
+        .skip-link:focus { left: 8px; top: 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<a class="skip-link" href="#main-content" data-i18n="skip">Saltar al contenido</a>
+<nav data-app-nav class="bg-white fixed left-0 top-0 h-screen w-64 border-r border-outline-variant/30 shadow-sm flex flex-col py-md z-50">
+<button type="button" class="sidebar-edge-toggle" data-sidebar-toggle aria-expanded="true" data-i18n-aria="aria.sidebarHide"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<div class="px-md mb-xl flex items-center gap-sm" data-brand-row>
+<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="brand-copy">
+<p class="font-headline-md text-headline-md font-bold text-primary leading-tight" data-i18n="brand">Dark Spear</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight" data-i18n="brand.tagline">Consola SecOps</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="reporting.html" aria-current="page"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+</div>
+<div class="mt-auto px-md flex flex-col gap-md">
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<div class="sidebar-prefs">
+<div class="ios-row">
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+<div class="ios-row">
+<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+</div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+</div>
+</div>
+</nav>
+
+<div data-app-shell class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
+<div class="relative w-96">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+</div>
+</div>
+</header>
+
+<main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg space-y-md">
+<nav class="chap-nav flex flex-wrap items-center gap-xs" aria-label="Capítulos del informe">
+<a href="comprehensive-report.html" data-i18n="chap.informe">Informe</a>
+<a href="executive-summary.html" data-i18n="chap.resumen">Resumen</a>
+<a class="active" href="finding-detail.html" data-i18n="chap.hallazgo">Hallazgo</a>
+<a href="findings-summary.html" data-i18n="chap.leyenda">Leyenda</a>
+<a href="remediation-plan.html" data-i18n="chap.remediacion">Remediación</a>
+<a href="gdpr-alignment.html" data-i18n="chap.rgpd">RGPD</a>
+<a href="maturity-index.html" data-i18n="chap.madurez">Madurez</a>
+<a href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>
+</nav>
+
+<nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant flex-wrap">
+<a class="hover:text-primary" href="reporting.html">Reporting</a>
+<i data-lucide="chevron-right" class="icon-sm"></i>
+<a class="hover:text-primary" href="engagement.html">Target_Alpha_Main</a>
+<i data-lucide="chevron-right" class="icon-sm"></i>
+<span class="text-on-surface font-semibold">F-001</span>
+</nav>
+
+<section class="glass-panel rounded-xl p-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-md">
+<div>
+<div class="flex items-center gap-sm mb-sm flex-wrap">
+<span class="font-mono-md text-secondary">F-001</span>
+<span class="px-sm py-xs rounded-full bg-error-container text-on-error-container font-label-md text-label-md flex items-center gap-xs"><i data-lucide="triangle-alert" class="icon-sm"></i> Crítico</span>
+<span class="px-sm py-xs rounded border border-outline-variant bg-surface font-mono-md">CVSS: 9.8</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Inyección SQL en endpoint de autenticación</h1>
+</div>
+<div class="flex gap-sm flex-wrap">
+<a href="comprehensive-report.html#sec-04" class="px-md py-sm rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low font-label-md text-label-md flex items-center gap-sm" data-export="pdf"><i data-lucide="download" class="icon-md"></i> Exportar PDF</a>
+<a href="remediation-detail.html" class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-primary font-label-md text-label-md shadow-sm">Asignar Remediación</a>
+</div>
+</section>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<div class="lg:col-span-2 space-y-md">
+<section class="glass-panel rounded-xl p-lg">
+<h2 class="font-headline-md text-headline-md flex items-center gap-sm mb-md border-b border-outline-variant/30 pb-sm"><i data-lucide="file-text" class="text-primary"></i> Descripción técnica</h2>
+<p class="font-body-md text-on-surface-variant leading-relaxed">Se identificó una vulnerabilidad de inyección SQL basada en errores en el parámetro <code class="font-mono-md bg-surface-container px-xs py-xs rounded border border-outline-variant/50">username</code> del endpoint <code class="font-mono-md bg-surface-container px-xs py-xs rounded border border-outline-variant/50">/api/v1/auth/login</code>. La entrada no se parametriza; el backend habla con PostgreSQL.</p>
+</section>
+<section class="glass-panel rounded-xl p-lg">
+<h2 class="font-headline-md text-headline-md flex items-center gap-sm mb-md border-b border-outline-variant/30 pb-sm"><i data-lucide="flask-conical" class="text-primary"></i> Prueba de concepto</h2>
+<p class="font-body-md text-on-surface-variant mb-sm">La solicitud de verificación está en el vault del engagement. Aquí solo el envoltorio HTTP, <strong class="text-on-surface">sin payload</strong>.</p>
+<div class="bg-inverse-surface text-inverse-on-surface rounded-lg p-md overflow-x-auto relative">
+<span class="absolute top-sm right-sm font-mono-md text-xs text-outline">HTTP Request · redactado</span>
+<pre class="font-mono-md text-mono-md">POST /api/v1/auth/login HTTP/1.1
+Host: api.internal
+Content-Type: application/json
+
+{
+    "username": "[redacted — vault]",
+    "password": "[redacted]"
+}</pre>
+</div>
+</section>
+<section class="glass-panel rounded-xl p-lg border border-tertiary">
+<h2 class="font-headline-md text-headline-md flex items-center gap-sm mb-md border-b border-outline-variant/30 pb-sm"><i data-lucide="wrench" class="text-tertiary"></i> Pasos de remediación</h2>
+<ol class="list-decimal list-inside font-body-md text-on-surface-variant space-y-sm">
+<li><strong class="text-on-surface">Consultas preparadas:</strong> no concatenar cadenas. Usar ORM o parámetros nativos.</li>
+<li><strong class="text-on-surface">Validación de entrada:</strong> allowlist en <code class="font-mono-md">username</code>.</li>
+<li><strong class="text-on-surface">Mínimo privilegio:</strong> la cuenta de la app no debe tocar esquemas de sistema.</li>
+</ol>
+<div class="mt-md bg-surface-container p-md rounded-lg border border-outline-variant/50">
+<h4 class="font-label-md text-label-md mb-sm">Ejemplo corregido (Node.js / pg)</h4>
+<pre class="font-mono-md text-sm text-on-surface-variant overflow-x-auto">const query = 'SELECT * FROM users WHERE username = $1';
+const values = [req.body.username];
+const res = await db.query(query, values);</pre>
+</div>
+</section>
+<section class="glass-panel rounded-xl p-lg" id="evidencia">
+<h2 class="font-headline-md text-headline-md flex items-center gap-sm mb-md border-b border-outline-variant/30 pb-sm"><i data-lucide="image" class="text-primary"></i> Evidencia</h2>
+<p class="font-body-sm text-on-surface-variant mb-md">Capturas del engagement. El detalle explotable vive en el vault; aquí el envoltorio.</p>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<figure class="border border-outline-variant rounded-lg overflow-hidden bg-surface">
+<div class="bg-[#1e1e1e] p-md min-h-[160px] font-mono-md text-[11px] text-[#d4d4d4] leading-relaxed">
+<p class="text-[#569cd6] mb-xs"># Fig 1 · verificación en vault</p>
+<p class="text-[#4ec9b0]">auditor@jump:~$</p>
+<p class="opacity-70">POST /api/v1/auth/login</p>
+<p class="mt-sm text-[#ce9178]">username: [redacted — vault]</p>
+<p class="text-error">HTTP 500 · error de motor (detalle en vault)</p>
+</div>
+<figcaption class="font-body-sm text-center text-on-surface-variant p-sm border-t border-outline-variant">Fig 1. Ejecución de la verificación (vault).</figcaption>
+</figure>
+<figure class="border border-outline-variant rounded-lg overflow-hidden bg-surface">
+<div class="bg-[#1e1e1e] p-md min-h-[160px] font-mono-md text-[11px] text-[#d4d4d4] leading-relaxed">
+<p class="text-[#569cd6] mb-xs"># Fig 2 · respuesta HTTP</p>
+<p>HTTP/1.1 500 Internal Server Error</p>
+<p class="opacity-70">Content-Type: application/json</p>
+<p class="mt-sm text-[#ce9178]">{"error":"[redacted — vault]"}</p>
+<p class="text-on-surface-variant mt-sm">Host: api.internal</p>
+</div>
+<figcaption class="font-body-sm text-center text-on-surface-variant p-sm border-t border-outline-variant">Fig 2. Respuesta HTTP (detalle en vault).</figcaption>
+</figure>
+</div>
+</section>
+</div>
+<div class="space-y-md lg:sticky lg:top-20 lg:self-start">
+<section class="glass-panel rounded-xl p-lg bg-error-container/20 border border-error/20" id="impacto">
+<h2 class="font-headline-md text-headline-md flex items-center gap-sm mb-sm"><i data-lucide="trending-down" class="text-error"></i> Impacto al negocio</h2>
+<p class="font-body-md text-on-surface-variant leading-relaxed">La explotación permite la <strong class="text-on-surface">exfiltración de la base de datos</strong>: credenciales, PII de clientes y datos financieros. En ciertas configuraciones, el mismo defecto puede escalar a compromiso del servidor de base de datos.</p>
+</section>
+<section class="glass-panel rounded-xl p-lg" id="causa-raiz">
+<h2 class="font-headline-md text-headline-md flex items-center gap-sm mb-sm"><i data-lucide="brain" class="text-primary"></i> Causa raíz</h2>
+<ul class="font-body-md text-on-surface-variant space-y-sm list-disc list-inside">
+<li>Falta de validación de entrada en el servidor.</li>
+<li>Consultas SQL por concatenación en lugar de ORM o parámetros.</li>
+<li>Excepciones que filtran mensajes del motor al cliente.</li>
+</ul>
+</section>
+<section class="glass-panel rounded-xl p-lg">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-md border-b border-outline-variant/30 pb-sm">Información del hallazgo</h3>
+<div class="space-y-sm font-body-md">
+<div class="flex justify-between"><span class="text-on-surface-variant">Estado</span><span class="font-label-md bg-surface-container px-sm py-xs rounded border border-outline-variant/50">Abierto</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">Reportado por</span><span class="font-medium">SecTeam Alpha</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">Descubrimiento</span><span class="font-mono-md">2026-08-18</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">SLA</span><span class="font-mono-md text-error font-semibold">24 horas</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">CWE</span><a class="font-mono-md text-primary hover:underline" href="https://cwe.mitre.org/data/definitions/89.html">CWE-89</a></div>
+</div>
+</section>
+<section class="glass-panel rounded-xl p-lg">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-wider mb-md border-b border-outline-variant/30 pb-sm">Alcance / entorno</h3>
+<div class="flex flex-wrap gap-sm">
+<span class="px-sm py-xs rounded-md bg-surface-container-high border border-outline-variant/50 font-mono-md text-[11px]">Producción</span>
+<span class="px-sm py-xs rounded-md bg-surface-container-high border border-outline-variant/50 font-mono-md text-[11px]">api.internal</span>
+<span class="px-sm py-xs rounded-md bg-surface-container-high border border-outline-variant/50 font-mono-md text-[11px]">PostgreSQL 14</span>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

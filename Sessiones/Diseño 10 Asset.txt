@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Auditor - Assets</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Guidelines -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#ffffff",
+                    "on-background": "#181c1f",
+                    "outline": "#717783",
+                    "surface-bright": "#f7fafe",
+                    "primary": "#005faa",
+                    "surface-container": "#ebeef2",
+                    "tertiary": "#006a5c",
+                    "on-tertiary-fixed": "#00201b",
+                    "outline-variant": "#c0c7d4",
+                    "on-secondary": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "tertiary-fixed-dim": "#75d8c5",
+                    "primary-container": "#0078d4",
+                    "error": "#ba1a1a",
+                    "on-error-container": "#93000a",
+                    "on-primary-fixed-variant": "#004883",
+                    "inverse-primary": "#a3c9ff",
+                    "surface-variant": "#e0e3e7",
+                    "secondary-fixed-dim": "#b8c7e5",
+                    "on-surface": "#181c1f",
+                    "primary-fixed-dim": "#a3c9ff",
+                    "on-error": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#f1f4f8",
+                    "inverse-surface": "#2d3134",
+                    "on-surface-variant": "#404752",
+                    "on-tertiary": "#ffffff",
+                    "on-tertiary-container": "#ffffff",
+                    "primary-fixed": "#d3e3ff",
+                    "surface-dim": "#d7dade",
+                    "tertiary-container": "#0a8575",
+                    "on-secondary-container": "#54637d",
+                    "secondary-container": "#d1e0ff",
+                    "on-primary-fixed": "#001c39",
+                    "background": "#f7fafe",
+                    "surface-tint": "#0060ab",
+                    "tertiary-fixed": "#91f4e1",
+                    "inverse-on-surface": "#eef1f5",
+                    "surface": "#f7fafe",
+                    "secondary-fixed": "#d5e3ff",
+                    "on-secondary-fixed": "#0c1c32",
+                    "surface-container-highest": "#e0e3e7",
+                    "secondary": "#505f79",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e5e8ec",
+                    "on-secondary-fixed-variant": "#394760",
+                    "on-tertiary-fixed-variant": "#005046"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "md": "16px",
+                    "lg": "24px",
+                    "container-max": "1440px",
+                    "gutter": "16px",
+                    "xl": "32px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "base": "4px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "label-md": ["Inter"],
+                    "mono-md": ["jetbrainsMono"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "mono-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom Ambient Shadow for Modals/Popovers (applied to specific elements if needed) */
+        .shadow-ambient {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        /* Acrylic Glassmorphism Class */
+        .acrylic-surface {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex">
+<!-- Desktop Side Navigation (from Shared Components JSON) -->
+<!-- Applies style_component_shape: w-64 h-screen fixed left-0 top-0 -->
+<nav class="hidden md:flex flex-col w-64 h-screen fixed left-0 top-0 border-r border-outline-variant/30 bg-surface-container-low py-lg gap-sm z-50">
+<!-- Header -->
+<div class="px-lg pb-md mb-md">
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">shield</span>
+<h1 class="font-headline-lg text-headline-lg font-bold text-primary">Auditor</h1>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enterprise Security</p>
+</div>
+<!-- Main Navigation Links -->
+<div class="flex-1 px-sm flex flex-col gap-xs">
+<!-- Inactive -->
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">radar</span>
+<span class="font-label-md text-label-md">Active Scans</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">security</span>
+<span class="font-label-md text-label-md">Vulnerabilities</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-label-md text-label-md">Reporting</span>
+</a>
+<!-- ACTIVE TAB: Assets -->
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container rounded-lg px-md py-sm active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="font-label-md text-label-md">Assets</span>
+</a>
+</div>
+<!-- Footer Links -->
+<div class="px-sm mt-auto flex flex-col gap-xs border-t border-outline-variant/30 pt-md mx-md">
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</nav>
+<!-- Mobile Top Navigation (Simplified fallback for small screens) -->
+<header class="md:hidden w-full h-16 sticky top-0 z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 flex justify-between items-center px-md shadow-sm">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">shield</span>
+<span class="font-headline-md text-headline-md font-bold text-primary">Auditor</span>
+</div>
+<button class="text-on-surface-variant p-sm rounded-DEFAULT hover:bg-surface-container-high">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 p-md md:p-lg w-full max-w-container-max mx-auto flex flex-col gap-lg overflow-y-auto">
+<!-- Page Header & Actions -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-md">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-background">Enterprise Assets</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Manage and monitor your infrastructure inventory.</p>
+</div>
+<div class="flex items-center gap-sm">
+<!-- Secondary Button (Ghost Style) -->
+<button class="flex items-center gap-xs px-md py-sm border border-outline-variant text-on-surface rounded-DEFAULT hover:bg-surface-container-low transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">cloud_download</span>
+                    Import from Cloud
+                </button>
+<!-- Primary Button -->
+<button class="flex items-center gap-xs px-md py-sm bg-primary-container text-on-primary-container rounded-DEFAULT hover:opacity-90 transition-opacity shadow-sm font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                    Add Asset
+                </button>
+</div>
+</div>
+<!-- Summary Widgets (Acrylic Glassmorphism Pattern) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md md:gap-lg">
+<!-- Widget 1: Total -->
+<div class="acrylic-surface border border-outline-variant/30 rounded-xl p-md flex flex-col gap-sm shadow-sm relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-primary/5 rounded-full blur-xl group-hover:bg-primary/10 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Total Assets</span>
+<span class="material-symbols-outlined text-outline">storage</span>
+</div>
+<div class="flex items-end gap-sm z-10">
+<span class="font-headline-xl text-[36px] font-bold text-on-background leading-none">1,248</span>
+<span class="font-body-sm text-body-sm text-tertiary font-medium mb-1 flex items-center"><span class="material-symbols-outlined text-[14px]">trending_up</span> +12 this week</span>
+</div>
+</div>
+<!-- Widget 2: Unscanned -->
+<div class="acrylic-surface border border-outline-variant/30 rounded-xl p-md flex flex-col gap-sm shadow-sm relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-secondary/5 rounded-full blur-xl group-hover:bg-secondary/10 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Unscanned (30d)</span>
+<span class="material-symbols-outlined text-outline">hourglass_empty</span>
+</div>
+<div class="flex items-end gap-sm z-10">
+<span class="font-headline-xl text-[36px] font-bold text-on-background leading-none">42</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">Requires attention</span>
+</div>
+</div>
+<!-- Widget 3: Critical -->
+<div class="acrylic-surface border border-outline-variant/30 rounded-xl p-md flex flex-col gap-sm shadow-sm relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-error/5 rounded-full blur-xl group-hover:bg-error/10 transition-colors"></div>
+<div class="flex items-center justify-between z-10">
+<span class="font-label-md text-label-md text-error uppercase tracking-wider font-bold">Vulnerable Assets</span>
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="flex items-end gap-sm z-10">
+<span class="font-headline-xl text-[36px] font-bold text-error leading-none">7</span>
+<span class="font-body-sm text-body-sm text-error mb-1">High severity issues</span>
+</div>
+</div>
+</div>
+<!-- Main Data Table Section (Acrylic Surface) -->
+<div class="acrylic-surface border border-outline-variant/30 rounded-xl shadow-sm flex flex-col flex-1 overflow-hidden">
+<!-- Table Toolbar -->
+<div class="p-md border-b border-outline-variant/30 flex flex-col sm:flex-row justify-between items-center gap-md">
+<!-- Search (Fluent Input Style) -->
+<div class="relative w-full sm:w-96">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline-variant">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-DEFAULT pl-10 pr-4 py-sm font-body-sm text-body-sm text-on-surface focus:outline-none focus:border-b-2 focus:border-b-primary focus:border-x-outline-variant/50 focus:border-t-outline-variant/50 transition-all placeholder:text-outline-variant" placeholder="Search by name, ID, or IP..." type="text"/>
+</div>
+<!-- Filters & Controls -->
+<div class="flex items-center gap-sm w-full sm:w-auto">
+<button class="flex items-center gap-xs px-sm py-sm text-on-surface-variant hover:bg-surface-container-low rounded-DEFAULT transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                        Filter
+                    </button>
+<div class="w-px h-6 bg-outline-variant/30 mx-xs"></div>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-DEFAULT transition-colors" title="Export CSV">
+<span class="material-symbols-outlined text-[20px]">download</span>
+</button>
+<button class="p-sm text-on-surface-variant hover:bg-surface-container-low rounded-DEFAULT transition-colors" title="Refresh">
+<span class="material-symbols-outlined text-[20px]">refresh</span>
+</button>
+</div>
+</div>
+<!-- Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="border-b border-outline-variant/30 bg-surface-container-lowest/50">
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Asset Name / ID</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Type</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Status</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold">Last Scan</th>
+<th class="font-label-md text-label-md text-on-surface-variant px-md py-sm font-semibold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm divide-y divide-outline-variant/20">
+<!-- Row 1: Vulnerable Server -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-md py-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant border border-outline-variant/20">
+<span class="material-symbols-outlined text-[18px]">dns</span>
+</div>
+<div>
+<p class="font-medium text-on-background">prod-db-cluster-01</p>
+<p class="text-on-surface-variant font-mono-md text-[11px]">10.4.22.105</p>
+</div>
+</div>
+</td>
+<td class="px-md py-sm text-on-surface-variant">Database Server</td>
+<td class="px-md py-sm">
+<span class="bg-error-container/40 border border-error/20 text-on-error-container font-label-md text-[11px] px-2 py-[2px] rounded-full inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span> Vulnerable
+                                </span>
+</td>
+<td class="px-md py-sm text-on-surface-variant">2 hours ago</td>
+<td class="px-md py-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2: Protected Cloud Bucket -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-md py-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant border border-outline-variant/20">
+<span class="material-symbols-outlined text-[18px]">cloud</span>
+</div>
+<div>
+<p class="font-medium text-on-background">aws-s3-customer-data-eu</p>
+<p class="text-on-surface-variant font-mono-md text-[11px]">arn:aws:s3:::customer-data-eu</p>
+</div>
+</div>
+</td>
+<td class="px-md py-sm text-on-surface-variant">Cloud Storage</td>
+<td class="px-md py-sm">
+<span class="bg-tertiary-container/20 border border-tertiary-container/30 text-tertiary-container font-label-md text-[11px] px-2 py-[2px] rounded-full inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Protected
+                                </span>
+</td>
+<td class="px-md py-sm text-on-surface-variant">Yesterday, 14:30</td>
+<td class="px-md py-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3: Scanning Endpoint -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-md py-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant border border-outline-variant/20">
+<span class="material-symbols-outlined text-[18px]">computer</span>
+</div>
+<div>
+<p class="font-medium text-on-background">lon-wkst-4092</p>
+<p class="text-on-surface-variant font-mono-md text-[11px]">192.168.1.42</p>
+</div>
+</div>
+</td>
+<td class="px-md py-sm text-on-surface-variant">User Endpoint</td>
+<td class="px-md py-sm">
+<span class="bg-secondary-container border border-secondary-container/50 text-on-secondary-container font-label-md text-[11px] px-2 py-[2px] rounded-full inline-flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px] animate-spin">sync</span> Scanning
+                                </span>
+</td>
+<td class="px-md py-sm text-on-surface-variant text-outline">In progress...</td>
+<td class="px-md py-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4: Protected Domain -->
+<tr class="hover:bg-surface-container-low/50 transition-colors group">
+<td class="px-md py-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded-DEFAULT bg-surface-container flex items-center justify-center text-on-surface-variant border border-outline-variant/20">
+<span class="material-symbols-outlined text-[18px]">language</span>
+</div>
+<div>
+<p class="font-medium text-on-background">api.internal.corp</p>
+<p class="text-on-surface-variant font-mono-md text-[11px]">Domain Name</p>
+</div>
+</div>
+</td>
+<td class="px-md py-sm text-on-surface-variant">Internal Domain</td>
+<td class="px-md py-sm">
+<span class="bg-tertiary-container/20 border border-tertiary-container/30 text-tertiary-container font-label-md text-[11px] px-2 py-[2px] rounded-full inline-flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span> Protected
+                                </span>
+</td>
+<td class="px-md py-sm text-on-surface-variant">Oct 24, 08:15</td>
+<td class="px-md py-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-1 opacity-0 group-hover:opacity-100 focus:opacity-100">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination Footer -->
+<div class="p-md border-t border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest/30">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Showing 1 to 4 of 1,248 assets</span>
+<div class="flex gap-sm">
+<button class="px-sm py-xs border border-outline-variant rounded text-on-surface-variant disabled:opacity-50 font-label-md text-label-md" disabled="">Prev</button>
+<button class="px-sm py-xs border border-outline-variant rounded text-on-surface hover:bg-surface-container-low font-label-md text-label-md">Next</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

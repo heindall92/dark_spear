@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dark Spear — Post-Exploitation Reporting</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script src="vendor/lucide.min.js"></script>
+<link rel="icon" type="image/png" href="vendor/logo.png"/>
+<link rel="apple-touch-icon" href="vendor/logo.png"/>
+<link href="vendor/tokens.css" rel="stylesheet"/>
+<script src="vendor/prefs-boot.js"></script>
+<script src="vendor/i18n.js" defer></script>
+<script src="vendor/export.js" defer></script>
+<script src="vendor/splash.js" defer></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary-fixed": "#d3e3ff",
+                "background": "#f7fafe",
+                "inverse-primary": "#a3c9ff",
+                "surface-container-lowest": "#ffffff",
+                "on-secondary-container": "#54637d",
+                "on-tertiary-fixed-variant": "#005046",
+                "surface-tint": "#0060ab",
+                "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a",
+                "on-tertiary-fixed": "#00201b",
+                "inverse-on-surface": "#eef1f5",
+                "primary-fixed-dim": "#a3c9ff",
+                "on-surface-variant": "#404752",
+                "tertiary-container": "#0a8575",
+                "on-primary": "#ffffff",
+                "surface-bright": "#f7fafe",
+                "secondary": "#505f79",
+                "surface-container": "#ebeef2",
+                "on-secondary-fixed-variant": "#394760",
+                "on-surface": "#181c1f",
+                "secondary-fixed-dim": "#b8c7e5",
+                "secondary-fixed": "#d5e3ff",
+                "tertiary-fixed": "#91f4e1",
+                "surface-variant": "#e0e3e7",
+                "inverse-surface": "#2d3134",
+                "on-error": "#ffffff",
+                "error": "#ba1a1a",
+                "surface-dim": "#d7dade",
+                "secondary-container": "#d1e0ff",
+                "tertiary": "#006a5c",
+                "surface-container-highest": "#e0e3e7",
+                "surface-container-low": "#f1f4f8",
+                "outline": "#717783",
+                "surface-container-high": "#e5e8ec",
+                "on-background": "#181c1f",
+                "on-primary-fixed": "#001c39",
+                "on-primary-container": "#ffffff",
+                "primary": "#005faa",
+                "error-container": "#ffdad6",
+                "on-secondary-fixed": "#0c1c32",
+                "tertiary-fixed-dim": "#75d8c5",
+                "on-secondary": "#ffffff",
+                "primary-container": "#0078d4",
+                "surface": "#f7fafe",
+                "on-primary-fixed-variant": "#004883",
+                "on-tertiary-container": "#ffffff",
+                "outline-variant": "#c0c7d4"
+              },
+              borderRadius: {
+                DEFAULT: "0.25rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                full: "9999px"
+              },
+              spacing: {
+                base: "4px",
+                lg: "24px",
+                "container-max": "1440px",
+                sm: "8px",
+                md: "16px",
+                xs: "4px",
+                gutter: "16px",
+                xl: "32px"
+              },
+              fontFamily: {
+                "headline-xl": ["Public Sans"],
+                "mono-md": ["JetBrains Mono"],
+                "label-md": ["Public Sans"],
+                "body-md": ["Public Sans"],
+                "headline-md": ["Public Sans"],
+                "body-lg": ["Public Sans"],
+                "body-sm": ["Public Sans"],
+                "headline-lg": ["Public Sans"]
+              },
+              fontSize: {
+                "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        [data-lucide],
+        svg.lucide {
+            width: 20px;
+            height: 20px;
+            stroke-width: 1.75;
+            flex-shrink: 0;
+        }
+        .icon-sm { width: 16px !important; height: 16px !important; }
+        .icon-md { width: 18px !important; height: 18px !important; }
+        .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel {
+            background-color: #ffffff; 
+            border: 1px solid #D8E3F0;
+        }
+        .severity-critical { background-color: rgba(186, 26, 26, 0.1); color: #ba1a1a; border: 1px solid rgba(186, 26, 26, 0.2); }
+        .severity-high { background-color: rgba(186, 26, 26, 0.05); color: #ba1a1a; border: 1px solid rgba(186, 26, 26, 0.1); }
+        .chap-nav { background: #ebeef2; border: 1px solid rgba(192,199,212,0.55); border-radius: 10px; padding: 4px; }
+        .chap-nav a { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #181c1f; }
+        .chap-nav a.active { background: #0078d4; color: #ffffff; box-shadow: 0 1px 3px rgba(27,42,65,0.12); }
+        .chap-nav a:not(.active):hover { color: #005faa; }
+        .dot-grid {
+          background-color: #f7fafe;
+          background-image: radial-gradient(#c0c7d4 1px, transparent 1px);
+          background-size: 18px 18px;
+        }
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
+        .skip-link:focus { left: 8px; top: 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<a class="skip-link" href="#main-content" data-i18n="skip">Saltar al contenido</a>
+<nav data-app-nav class="bg-white fixed left-0 top-0 h-screen w-64 border-r border-outline-variant/30 shadow-sm flex flex-col py-md z-50">
+<button type="button" class="sidebar-edge-toggle" data-sidebar-toggle aria-expanded="true" data-i18n-aria="aria.sidebarHide"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<div class="px-md mb-xl flex items-center gap-sm" data-brand-row>
+<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="brand-copy">
+<p class="font-headline-md text-headline-md font-bold text-primary leading-tight" data-i18n="brand">Dark Spear</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight" data-i18n="brand.tagline">Consola SecOps</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html">
+<i data-lucide="layout-dashboard"></i>
+<span data-i18n="nav.dashboard">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html">
+<i data-lucide="gauge"></i>
+<span data-i18n="nav.metrics">Remediation Metrics</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html">
+<i data-lucide="activity"></i>
+<span data-i18n="nav.engagement">Active Engagement</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html">
+<i data-lucide="radar"></i>
+<span data-i18n="nav.scans">Active Scans</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html">
+<i data-lucide="bug"></i>
+<span data-i18n="nav.vulns">Vulnerabilities</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html">
+<i data-lucide="triangle-alert"></i>
+<span data-i18n="nav.critical">Critical Findings</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="reporting.html" aria-current="page">
+<i data-lucide="chart-column"></i>
+<span data-i18n="nav.reporting">Reporting</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html">
+<i data-lucide="binoculars"></i>
+<span data-i18n="nav.osint">OSINT</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html">
+<i data-lucide="share-2"></i>
+<span data-i18n="nav.graph">Attack Graph</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html">
+<i data-lucide="swords"></i>
+<span data-i18n="nav.mitre">MITRE ATT&amp;CK</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html">
+<i data-lucide="boxes"></i>
+<span data-i18n="nav.assets">Assets</span>
+</a>
+</div>
+<div class="mt-auto px-md flex flex-col gap-md">
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm">
+<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span>
+            </a>
+<div class="sidebar-prefs">
+<div class="ios-row">
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+<div class="ios-row">
+<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+</div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html">
+<i data-lucide="settings"></i>
+<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html">
+<i data-lucide="circle-question-mark"></i>
+<span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span>
+</a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<i data-lucide="log-out"></i>
+<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span>
+</a>
+</div>
+</div>
+</nav>
+
+<div data-app-shell class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background relative">
+<header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
+<div class="relative w-96">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<i data-lucide="bell"></i>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+</button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
+<i data-lucide="settings"></i>
+</a>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+</div>
+</div>
+</header>
+
+<main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg pb-32">
+<div class="max-w-6xl mx-auto space-y-lg">
+<nav class="chap-nav flex flex-wrap items-center gap-xs" aria-label="Capítulos del informe">
+<a href="comprehensive-report.html" data-i18n="chap.informe">Informe</a>
+<a href="executive-summary.html" data-i18n="chap.resumen">Resumen</a>
+<a href="finding-detail.html" data-i18n="chap.hallazgo">Hallazgo</a>
+<a href="findings-summary.html" data-i18n="chap.leyenda">Leyenda</a>
+<a href="remediation-plan.html" data-i18n="chap.remediacion">Remediación</a>
+<a href="gdpr-alignment.html" data-i18n="chap.rgpd">RGPD</a>
+<a href="maturity-index.html" data-i18n="chap.madurez">Madurez</a>
+<a href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>
+</nav>
+<nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant" aria-label="Breadcrumb">
+<a class="hover:text-primary transition-colors" href="active-scans.html">Active Scans</a>
+<i data-lucide="chevron-right" class="icon-sm text-outline"></i>
+<a class="hover:text-primary transition-colors" href="engagement.html">Target_Alpha_Main</a>
+<i data-lucide="chevron-right" class="icon-sm text-outline"></i>
+<span class="font-semibold text-primary">Post-Exploitation</span>
+</nav>
+
+<div class="glass-panel rounded-xl p-md flex items-center justify-between">
+<div class="flex-1 relative">
+<div class="absolute inset-0 top-1/2 -translate-y-1/2 h-1 bg-surface-container-high rounded-full"></div>
+<div class="absolute inset-0 top-1/2 -translate-y-1/2 h-1 bg-primary-container rounded-full w-full"></div>
+<div class="relative flex justify-between">
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-surface-bright z-10">
+<i data-lucide="check" class="icon-sm"></i>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Intelligence</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-surface-bright z-10">
+<i data-lucide="check" class="icon-sm"></i>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Enumeration</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-surface-bright z-10">
+<i data-lucide="check" class="icon-sm"></i>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Exploitation</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-primary-container z-10 shadow-[0_0_0_4px_rgba(0,120,212,0.2)]">
+<i data-lucide="flag" class="icon-sm"></i>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold">Post-Exploitation</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="glass-panel rounded-xl p-lg flex flex-col md:flex-row gap-lg justify-between items-start md:items-center">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Target_Alpha_Main</h2>
+<div class="flex items-center gap-md font-body-sm text-body-sm text-on-surface-variant flex-wrap">
+<span class="flex items-center gap-xs"><i data-lucide="calendar" class="icon-sm"></i> Oct 12 - Oct 26, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="flex items-center gap-xs"><i data-lucide="timer" class="icon-sm"></i> 14 Days Elapsed</span>
+</div>
+</div>
+<div class="flex gap-md">
+<a href="critical-findings.html" class="bg-surface-container-low rounded-lg p-md border border-outline-variant text-center min-w-[100px] hover:border-error/40 transition-colors">
+<div class="font-headline-md text-headline-md text-error">3</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase mt-xs">Critical</div>
+</a>
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant text-center min-w-[100px]">
+<div class="font-headline-md text-headline-md text-error">12</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase mt-xs">High</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant text-center min-w-[100px]">
+<div class="font-headline-md text-headline-md text-primary">28</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase mt-xs">Total</div>
+</div>
+</div>
+</div>
+
+<section class="glass-panel rounded-xl p-lg">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-sm mb-md">
+<div>
+<h3 class="font-headline-md text-headline-md">Capítulos del informe</h3>
+<p class="font-body-sm text-on-surface-variant mt-xs">No van en la sidebar. Plan de remediación, RGPD, madurez y kill chain se abren desde aquí.</p>
+</div>
+<a href="comprehensive-report.html" class="font-label-md text-primary hover:underline">Informe completo →</a>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">
+<a href="remediation-plan.html" class="rounded-xl border-2 border-primary/30 bg-white p-md hover:border-primary hover:shadow-sm transition-all">
+<h4 class="font-headline-md">Plan de remediación</h4>
+<p class="font-body-sm text-on-surface-variant mt-xs">Tres fases y gráfico de proyección CMMI.</p>
+</a>
+<a href="gdpr-alignment.html" class="rounded-xl border-2 border-primary/30 bg-white p-md hover:border-primary hover:shadow-sm transition-all">
+<h4 class="font-headline-md">Alineación RGPD</h4>
+<p class="font-body-sm text-on-surface-variant mt-xs">Art. 30–33, sanción y matriz de riesgos.</p>
+</a>
+<a href="maturity-index.html" class="rounded-xl border-2 border-primary/30 bg-white p-md hover:border-primary hover:shadow-sm transition-all">
+<h4 class="font-headline-md">Índice de madurez</h4>
+<p class="font-body-sm text-on-surface-variant mt-xs">Radar por dominio, índice 3.2 y trayectoria.</p>
+</a>
+<a href="kill-chain.html" class="rounded-xl border-2 border-primary/30 bg-white p-md hover:border-primary hover:shadow-sm transition-all">
+<h4 class="font-headline-md">Kill Chain</h4>
+<p class="font-body-sm text-on-surface-variant mt-xs">Narrativa del ataque y matriz MITRE.</p>
+</a>
+</div>
+</section>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<div class="lg:col-span-2 space-y-md">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<i data-lucide="list" class="text-primary"></i>
+                            Post-Exploitation Findings
+                        </h3>
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="p-md border-b border-outline-variant/50">
+<div class="flex items-center gap-sm mb-sm flex-wrap">
+<span class="px-2 py-1 rounded font-label-md text-label-md severity-critical uppercase">Critical</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
+<i data-lucide="terminal" class="icon-sm"></i> mimikatz
+                                        </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs ml-auto">
+<i data-lucide="clock" class="icon-sm"></i> 10:45 AM
+                                        </span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Domain Admin Credentials Extracted</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">LSASS memory capture confirmed plaintext credentials for the DOMAIN\Administrator account. Secrets are stored in the evidence vault and redacted below.</p>
+</div>
+<div class="bg-inverse-surface text-inverse-on-surface p-md font-mono-md text-mono-md overflow-x-auto">
+<p class="font-label-md text-label-md text-primary-fixed mb-sm opacity-80">Evidence excerpt — credential dump (redacted)</p>
+<pre><code>Authentication Id : [redacted]
+Session           : Interactive from 1
+User Name         : Administrator
+Domain            : TARGET_ALPHA
+Logon Server      : DC01
+Logon Time        : 10/24/2023 9:15:22 AM
+SID               : S-1-5-21-********-********-********-500
+
+        msv :
+         * Username : Administrator
+         * Domain   : TARGET_ALPHA
+         * NTLM     : [redacted]
+         * SHA1     : [redacted]
+        wdigest :
+         * Username : Administrator
+         * Domain   : TARGET_ALPHA
+         * Password : ********</code></pre>
+</div>
+</div>
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="p-md border-b border-outline-variant/50">
+<div class="flex items-center gap-sm mb-sm flex-wrap">
+<span class="px-2 py-1 rounded font-label-md text-label-md severity-high uppercase">High</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
+<i data-lucide="terminal" class="icon-sm"></i> lateral-ad
+                                        </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs ml-auto">
+<i data-lucide="clock" class="icon-sm"></i> 11:30 AM
+                                        </span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Capa lateral AD identificada</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Camino AD (capa lateral, no el grafo de perímetro): WS01 → svc-backup → DOMAIN ADMINS → DC01 vía unconstrained delegation.</p>
+</div>
+<div class="bg-surface-container-low p-md">
+<a href="attack-graph.html" class="flex items-center gap-sm text-primary font-body-sm text-body-sm hover:underline">
+<i data-lucide="eye" class="icon-sm"></i> View Graph Evidence
+                                 </a>
+</div>
+</div>
+</div>
+<div class="space-y-md" id="evidence-gallery">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<i data-lucide="images" class="text-primary"></i>
+                            Evidence Gallery
+                        </h3>
+<div class="grid grid-cols-2 gap-sm">
+<a href="attack-graph.html" class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors block border border-outline-variant">
+<div class="dot-grid w-full h-24 rounded mb-xs border border-outline-variant overflow-hidden relative bg-[#f7fafe]">
+<span class="absolute top-xs left-xs text-[10px] font-bold uppercase tracking-wider bg-primary-container text-on-primary-container px-xs rounded">Perímetro</span>
+<span class="absolute inset-0 flex items-center justify-center font-label-md text-on-surface px-sm text-center">Internet → SRV-WEB-01 → DB-PROD-Main</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">perimetro_attack_graph.png</span>
+</a>
+<a href="kill-chain.html" class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors block border border-outline-variant">
+<div class="dot-grid w-full h-24 rounded mb-xs border border-outline-variant overflow-hidden relative bg-[#f7fafe]">
+<span class="absolute top-xs left-xs text-[10px] font-bold uppercase tracking-wider bg-secondary-container text-on-secondary-container px-xs rounded z-10">Lateral AD</span>
+<span class="absolute inset-0 flex items-center justify-center font-label-md text-on-surface px-sm text-center">WS01 → DC01</span>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">ad_lateral_ws01_dc01.png</span>
+</a>
+<div class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors">
+<div class="bg-cover bg-center w-full h-24 rounded mb-xs border border-outline-variant" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBpZJ6Xyxb_nhY2iVlEOl4Q_bXdmHW_zVpmG1kI18yB-AgPnI1pbhE3-FLT7IPYL-2oTJlCQkIMLkW7I6yKTUhMKgZX-YF_SHvgttL7hAc9ZoyKNY0M1-LQdyx3KuncKgWOwW-sJn7EmDzCjLvo4uwbBqNriehObl8GcIyHZfRtUMMYSUxX2S0qqgpYU0Ey4AUu7T3lzEtCEEZJqvQAdN-g5QF-hhElwT9fWt8XyYkkmdeg_fi51fJ9xA')"></div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">lsass_dump_term.jpg</span>
+</div>
+<div class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors">
+<div class="bg-cover bg-center w-full h-24 rounded mb-xs border border-outline-variant" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAAVaXH5ue5R_U5Lf_edSI9So2dGchSOv5Xi7ZKAlAE-AToWsvYTLB-zDNaVZkmuOXwcXdQant4fKOcHyEsKXi3OZ2L4DARiQX7FWV1rYJ5eqfUK6wkdEQAltkW54WF0QNCJeIY2bDohnf70I_zC_2FkdlVUt2Ai5OQzFdWgfOJL_EjnLRtKkbLp77c4ePmo6_uTpCUfL1nJuCghSO3NVP0FxenmFXZtZdwiQeFBVtJDMw-moBbgwC5_Q')"></div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">ad_groups_enum.png</span>
+</div>
+<button class="glass-panel rounded-lg p-sm flex items-center justify-center flex-col text-on-surface-variant hover:text-primary hover:border-primary transition-colors border-dashed border-2 min-h-[132px]" type="button">
+<i data-lucide="upload" class="icon-lg mb-xs"></i>
+<span class="font-body-sm text-body-sm">Add Evidence</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+<div class="absolute bottom-0 right-0 left-0 bg-white border-t border-outline-variant p-md flex justify-end gap-md shadow-[0_-4px_16px_rgba(27,42,65,0.05)] z-20">
+<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-export="json">
+<i data-lucide="braces" class="icon-md"></i>
+                Export raw JSON
+            </button>
+<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-export="html">
+<i data-lucide="code" class="icon-md"></i>
+                Export HTML
+            </button>
+<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-export="pdf">
+<i data-lucide="file-text" class="icon-md"></i>
+                Export PDF
+            </button>
+<a href="comprehensive-report.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<i data-lucide="file-text" class="icon-md"></i>
+                Generate PDF Report
+            </a>
+<a href="executive-summary.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<i data-lucide="chart-pie" class="icon-md"></i>
+                Executive Summary
+            </a>
+<a href="index.html" class="px-lg py-sm rounded-lg font-label-md font-semibold bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-xs shadow-sm">
+<i data-lucide="circle-check" class="icon-md"></i>
+                Finalize Engagement
+            </a>
+</div>
+</div>
+<script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

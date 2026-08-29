@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post-Exploitation Reporting - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-bright": "#f7fafe",
+                    "tertiary": "#006a5c",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#f1f4f8",
+                    "tertiary-fixed": "#91f4e1",
+                    "on-surface": "#181c1f",
+                    "surface-tint": "#0060ab",
+                    "inverse-surface": "#2d3134",
+                    "primary-container": "#0078d4",
+                    "on-tertiary-container": "#ffffff",
+                    "primary-fixed-dim": "#a3c9ff",
+                    "surface-container": "#ebeef2",
+                    "tertiary-container": "#0a8575",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c0c7d4",
+                    "on-background": "#181c1f",
+                    "on-tertiary-fixed": "#00201b",
+                    "error": "#ba1a1a",
+                    "surface": "#f7fafe",
+                    "on-secondary-fixed-variant": "#394760",
+                    "on-primary-fixed": "#001c39",
+                    "surface-container-high": "#e5e8ec",
+                    "primary": "#005faa",
+                    "on-primary-fixed-variant": "#004883",
+                    "inverse-on-surface": "#eef1f5",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary": "#ffffff",
+                    "secondary-container": "#d1e0ff",
+                    "secondary-fixed-dim": "#b8c7e5",
+                    "secondary-fixed": "#d5e3ff",
+                    "tertiary-fixed-dim": "#75d8c5",
+                    "on-surface-variant": "#404752",
+                    "outline": "#717783",
+                    "on-tertiary-fixed-variant": "#005046",
+                    "on-secondary-fixed": "#0c1c32",
+                    "primary-fixed": "#d3e3ff",
+                    "on-primary": "#ffffff",
+                    "surface-container-highest": "#e0e3e7",
+                    "background": "#f7fafe",
+                    "on-primary-container": "#ffffff",
+                    "surface-variant": "#e0e3e7",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#54637d",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#d7dade",
+                    "inverse-primary": "#a3c9ff",
+                    "secondary": "#505f79"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sm": "8px",
+                    "base": "4px",
+                    "md": "16px",
+                    "container-max": "1440px",
+                    "xs": "4px",
+                    "gutter": "16px",
+                    "xl": "32px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "mono-md": ["JetBrains Mono"],
+                    "headline-xl": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "body-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "mono-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .fluent-input {
+            border: 1px solid #c0c7d4;
+            transition: border-bottom-color 0.2s ease, border-bottom-width 0.2s ease;
+        }
+        .fluent-input:focus {
+            outline: none;
+            border-bottom: 2px solid #0078d4;
+            margin-bottom: -1px;
+        }
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        .severity-critical { background-color: rgba(186, 26, 26, 0.1); color: #ba1a1a; border: 1px solid rgba(186, 26, 26, 0.2); }
+        .severity-high { background-color: rgba(186, 26, 26, 0.05); color: #ba1a1a; border: 1px solid rgba(186, 26, 26, 0.1); }
+        .severity-medium { background-color: rgba(0, 95, 170, 0.1); color: #005faa; border: 1px solid rgba(0, 95, 170, 0.2); }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="h-screen w-64 fixed left-0 top-0 border-r border-outline-variant bg-white/70 backdrop-blur-xl shadow-sm transition-all duration-200 ease-in-out flex flex-col py-md px-sm z-30">
+<div class="mb-xl px-md">
+<h1 class="text-headline-md font-headline-md font-bold text-on-surface">Auditor Console</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Enterprise Security</p>
+</div>
+<div class="flex-1 space-y-1">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="radar">radar</span>
+                Active Scans
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+                Vulnerabilities
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-secondary-container text-on-secondary-container font-semibold font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                Reporting
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                Assets
+            </a>
+</div>
+<div class="mt-auto space-y-1 border-t border-outline-variant pt-md">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+                Support
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                Account
+            </a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="ml-64 flex-1 flex flex-col relative h-full">
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-16rem)] z-40 bg-white/70 backdrop-blur-xl border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-lg max-w-container-max mx-auto">
+<div class="flex items-center gap-lg">
+<div class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
+<span>Engagements</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span>Target_Alpha_Main</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-semibold text-primary">Post-Exploitation</span>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors p-sm rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors p-sm rounded-full hover:bg-surface-container-low">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-label-md ml-sm">
+                    AU
+                </div>
+<button class="ml-sm bg-primary-container text-on-primary-container px-md py-sm rounded-lg font-label-md font-semibold hover:bg-primary transition-colors">
+                    Iniciar engagement
+                </button>
+</div>
+</header>
+<!-- Scrollable Content Canvas -->
+<main class="flex-1 overflow-y-auto mt-16 p-lg bg-surface-bright">
+<div class="max-w-6xl mx-auto space-y-lg pb-32">
+<!-- Phase Progress Bar -->
+<div class="glass-panel rounded-xl p-md flex items-center justify-between">
+<div class="flex-1 relative">
+<div class="absolute inset-0 top-1/2 -translate-y-1/2 h-1 bg-surface-container-high rounded-full"></div>
+<div class="absolute inset-0 top-1/2 -translate-y-1/2 h-1 bg-primary-container rounded-full w-full transition-all duration-500"></div>
+<div class="relative flex justify-between">
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-surface-bright z-10">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Intelligence</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-surface-bright z-10">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Enumeration</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-surface-bright z-10">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Exploitation</span>
+</div>
+<div class="flex flex-col items-center gap-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-primary-container z-10 shadow-[0_0_0_4px_rgba(0,120,212,0.2)]">
+<span class="material-symbols-outlined text-[16px]">flag</span>
+</div>
+<span class="font-label-md text-label-md text-primary font-bold">Post-Exploitation</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Engagement Summary Header -->
+<div class="glass-panel rounded-xl p-lg flex flex-col md:flex-row gap-lg justify-between items-start md:items-center">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Target_Alpha_Main</h2>
+<div class="flex items-center gap-md font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">calendar_month</span> Oct 12 - Oct 26, 2023</span>
+<span class="w-1 h-1 rounded-full bg-outline"></span>
+<span class="flex items-center gap-xs"><span class="material-symbols-outlined text-[16px]">timer</span> 14 Days Elapsed</span>
+</div>
+</div>
+<div class="flex gap-md">
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant text-center min-w-[100px]">
+<div class="font-headline-md text-headline-md text-error">3</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase mt-xs">Critical</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant text-center min-w-[100px]">
+<div class="font-headline-md text-headline-md text-error">12</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase mt-xs">High</div>
+</div>
+<div class="bg-surface-container-low rounded-lg p-md border border-outline-variant text-center min-w-[100px]">
+<div class="font-headline-md text-headline-md text-primary">28</div>
+<div class="font-label-md text-label-md text-on-surface-variant uppercase mt-xs">Total</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<!-- Findings & Evidence Feed (Col 1 & 2) -->
+<div class="lg:col-span-2 space-y-md">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">list_alt</span> 
+                            Post-Exploitation Findings
+                        </h3>
+<!-- Finding Card 1 -->
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="p-md flex justify-between items-start border-b border-outline-variant/50">
+<div>
+<div class="flex items-center gap-sm mb-sm">
+<span class="px-2 py-1 rounded font-label-md text-label-md severity-critical uppercase">Critical</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">terminal</span> mimikatz
+                                        </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs ml-auto">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 10:45 AM
+                                        </span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Domain Admin Credentials Extracted</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Successfully dumped LSASS memory and extracted plaintext credentials for the DOMAIN\Administrator account.</p>
+</div>
+</div>
+<div class="bg-inverse-surface text-inverse-on-surface p-md font-mono-md text-mono-md overflow-x-auto">
+<pre><code>mimikatz # sekurlsa::logonpasswords
+Authentication Id : 0 ; 999999 (00000000:000f423f)
+Session           : Interactive from 1
+User Name         : Administrator
+Domain            : TARGET_ALPHA
+Logon Server      : DC01
+Logon Time        : 10/24/2023 9:15:22 AM
+SID               : S-1-5-21-1234567890-123456789-1234567890-500
+
+        msv :
+         [00000003] Primary
+         * Username : Administrator
+         * Domain   : TARGET_ALPHA
+         * NTLM     : 8846f7eaee8fb117ad06bdd830b7586c
+         * SHA1     : 1234567890abcdef1234567890abcdef12345678
+        wdigest :
+         * Username : Administrator
+         * Domain   : TARGET_ALPHA
+         * Password : SuperSecretPassword123!</code></pre>
+</div>
+</div>
+<!-- Finding Card 2 -->
+<div class="glass-panel rounded-xl overflow-hidden">
+<div class="p-md flex justify-between items-start border-b border-outline-variant/50">
+<div>
+<div class="flex items-center gap-sm mb-sm">
+<span class="px-2 py-1 rounded font-label-md text-label-md severity-high uppercase">High</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px]">terminal</span> bloodhound
+                                        </span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs ml-auto">
+<span class="material-symbols-outlined text-[14px]">schedule</span> 11:30 AM
+                                        </span>
+</div>
+<h4 class="font-headline-md text-headline-md text-on-surface">Lateral Movement Path Identified</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mt-xs">Identified a viable attack path from current compromised host to the Domain Controller via unconstrained delegation.</p>
+</div>
+</div>
+<div class="bg-surface-container-low p-md border-t border-outline-variant">
+<div class="flex items-center gap-sm text-primary font-body-sm text-body-sm cursor-pointer">
+<span class="material-symbols-outlined text-[16px]">visibility</span> View Graph Evidence
+                                 </div>
+</div>
+</div>
+</div>
+<!-- Evidence Gallery (Col 3) -->
+<div class="space-y-md">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary">collections</span> 
+                            Evidence Gallery
+                        </h3>
+<div class="grid grid-cols-2 gap-sm">
+<div class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors">
+<div class="bg-cover bg-center w-full h-24 rounded mb-xs border border-outline-variant" data-alt="A stylized, modern light-mode conceptual graphic showing a network map with a highlighted path to a central node representing a domain controller. Corporate modern aesthetic, soft blues and whites." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCOTNfk0JB8Rywpr_In9h2NDTbFPMmTfiHhxBqVsRuL5PrVDD1c99fd_CQF9rDmOzRmugfUlNW1PmIAAP524ic-e4F4cPQtuKtOTXHCgXtyTYjirt-QKYxDID2bLrWs8RJksmerRWWGFGgzPtl7tOeumB98JrDfcT1bCYlvY1HEteT02IY-Xx5G7FQvjrNMcHnJzBQXs5G9NcXa56NnQCC0jhDSF6cIwIcS-QHmnY-Uzf8U7T6gd42BiA')"></div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">bh_attack_path.png</span>
+</div>
+<div class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors">
+<div class="bg-cover bg-center w-full h-24 rounded mb-xs border border-outline-variant" data-alt="A stylized, modern light-mode screenshot of a dark terminal window floating on a light acrylic background, showing lines of code and the word 'mimikatz'. Corporate modern, clean layout." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBpZJ6Xyxb_nhY2iVlEOl4Q_bXdmHW_zVpmG1kI18yB-AgPnI1pbhE3-FLT7IPYL-2oTJlCQkIMLkW7I6yKTUhMKgZX-YF_SHvgttL7hAc9ZoyKNY0M1-LQdyx3KuncKgWOwW-sJn7EmDzCjLvo4uwbBqNriehObl8GcIyHZfRtUMMYSUxX2S0qqgpYU0Ey4AUu7T3lzEtCEEZJqvQAdN-g5QF-hhElwT9fWt8XyYkkmdeg_fi51fJ9xA')"></div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">lsass_dump_term.jpg</span>
+</div>
+<div class="glass-panel rounded-lg p-sm cursor-pointer hover:border-primary transition-colors">
+<div class="bg-cover bg-center w-full h-24 rounded mb-xs border border-outline-variant" data-alt="A stylized, modern light-mode conceptual graphic of a folder structure or active directory tree, emphasizing a specific high-privileged group. Corporate modern aesthetic, soft blues and whites." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAAVaXH5ue5R_U5Lf_edSI9So2dGchSOv5Xi7ZKAlAE-AToWsvYTLB-zDNaVZkmuOXwcXdQant4fKOcHyEsKXi3OZ2L4DARiQX7FWV1rYJ5eqfUK6wkdEQAltkW54WF0QNCJeIY2bDohnf70I_zC_2FkdlVUt2Ai5OQzFdWgfOJL_EjnLRtKkbLp77c4ePmo6_uTpCUfL1nJuCghSO3NVP0FxenmFXZtZdwiQeFBVtJDMw-moBbgwC5_Q')"></div>
+<span class="font-body-sm text-body-sm text-on-surface truncate block">ad_groups_enum.png</span>
+</div>
+<div class="glass-panel rounded-lg p-sm flex items-center justify-center flex-col text-on-surface-variant hover:text-primary hover:border-primary transition-colors cursor-pointer border-dashed border-2">
+<span class="material-symbols-outlined text-[24px] mb-xs">upload_file</span>
+<span class="font-body-sm text-body-sm">Add Evidence</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Reporting Actions Footer -->
+<div class="absolute bottom-0 right-0 w-full bg-white/80 backdrop-blur-xl border-t border-outline-variant p-md flex justify-end gap-md shadow-[0_-4px_16px_rgba(27,42,65,0.05)] z-20">
+<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">data_object</span>
+                Export raw JSON
+            </button>
+<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                Generate PDF Report
+            </button>
+<button class="px-lg py-sm rounded-lg font-label-md font-semibold bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-xs shadow-sm">
+<span class="material-symbols-outlined text-[18px]">task_alt</span>
+                Finalize Engagement
+            </button>
+</div>
+</div>
+<script>
+        // Simple interactions for collapsible evidence (simulated)
+        document.querySelectorAll('.glass-panel h4').forEach(header => {
+            header.addEventListener('click', () => {
+                const card = header.closest('.glass-panel');
+                const content = card.querySelector('.bg-inverse-surface, .bg-surface-container-low');
+                if(content) {
+                    content.classList.toggle('hidden');
+                }
+            });
+        });
+    </script>
+</body></html>

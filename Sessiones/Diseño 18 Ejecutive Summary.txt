@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resumen Ejecutivo - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#c0c7d4",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-container": "#0078d4",
+                        "tertiary": "#006a5c",
+                        "on-secondary-fixed": "#0c1c32",
+                        "on-tertiary-fixed": "#00201b",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-secondary-container": "#54637d",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#404752",
+                        "inverse-on-surface": "#eef1f5",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-bright": "#f7fafe",
+                        "surface": "#f7fafe",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "surface-container": "#ebeef2",
+                        "surface-variant": "#e0e3e7",
+                        "tertiary-container": "#0a8575",
+                        "on-primary-fixed": "#001c39",
+                        "on-secondary-fixed-variant": "#394760",
+                        "secondary": "#505f79",
+                        "on-surface": "#181c1f",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-tint": "#0060ab",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-surface": "#2d3134",
+                        "outline": "#717783",
+                        "primary": "#005faa",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "background": "#f7fafe",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-background": "#181c1f",
+                        "primary-fixed": "#d3e3ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "mono-md": ["jetbrainsMono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7fafe; }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .filled-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="text-on-background bg-background h-screen flex flex-col md:flex-row overflow-hidden">
+<!-- TopNavBar (Web & Mobile) -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-lg h-16 bg-white/70 backdrop-blur-md border-b border-outline-variant/30 shadow-sm md:hidden">
+<div class="flex items-center gap-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">Auditor</span>
+</div>
+<div class="flex items-center gap-sm text-primary">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary-container transition-colors p-sm">notifications</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary-container transition-colors p-sm">settings</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-primary-container transition-colors p-sm">help</span>
+</div>
+</nav>
+<!-- SideNavBar (Web Only) -->
+<aside class="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col py-md bg-surface-container-lowest/70 backdrop-blur-xl border-r border-outline-variant/20 z-40">
+<div class="px-lg pb-xl pt-lg border-b border-outline-variant/20 mb-md">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-bold text-lg">
+<img alt="Organization Logo" class="w-full h-full object-cover rounded-full" data-alt="A clean, modern geometric logo design representing an enterprise security firm. The logo should feature sharp angles and a professional blue and slate color palette, set against a pristine white background. The aesthetic is corporate, trustworthy, and high-tech." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOjeyxfWxHkfxmVWlDtWM_b5BmkzaCSnjnBIaxJZAq2SC9OENVed1I9R5eNX8l4sth_ZuTGpmaHz6YuYvrQxactyCBTrRjbE_nDkEpYhbc5ITWdnH2FqsFV9oUPd4LC1LvgpzTy-EeuJdBcxjnx3FYnqnreLniIq_u2mA7BfVhh3QV_nZXEcA_kx76n74ISxWINDDBgJYC78wujnWhdPoTconQp8I1VRkUsB8B4RdoLZMHWMW424-COg"/>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface">Enterprise Security</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Global Console</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 px-sm overflow-y-auto">
+<ul class="space-y-sm">
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary bg-primary-container/10 border-r-4 border-primary transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined filled-icon">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-label-md text-label-md">Risk Matrix</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+<span class="font-label-md text-label-md">Compliance</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-label-md text-label-md">Assets</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-label-md text-label-md">Audits</span>
+</a>
+</li>
+</ul>
+</nav>
+<div class="px-sm mt-auto pt-md border-t border-outline-variant/20">
+<ul class="space-y-sm">
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+<span class="font-label-md text-label-md">Help Center</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-label-md text-label-md">Account</span>
+</a>
+</li>
+</ul>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 mt-16 md:mt-0 p-lg md:p-xl overflow-y-auto w-full max-w-container-max mx-auto h-full">
+<!-- Header Section -->
+<header class="mb-xl flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-background mb-xs">Resumen Ejecutivo</h2>
+<p class="font-body-md text-body-md text-secondary">Evaluación de Postura de Seguridad Q3 - Octubre 2023</p>
+</div>
+<div class="flex gap-md">
+<button class="px-lg py-sm rounded-lg font-label-md text-label-md border border-outline-variant text-secondary bg-transparent hover:bg-surface-container transition-colors flex items-center gap-sm">
+<span class="material-symbols-outlined">download</span> Exportar PDF
+                </button>
+<button class="px-lg py-sm rounded-lg font-label-md text-label-md bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-sm shadow-sm">
+<span class="material-symbols-outlined">share</span> Compartir
+                </button>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter md:gap-lg">
+<!-- Overall Posture Card (Spans 4 cols on desktop) -->
+<section class="glass-panel rounded-xl p-lg col-span-1 md:col-span-4 flex flex-col justify-center items-center text-center shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 p-md opacity-20 pointer-events-none">
+<span class="material-symbols-outlined" style="font-size: 120px;">security</span>
+</div>
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-md w-full text-left">Puntuación Global</h3>
+<div class="relative w-40 h-40 flex items-center justify-center mb-md">
+<!-- Placeholder for circular progress/grade -->
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="#e0e3e7" stroke-width="8"></circle>
+<circle cx="50" cy="50" fill="none" r="45" stroke="#0078d4" stroke-dasharray="282.7" stroke-dashoffset="56.54" stroke-width="8"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-headline-xl text-headline-xl text-primary font-black text-5xl">B+</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1">82 / 100</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant font-medium">Postura de seguridad sólida. Riesgos críticos mitigados satisfactoriamente.</p>
+</section>
+<!-- Key Findings & Severity (Spans 8 cols on desktop) -->
+<section class="glass-panel rounded-xl p-lg col-span-1 md:col-span-8 shadow-sm flex flex-col">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-md">Hallazgos por Severidad</h3>
+<div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-md">
+<!-- Critical -->
+<div class="bg-error-container/30 border border-error-container p-md rounded-lg flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<span class="material-symbols-outlined text-error">warning</span>
+<span class="font-label-md text-label-md text-error bg-error-container px-2 py-1 rounded-full">Crítico</span>
+</div>
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold">2</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1">Requiere atención inmediata</span>
+</div>
+<!-- High -->
+<div class="bg-[#FFEFE5]/50 border border-[#FFD0B5] p-md rounded-lg flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<span class="material-symbols-outlined text-[#C25400]">error</span>
+<span class="font-label-md text-label-md text-[#C25400] bg-[#FFEFE5] px-2 py-1 rounded-full">Alto</span>
+</div>
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold">14</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1">Planificar remediación a corto plazo</span>
+</div>
+<!-- Medium -->
+<div class="bg-[#FFF4CE]/50 border border-[#FDE073] p-md rounded-lg flex flex-col justify-between">
+<div class="flex items-center justify-between mb-sm">
+<span class="material-symbols-outlined text-[#795F00]">info</span>
+<span class="font-label-md text-label-md text-[#795F00] bg-[#FFF4CE] px-2 py-1 rounded-full">Medio</span>
+</div>
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold">38</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1">Revisar en ciclo normal</span>
+</div>
+<!-- Low -->
+<div class="bg-surface-container p-md rounded-lg flex flex-col justify-between border border-outline-variant/30">
+<div class="flex items-center justify-between mb-sm">
+<span class="material-symbols-outlined text-secondary">check_circle</span>
+<span class="font-label-md text-label-md text-secondary bg-surface-variant px-2 py-1 rounded-full">Bajo</span>
+</div>
+<span class="font-headline-xl text-headline-xl text-on-surface font-bold">56</span>
+<span class="font-body-sm text-body-sm text-secondary mt-1">Mejoras de higiene</span>
+</div>
+</div>
+</section>
+<!-- Executive Narrative (Spans 12 cols) -->
+<section class="glass-panel rounded-xl p-lg col-span-1 md:col-span-12 shadow-sm">
+<h3 class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-md">Resumen Ejecutivo</h3>
+<div class="prose max-w-none text-on-surface-variant font-body-lg">
+<p class="mb-4">
+                        La evaluación integral de seguridad del tercer trimestre indica una mejora del <strong>15%</strong> en la postura general de seguridad en comparación con la auditoría anterior. Los controles principales de infraestructura en la nube (AWS/Azure) operan dentro de los márgenes de tolerancia de riesgo aceptados por la junta directiva.
+                    </p>
+<p>
+                        Sin embargo, se identificaron vulnerabilidades persistentes en aplicaciones heredadas (Legacy Apps) y procesos de gestión de identidad (IAM). Se requiere inversión focalizada en la automatización de parches y la implementación estricta de MFA en sistemas internos para mitigar los dos riesgos críticos identificados en el perímetro de la red corporativa.
+                    </p>
+</div>
+</section>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dark Spear — Kill Chain y MITRE</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script src="vendor/lucide.min.js"></script>
+<link rel="icon" type="image/png" href="vendor/logo.png"/>
+<link rel="apple-touch-icon" href="vendor/logo.png"/>
+<link href="vendor/tokens.css" rel="stylesheet"/>
+<script src="vendor/prefs-boot.js"></script>
+<script src="vendor/i18n.js" defer></script>
+<script src="vendor/export.js" defer></script>
+<script src="vendor/splash.js" defer></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary-fixed": "#d3e3ff", "background": "#f7fafe", "inverse-primary": "#a3c9ff",
+                "surface-container-lowest": "#ffffff", "on-secondary-container": "#54637d",
+                "on-tertiary-fixed-variant": "#005046", "surface-tint": "#0060ab", "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a", "on-tertiary-fixed": "#00201b", "inverse-on-surface": "#eef1f5",
+                "primary-fixed-dim": "#a3c9ff", "on-surface-variant": "#404752", "tertiary-container": "#0a8575",
+                "on-primary": "#ffffff", "surface-bright": "#f7fafe", "secondary": "#505f79",
+                "surface-container": "#ebeef2", "on-secondary-fixed-variant": "#394760", "on-surface": "#181c1f",
+                "secondary-fixed-dim": "#b8c7e5", "secondary-fixed": "#d5e3ff", "tertiary-fixed": "#91f4e1",
+                "surface-variant": "#e0e3e7", "inverse-surface": "#2d3134", "on-error": "#ffffff", "error": "#ba1a1a",
+                "surface-dim": "#d7dade", "secondary-container": "#d1e0ff", "tertiary": "#006a5c",
+                "surface-container-highest": "#e0e3e7", "surface-container-low": "#f1f4f8", "outline": "#717783",
+                "surface-container-high": "#e5e8ec", "on-background": "#181c1f", "on-primary-fixed": "#001c39",
+                "on-primary-container": "#ffffff", "primary": "#005faa", "error-container": "#ffdad6",
+                "on-secondary-fixed": "#0c1c32", "tertiary-fixed-dim": "#75d8c5", "on-secondary": "#ffffff",
+                "primary-container": "#0078d4", "surface": "#f7fafe", "on-primary-fixed-variant": "#004883",
+                "on-tertiary-container": "#ffffff", "outline-variant": "#c0c7d4"
+              },
+              borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+              spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
+              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontSize: {
+                "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        [data-lucide], svg.lucide { width: 20px; height: 20px; stroke-width: 1.75; flex-shrink: 0; }
+        .icon-sm { width: 16px !important; height: 16px !important; }
+        .icon-md { width: 18px !important; height: 18px !important; }
+        .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
+        .chap-nav { background: #ebeef2; border: 1px solid rgba(192,199,212,0.55); border-radius: 10px; padding: 4px; }
+        .chap-nav a { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #181c1f; }
+        .chap-nav a.active { background: #0078d4; color: #ffffff; box-shadow: 0 1px 3px rgba(27,42,65,0.12); }
+        .chap-nav a:not(.active):hover { color: #005faa; }
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
+        .skip-link:focus { left: 8px; top: 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<a class="skip-link" href="#main-content" data-i18n="skip">Saltar al contenido</a>
+<nav data-app-nav class="bg-white fixed left-0 top-0 h-screen w-64 border-r border-outline-variant/30 shadow-sm flex flex-col py-md z-50">
+<button type="button" class="sidebar-edge-toggle" data-sidebar-toggle aria-expanded="true" data-i18n-aria="aria.sidebarHide"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<div class="px-md mb-xl flex items-center gap-sm" data-brand-row>
+<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="brand-copy">
+<p class="font-headline-md text-headline-md font-bold text-primary leading-tight" data-i18n="brand">Dark Spear</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight" data-i18n="brand.tagline">Consola SecOps</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="reporting.html" aria-current="page"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+</div>
+<div class="mt-auto px-md flex flex-col gap-md">
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<div class="sidebar-prefs">
+<div class="ios-row">
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+<div class="ios-row">
+<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+</div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+</div>
+</div>
+</nav>
+
+<div data-app-shell class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
+<div class="relative w-96">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+</div>
+</div>
+</header>
+
+<main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
+<nav class="chap-nav flex flex-wrap items-center gap-xs mb-md" aria-label="Capítulos del informe">
+<a href="comprehensive-report.html" data-i18n="chap.informe">Informe</a>
+<a href="executive-summary.html" data-i18n="chap.resumen">Resumen</a>
+<a href="finding-detail.html" data-i18n="chap.hallazgo">Hallazgo</a>
+<a href="findings-summary.html" data-i18n="chap.leyenda">Leyenda</a>
+<a href="remediation-plan.html" data-i18n="chap.remediacion">Remediación</a>
+<a href="gdpr-alignment.html" data-i18n="chap.rgpd">RGPD</a>
+<a href="maturity-index.html" data-i18n="chap.madurez">Madurez</a>
+<a class="active" href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>
+</nav>
+
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+<div>
+<nav class="flex items-center gap-xs text-on-surface-variant font-body-sm mb-xs">
+<a class="hover:text-primary" href="findings-summary.html">Risk Matrix</a>
+<i data-lucide="chevron-right" class="icon-sm"></i>
+<span class="text-on-surface">INC-2026-08-18</span>
+</nav>
+<h2 class="font-headline-xl text-headline-xl">Análisis Kill Chain: Operación Target_Alpha</h2>
+<p class="font-body-md text-on-surface-variant mt-xs">Progresión del ataque y técnicas MITRE ATT&amp;CK identificadas.</p>
+</div>
+<div class="flex gap-sm flex-wrap">
+<a href="comprehensive-report.html#sec-08f" class="px-md py-sm rounded-lg border border-outline-variant text-secondary font-label-md text-label-md hover:bg-surface-container-low" data-export="pdf">Exportar PDF</a>
+<a href="mitre.html" class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary">Mitigar amenazas (3)</a>
+</div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
+<div class="lg:col-span-2 space-y-md">
+<div class="glass-panel rounded-xl p-lg">
+<h3 class="font-headline-md mb-md flex items-center gap-sm"><i data-lucide="waypoints" class="text-primary"></i> Narrativa del Ataque</h3>
+<div class="relative border-l-2 border-outline-variant/30 ml-sm pl-md space-y-lg">
+<div class="relative">
+<div class="absolute -left-[21px] bg-white border-2 border-outline-variant w-3 h-3 rounded-full mt-1.5"></div>
+<div class="flex items-start justify-between gap-md mb-xs">
+<h4 class="font-headline-lg">1. Descubrimiento y preparación</h4>
+<span class="px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px] uppercase">18 Ago, 02:15Z</span>
+</div>
+<p class="font-body-md text-on-surface-variant mb-sm">Escaneo de superficie pública (OSINT + puertos) e identificación de un servicio VPN expuesto.</p>
+<div class="bg-surface-container-low rounded-lg p-sm border border-outline-variant/20">
+<div class="flex items-center gap-sm text-on-surface-variant mb-xs"><i data-lucide="bug" class="icon-sm"></i><span class="font-label-md">Hallazgos técnicos</span></div>
+<ul class="font-mono-md text-on-surface space-y-xs">
+<li><span class="text-secondary">IP origen:</span> [redacted — vault]</li>
+<li><span class="text-secondary">Técnica:</span> Escaneo de red T1046</li>
+<li><span class="text-secondary">Evidencia:</span> Logs FW-MAD-01 (Log-8842)</li>
+</ul>
+</div>
+</div>
+<div class="relative">
+<div class="absolute -left-[21px] bg-primary-container w-3 h-3 rounded-full mt-1.5"></div>
+<div class="flex items-start justify-between gap-md mb-xs">
+<h4 class="font-headline-lg">2. Infiltración y acceso inicial</h4>
+<span class="px-sm py-xs rounded-full bg-surface-container-high text-on-surface-variant font-label-md text-[10px] uppercase">18 Ago, 03:42Z</span>
+</div>
+<p class="font-body-md text-on-surface-variant mb-sm">Uso de cuenta de servicio en el gateway VPN y sesión válida. Detalle de la petición en vault.</p>
+<div class="bg-surface-container-low rounded-lg p-sm border border-outline-variant/20">
+<div class="flex items-center gap-sm text-error mb-xs"><i data-lucide="triangle-alert" class="icon-sm"></i><span class="font-label-md">Severidad alta</span></div>
+<ul class="font-mono-md text-on-surface space-y-xs">
+<li><span class="text-secondary">Cuenta:</span> svc-backup</li>
+<li><span class="text-secondary">Técnica:</span> T1190 / T1078</li>
+<li><span class="text-secondary">Indicador:</span> POST anómalo a /auth (detalle en vault)</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-lg overflow-x-auto">
+<div class="flex items-center justify-between mb-md">
+<h3 class="font-headline-md flex items-center gap-sm"><i data-lucide="layout-grid" class="text-tertiary"></i> Matriz MITRE ATT&amp;CK</h3>
+<span class="font-body-sm text-on-surface-variant">Tácticas observadas: 4</span>
+</div>
+<table class="w-full min-w-[600px] text-left">
+<thead>
+<tr class="border-b border-outline-variant/30">
+<th class="py-sm px-xs font-label-md text-secondary">Initial Access</th>
+<th class="py-sm px-xs font-label-md text-secondary">Execution</th>
+<th class="py-sm px-xs font-label-md text-secondary">Persistence</th>
+<th class="py-sm px-xs font-label-md text-secondary">Lateral Movement</th>
+</tr>
+</thead>
+<tbody class="align-top font-body-sm">
+<tr>
+<td class="p-xs">
+<a href="mitre.html" class="block bg-error-container/50 border border-error/30 p-sm rounded mb-xs"><div class="font-mono-md text-[11px] text-error mb-xs">T1190</div> Exploit Public-Facing App</a>
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface-variant p-sm rounded opacity-60"><div class="font-mono-md text-[11px] mb-xs">T1078</div> Valid Accounts</div>
+</td>
+<td class="p-xs">
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface-variant p-sm rounded mb-xs opacity-60"><div class="font-mono-md text-[11px] mb-xs">T1059</div> Command and Script</div>
+<div class="bg-tertiary-container/20 border border-tertiary/30 p-sm rounded"><div class="font-mono-md text-[11px] text-tertiary mb-xs">T1047</div> WMI</div>
+</td>
+<td class="p-xs">
+<div class="bg-surface-container-low border border-outline-variant/30 text-on-surface-variant p-sm rounded opacity-60"><div class="font-mono-md text-[11px] mb-xs">T1098</div> Account Manipulation</div>
+</td>
+<td class="p-xs">
+<a href="attack-graph.html" class="block bg-error-container/50 border border-error/30 p-sm rounded"><div class="font-mono-md text-[11px] text-error mb-xs">T1021</div> Remote Services</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="space-y-md">
+<div class="glass-panel rounded-xl p-lg">
+<h3 class="font-headline-md mb-md flex items-center gap-sm"><i data-lucide="upload" class="text-error"></i> Impacto de Exfiltración</h3>
+<div class="flex flex-col items-center py-lg border-b border-outline-variant/20 mb-md">
+<div class="w-24 h-24 rounded-full border-8 border-error-container flex items-center justify-center mb-sm relative">
+<div class="absolute inset-0 rounded-full border-8 border-error" style="clip-path: inset(0 0 30% 0);"></div>
+<span class="font-headline-xl font-bold">70%</span>
+</div>
+<p class="font-label-md text-secondary text-center">Probabilidad de fuga de datos confidenciales</p>
+</div>
+<div class="space-y-sm font-body-sm">
+<div class="flex justify-between"><span class="text-on-surface-variant">Volumen estimado</span><span class="font-mono-md font-bold">1.2 GB</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">Destino</span><span class="font-mono-md">[redacted — vault]</span></div>
+<div class="flex justify-between"><span class="text-on-surface-variant">Activos</span><span class="font-bold">DB-FIN-PROD-01</span></div>
+</div>
+</div>
+<div class="glass-panel rounded-xl p-md">
+<h4 class="font-label-md text-secondary mb-sm uppercase tracking-wider">Contexto del entorno</h4>
+<p class="font-body-sm text-on-surface-variant mb-sm"><span class="font-label-md text-primary uppercase tracking-wider">Perímetro</span> Internet Externo → SRV-WEB-01 → DB-PROD-Main (Attack Graph).</p>
+<p class="font-body-sm text-on-surface-variant mb-md"><span class="font-label-md text-secondary uppercase tracking-wider">Lateral AD</span> WS01 → svc-backup → DOMAIN ADMINS → DC01 (T1003). No sustituye el grafo de perímetro.</p>
+<a href="attack-graph.html" class="w-full py-sm rounded-lg border border-outline-variant font-label-md text-label-md hover:bg-surface-container-low flex items-center justify-center gap-xs"><i data-lucide="share-2" class="icon-md"></i> Ver grafo de perímetro</a>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html class="light" lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dark Spear — Resumen de hallazgos</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<script src="vendor/lucide.min.js"></script>
+<link rel="icon" type="image/png" href="vendor/logo.png"/>
+<link rel="apple-touch-icon" href="vendor/logo.png"/>
+<link href="vendor/tokens.css" rel="stylesheet"/>
+<script src="vendor/prefs-boot.js"></script>
+<script src="vendor/i18n.js" defer></script>
+<script src="vendor/export.js" defer></script>
+<script src="vendor/splash.js" defer></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "primary-fixed": "#d3e3ff", "background": "#f7fafe", "inverse-primary": "#a3c9ff",
+                "surface-container-lowest": "#ffffff", "on-secondary-container": "#54637d",
+                "on-tertiary-fixed-variant": "#005046", "surface-tint": "#0060ab", "on-tertiary": "#ffffff",
+                "on-error-container": "#93000a", "on-tertiary-fixed": "#00201b", "inverse-on-surface": "#eef1f5",
+                "primary-fixed-dim": "#a3c9ff", "on-surface-variant": "#404752", "tertiary-container": "#0a8575",
+                "on-primary": "#ffffff", "surface-bright": "#f7fafe", "secondary": "#505f79",
+                "surface-container": "#ebeef2", "on-secondary-fixed-variant": "#394760", "on-surface": "#181c1f",
+                "secondary-fixed-dim": "#b8c7e5", "secondary-fixed": "#d5e3ff", "tertiary-fixed": "#91f4e1",
+                "surface-variant": "#e0e3e7", "inverse-surface": "#2d3134", "on-error": "#ffffff", "error": "#ba1a1a",
+                "surface-dim": "#d7dade", "secondary-container": "#d1e0ff", "tertiary": "#006a5c",
+                "surface-container-highest": "#e0e3e7", "surface-container-low": "#f1f4f8", "outline": "#717783",
+                "surface-container-high": "#e5e8ec", "on-background": "#181c1f", "on-primary-fixed": "#001c39",
+                "on-primary-container": "#ffffff", "primary": "#005faa", "error-container": "#ffdad6",
+                "on-secondary-fixed": "#0c1c32", "tertiary-fixed-dim": "#75d8c5", "on-secondary": "#ffffff",
+                "primary-container": "#0078d4", "surface": "#f7fafe", "on-primary-fixed-variant": "#004883",
+                "on-tertiary-container": "#ffffff", "outline-variant": "#c0c7d4"
+              },
+              borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
+              spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
+              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontSize: {
+                "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
+                "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                "body-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                "headline-md": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                "body-lg": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                "body-sm": ["12px", { lineHeight: "16px", fontWeight: "400" }],
+                "headline-lg": ["24px", { lineHeight: "32px", fontWeight: "600" }]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+        [data-lucide], svg.lucide { width: 20px; height: 20px; stroke-width: 1.75; flex-shrink: 0; }
+        .icon-sm { width: 16px !important; height: 16px !important; }
+        .icon-md { width: 18px !important; height: 18px !important; }
+        .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
+        .chap-nav { background: #ebeef2; border: 1px solid rgba(192,199,212,0.55); border-radius: 10px; padding: 4px; }
+        .chap-nav a { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #181c1f; }
+        .chap-nav a.active { background: #0078d4; color: #ffffff; box-shadow: 0 1px 3px rgba(27,42,65,0.12); }
+        .chap-nav a:not(.active):hover { color: #005faa; }
+        .pill-critical { background: #ffdad6; color: #93000a; }
+        .pill-high { background: #FFEFE5; color: #C25400; }
+        .pill-medium { background: #d3e3ff; color: #004883; }
+        .pill-low { background: #91f4e1; color: #00201b; }
+        .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
+        .skip-link:focus { left: 8px; top: 8px; }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen overflow-hidden flex">
+<a class="skip-link" href="#main-content" data-i18n="skip">Saltar al contenido</a>
+<nav data-app-nav class="bg-white fixed left-0 top-0 h-screen w-64 border-r border-outline-variant/30 shadow-sm flex flex-col py-md z-50">
+<button type="button" class="sidebar-edge-toggle" data-sidebar-toggle aria-expanded="true" data-i18n-aria="aria.sidebarHide"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<div class="px-md mb-xl flex items-center gap-sm" data-brand-row>
+<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="brand-copy">
+<p class="font-headline-md text-headline-md font-bold text-primary leading-tight" data-i18n="brand">Dark Spear</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant leading-tight" data-i18n="brand.tagline">Consola SecOps</p>
+</div>
+</div>
+<div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="reporting.html" aria-current="page"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+</div>
+<div class="mt-auto px-md flex flex-col gap-md">
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<div class="sidebar-prefs">
+<div class="ios-row">
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+<div class="ios-row">
+<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
+</div>
+</div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+</div>
+</div>
+</nav>
+
+<div data-app-shell class="flex-1 ml-64 flex flex-col h-screen overflow-hidden bg-background">
+<header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
+<div class="relative w-96">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
+<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+</div>
+<div class="flex items-center gap-md">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
+<div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
+<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+</div>
+</div>
+</header>
+
+<main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
+<nav class="chap-nav flex flex-wrap items-center gap-xs mb-md" aria-label="Capítulos del informe">
+<a href="comprehensive-report.html" data-i18n="chap.informe">Informe</a>
+<a href="executive-summary.html" data-i18n="chap.resumen">Resumen</a>
+<a href="finding-detail.html" data-i18n="chap.hallazgo">Hallazgo</a>
+<a class="active" href="findings-summary.html" data-i18n="chap.leyenda">Leyenda</a>
+<a href="remediation-plan.html" data-i18n="chap.remediacion">Remediación</a>
+<a href="gdpr-alignment.html" data-i18n="chap.rgpd">RGPD</a>
+<a href="maturity-index.html" data-i18n="chap.madurez">Madurez</a>
+<a href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>
+</nav>
+
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+<div>
+<nav class="flex items-center gap-xs font-body-sm text-secondary mb-xs">
+<a class="hover:text-primary" href="index.html">Inicio</a>
+<i data-lucide="chevron-right" class="icon-sm"></i>
+<a class="hover:text-primary" href="reporting.html">Reporting</a>
+<i data-lucide="chevron-right" class="icon-sm"></i>
+<span class="text-on-surface font-medium">Resumen de Hallazgos</span>
+</nav>
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Resumen de Hallazgos y Leyenda</h1>
+<p class="font-body-md text-secondary mt-xs">Vulnerabilidades de Target_Alpha_Main categorizadas por riesgo.</p>
+</div>
+<div class="flex gap-sm flex-wrap">
+<a href="comprehensive-report.html#sec-02" class="px-md py-sm rounded-lg font-label-md text-label-md border border-outline-variant text-secondary hover:bg-surface-container-low flex items-center gap-sm" data-export="pdf"><i data-lucide="download" class="icon-md"></i> Exportar PDF</a>
+<a href="remediation-plan.html" class="px-md py-sm rounded-lg font-label-md text-label-md bg-primary text-on-primary hover:bg-primary-container shadow-sm">Crear Plan de Acción</a>
+</div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md mb-lg">
+<section class="lg:col-span-2 glass-panel rounded-xl p-lg flex flex-col">
+<h3 class="font-headline-md text-headline-md mb-md">Matriz de Riesgo: Impacto vs. Probabilidad</h3>
+<div class="relative min-h-[300px] bg-surface-container-lowest/50 rounded-lg border border-outline-variant/30 p-md">
+<span class="absolute left-0 top-1/2 -translate-y-1/2 -rotate-90 font-label-md text-xs text-secondary uppercase">Impacto</span>
+<span class="absolute bottom-sm left-1/2 -translate-x-1/2 font-label-md text-xs text-secondary uppercase">Probabilidad</span>
+<div class="absolute inset-md ml-lg mb-lg border-l border-b border-outline-variant">
+<span class="absolute top-sm right-sm font-label-md text-xs text-error/50">Alto Riesgo</span>
+<span class="absolute bottom-sm left-sm font-label-md text-xs text-secondary/50">Bajo Riesgo</span>
+<div class="absolute bottom-[90%] left-[85%] w-3.5 h-3.5 rounded-full bg-error ring-2 ring-white" title="F-001"></div>
+<div class="absolute bottom-[95%] left-[70%] w-3.5 h-3.5 rounded-full bg-error ring-2 ring-white"></div>
+<div class="absolute bottom-[75%] left-[60%] w-3 h-3 rounded-full bg-[#d97706] ring-2 ring-white"></div>
+<div class="absolute bottom-[60%] left-[80%] w-3 h-3 rounded-full bg-[#d97706] ring-2 ring-white"></div>
+<div class="absolute bottom-[85%] left-[45%] w-3 h-3 rounded-full bg-[#d97706] ring-2 ring-white"></div>
+<div class="absolute bottom-[40%] left-[50%] w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-white"></div>
+<div class="absolute bottom-[55%] left-[30%] w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-white"></div>
+<div class="absolute bottom-[30%] left-[70%] w-2.5 h-2.5 rounded-full bg-primary ring-2 ring-white"></div>
+<div class="absolute bottom-[15%] left-[20%] w-2 h-2 rounded-full bg-tertiary ring-2 ring-white"></div>
+<div class="absolute bottom-[10%] left-[35%] w-2 h-2 rounded-full bg-tertiary ring-2 ring-white"></div>
+</div>
+</div>
+</section>
+<section class="flex flex-col gap-md">
+<div class="glass-panel rounded-xl p-md flex-1">
+<h3 class="font-headline-md text-headline-md mb-sm flex items-center gap-sm border-b border-outline-variant/30 pb-sm"><i data-lucide="layers" class="text-secondary"></i> Categorías</h3>
+<ul class="space-y-sm mt-md">
+<li class="flex items-start gap-sm">
+<div class="p-xs rounded bg-primary-container/10 text-primary"><i data-lucide="terminal" class="icon-md"></i></div>
+<div><h4 class="font-label-md">Técnico</h4><p class="font-body-sm text-secondary">Software, red o acceso lógico.</p></div>
+</li>
+<li class="flex items-start gap-sm">
+<div class="p-xs rounded bg-secondary-container text-on-secondary-container"><i data-lucide="shield-user" class="icon-md"></i></div>
+<div><h4 class="font-label-md">Administrativo</h4><p class="font-body-sm text-secondary">Políticas, procedimientos, concienciación.</p></div>
+</li>
+<li class="flex items-start gap-sm">
+<div class="p-xs rounded bg-tertiary-container/20 text-tertiary"><i data-lucide="cctv" class="icon-md"></i></div>
+<div><h4 class="font-label-md">Físico</h4><p class="font-body-sm text-secondary">Perímetro e instalaciones.</p></div>
+</li>
+</ul>
+</div>
+<div class="glass-panel rounded-xl p-md flex-1">
+<h3 class="font-headline-md text-headline-md mb-sm flex items-center gap-sm border-b border-outline-variant/30 pb-sm"><i data-lucide="book-open" class="text-secondary"></i> Glosario CVSS</h3>
+<div class="mt-md space-y-xs font-body-sm">
+<div class="flex items-center justify-between p-sm rounded"><div class="flex items-center gap-sm"><span class="w-2.5 h-2.5 rounded-full bg-error"></span> Crítico</div><span class="font-mono-md text-secondary bg-surface-container px-sm py-xs rounded">9.0 – 10.0</span></div>
+<div class="flex items-center justify-between p-sm rounded"><div class="flex items-center gap-sm"><span class="w-2.5 h-2.5 rounded-full bg-[#d97706]"></span> Alto</div><span class="font-mono-md text-secondary bg-surface-container px-sm py-xs rounded">7.0 – 8.9</span></div>
+<div class="flex items-center justify-between p-sm rounded"><div class="flex items-center gap-sm"><span class="w-2.5 h-2.5 rounded-full bg-primary"></span> Medio</div><span class="font-mono-md text-secondary bg-surface-container px-sm py-xs rounded">4.0 – 6.9</span></div>
+<div class="flex items-center justify-between p-sm rounded"><div class="flex items-center gap-sm"><span class="w-2.5 h-2.5 rounded-full bg-tertiary"></span> Bajo</div><span class="font-mono-md text-secondary bg-surface-container px-sm py-xs rounded">0.1 – 3.9</span></div>
+</div>
+</div>
+</section>
+</div>
+
+<section class="glass-panel rounded-xl overflow-hidden">
+<div class="p-lg border-b border-outline-variant/30 flex justify-between items-center">
+<h3 class="font-headline-md text-headline-md">Registro Detallado de Hallazgos</h3>
+<select class="pl-md pr-lg py-sm bg-surface rounded-lg border border-outline-variant font-body-sm">
+<option>Todas las Severidades</option>
+<option>Crítico y Alto</option>
+<option>Solo Abiertos</option>
+</select>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-container-low/50 border-b border-outline-variant/30 font-label-md text-on-surface-variant">
+<th class="py-sm px-md w-12">ID</th>
+<th class="py-sm px-md">Nombre</th>
+<th class="py-sm px-md">Categoría</th>
+<th class="py-sm px-md">Severidad</th>
+<th class="py-sm px-md">Activos</th>
+<th class="py-sm px-md text-right">Acción</th>
+</tr>
+</thead>
+<tbody class="font-body-sm">
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50">
+<td class="py-sm px-md font-mono-md text-secondary">001</td>
+<td class="py-sm px-md font-medium">Ejecución remota de código en servidor web (librería obsoleta).</td>
+<td class="py-sm px-md text-secondary flex items-center gap-xs"><i data-lucide="terminal" class="icon-sm"></i> Técnico</td>
+<td class="py-sm px-md"><span class="px-sm py-xs rounded-full font-label-md text-[10px] pill-critical">Crítico (9.8)</span></td>
+<td class="py-sm px-md font-mono-md text-secondary">srv-web-prod-01</td>
+<td class="py-sm px-md text-right"><a href="finding-detail.html" class="text-primary inline-flex"><i data-lucide="arrow-right" class="icon-md"></i></a></td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50">
+<td class="py-sm px-md font-mono-md text-secondary">002</td>
+<td class="py-sm px-md font-medium">Contraseñas en texto plano en base de respaldo.</td>
+<td class="py-sm px-md text-secondary"><span class="inline-flex items-center gap-xs"><i data-lucide="terminal" class="icon-sm"></i> Técnico</span></td>
+<td class="py-sm px-md"><span class="px-sm py-xs rounded-full font-label-md text-[10px] pill-high">Alto (8.2)</span></td>
+<td class="py-sm px-md font-mono-md text-secondary">db-backup-02</td>
+<td class="py-sm px-md text-right"><a href="critical-findings.html" class="text-primary inline-flex"><i data-lucide="arrow-right" class="icon-md"></i></a></td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50">
+<td class="py-sm px-md font-mono-md text-secondary">003</td>
+<td class="py-sm px-md font-medium">Sin política formal de revocación de accesos de ex-empleados.</td>
+<td class="py-sm px-md text-secondary"><span class="inline-flex items-center gap-xs"><i data-lucide="shield-user" class="icon-sm"></i> Administrativo</span></td>
+<td class="py-sm px-md"><span class="px-sm py-xs rounded-full font-label-md text-[10px] pill-medium">Medio (5.5)</span></td>
+<td class="py-sm px-md text-secondary italic">Global (RRHH / IT)</td>
+<td class="py-sm px-md text-right"><a href="vulnerabilities.html" class="text-primary inline-flex"><i data-lucide="arrow-right" class="icon-md"></i></a></td>
+</tr>
+<tr class="hover:bg-surface-container-low/50">
+<td class="py-sm px-md font-mono-md text-secondary">004</td>
+<td class="py-sm px-md font-medium">Cámara de pasillo norte obstruida por vegetación.</td>
+<td class="py-sm px-md text-secondary"><span class="inline-flex items-center gap-xs"><i data-lucide="cctv" class="icon-sm"></i> Físico</span></td>
+<td class="py-sm px-md"><span class="px-sm py-xs rounded-full font-label-md text-[10px] pill-low">Bajo (2.1)</span></td>
+<td class="py-sm px-md text-secondary">Oficina Principal · CCTV-04</td>
+<td class="py-sm px-md text-right"><a href="assets.html" class="text-primary inline-flex"><i data-lucide="arrow-right" class="icon-md"></i></a></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="px-lg py-sm border-t border-outline-variant/20 flex justify-between items-center font-body-sm text-secondary">
+<span>Mostrando 1 – 4 de 24 hallazgos</span>
+<div class="flex gap-xs">
+<button class="p-xs rounded hover:bg-surface-container opacity-50" type="button" disabled><i data-lucide="chevron-left" class="icon-md"></i></button>
+<button class="p-xs rounded hover:bg-surface-container text-primary" type="button"><i data-lucide="chevron-right" class="icon-md"></i></button>
+</div>
+</div>
+</section>
+</main>
+</div>
+<script>lucide.createIcons();</script>
+</body>
+</html>

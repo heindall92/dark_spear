@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Remediation Verification Request</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#91f4e1",
+                      "on-primary-fixed-variant": "#004883",
+                      "on-tertiary-fixed-variant": "#005046",
+                      "on-primary-fixed": "#001c39",
+                      "surface-bright": "#f7fafe",
+                      "inverse-primary": "#a3c9ff",
+                      "primary-container": "#0078d4",
+                      "outline": "#717783",
+                      "tertiary-container": "#0a8575",
+                      "surface-container-low": "#f1f4f8",
+                      "primary": "#005faa",
+                      "surface-container-highest": "#e0e3e7",
+                      "primary-fixed": "#d3e3ff",
+                      "on-background": "#181c1f",
+                      "surface": "#f7fafe",
+                      "on-secondary-container": "#54637d",
+                      "error-container": "#ffdad6",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-container": "#d1e0ff",
+                      "on-secondary-fixed-variant": "#394760",
+                      "inverse-on-surface": "#eef1f5",
+                      "on-secondary-fixed": "#0c1c32",
+                      "tertiary": "#006a5c",
+                      "surface-dim": "#d7dade",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "on-surface-variant": "#404752",
+                      "surface-container-high": "#e5e8ec",
+                      "surface-container": "#ebeef2",
+                      "outline-variant": "#c0c7d4",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-container": "#ffffff",
+                      "inverse-surface": "#2d3134",
+                      "primary-fixed-dim": "#a3c9ff",
+                      "error": "#ba1a1a",
+                      "on-surface": "#181c1f",
+                      "secondary-fixed-dim": "#b8c7e5",
+                      "secondary": "#505f79",
+                      "surface-tint": "#0060ab",
+                      "background": "#f7fafe",
+                      "on-primary-container": "#ffffff",
+                      "on-tertiary": "#ffffff",
+                      "secondary-fixed": "#d5e3ff",
+                      "surface-variant": "#e0e3e7",
+                      "on-tertiary-fixed": "#00201b",
+                      "tertiary-fixed-dim": "#75d8c5"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xl": "32px",
+                      "gutter": "16px",
+                      "sm": "8px",
+                      "base": "4px",
+                      "xs": "4px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "container-max": "1440px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "mono-md": [
+                              "jetbrainsMono"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "mono-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .acrylic-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .dark .acrylic-panel {
+            background-color: rgba(24, 28, 31, 0.7);
+            border: 1px solid rgba(192, 199, 212, 0.2);
+        }
+        .modal-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        .dark .modal-shadow {
+             box-shadow: 0px 8px 32px rgba(0, 0, 0, 0.4);
+        }
+      </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Background Context (Blurred Vulnerability Detail Screen) -->
+<div class="fixed inset-0 z-0 select-none pointer-events-none opacity-40 filter blur-[4px]">
+<!-- TopNavBar Mockup -->
+<header class="bg-surface/70 dark:bg-surface-container/70 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant/30 dark:border-outline/20 shadow-sm flex items-center justify-between px-lg h-16 w-full max-w-container-max mx-auto">
+<div class="flex items-center space-x-md">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Auditor platform</span>
+</div>
+</header>
+<!-- SideNavBar Mockup -->
+<nav class="bg-surface-container-low dark:bg-surface-dim fixed left-0 top-0 h-full w-64 z-40 border-r border-outline-variant/30 flex flex-col py-lg space-y-base pt-24">
+<div class="px-md pb-md">
+<h2 class="font-headline-sm text-headline-sm font-semibold text-primary">Enterprise Security</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Remediation Console</p>
+</div>
+<div class="flex-1 px-sm space-y-xs">
+<div class="flex items-center space-x-md px-md py-sm rounded text-on-surface-variant dark:text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</div>
+<div class="flex items-center space-x-md px-md py-sm rounded bg-primary-container/20 dark:bg-primary-container/10 text-primary dark:text-primary-fixed-dim font-semibold border-r-4 border-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="font-label-md text-label-md">Vulnerabilities</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Mockup -->
+<main class="pl-64 pt-16 h-full w-full max-w-container-max mx-auto p-lg">
+<div class="mb-lg">
+<div class="flex items-center space-x-xs text-on-surface-variant mb-md">
+<span class="font-body-sm text-body-sm">Vulnerabilities</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="font-body-sm text-body-sm text-on-surface">CVE-2023-4528</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-sm">Remote Code Execution in Apache Struts</h1>
+<div class="flex items-center space-x-md">
+<span class="inline-flex items-center px-sm py-xs rounded-full bg-error-container/30 text-error border border-error-container font-label-md text-label-md">Critical</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">CVSS 3.1: 9.8</span>
+</div>
+</div>
+<div class="grid grid-cols-12 gap-lg">
+<div class="col-span-8 space-y-md">
+<div class="acrylic-panel rounded-lg p-md">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Description</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">A flaw in the multipart parser allows an attacker to inject arbitrary OGNL expressions, leading to remote code execution under the privileges of the web server process.</p>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Overlay Backdrop -->
+<div class="fixed inset-0 z-50 bg-on-background/20 dark:bg-black/40 backdrop-blur-[2px] transition-opacity flex items-center justify-center p-md">
+<!-- Modal Container -->
+<div aria-labelledby="modal-title" aria-modal="true" class="acrylic-panel modal-shadow w-full max-w-[600px] rounded-xl overflow-hidden flex flex-col relative" role="dialog">
+<!-- Header -->
+<div class="px-lg py-md border-b border-outline-variant/30 flex items-center justify-between">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface" id="modal-title">Request Verification</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Submit evidence for CVE-2023-4528 remediation.</p>
+</div>
+<button aria-label="Close modal" class="p-sm rounded-full hover:bg-surface-variant/50 text-on-surface-variant transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Form Content -->
+<div class="px-lg py-lg overflow-y-auto max-h-[716px] space-y-lg">
+<!-- Verification Method -->
+<div>
+<fieldset>
+<legend class="font-label-md text-label-md text-on-surface mb-md">Verification Method</legend>
+<div class="grid grid-cols-2 gap-md">
+<label class="relative flex cursor-pointer rounded-lg border border-outline-variant bg-surface-container-lowest p-md hover:bg-surface-container-low transition-colors has-[:checked]:border-primary-container has-[:checked]:bg-primary-container/5">
+<input checked="" class="peer sr-only" name="verification_method" type="radio" value="auto"/>
+<div class="flex w-full items-center justify-between">
+<div class="flex items-center space-x-md">
+<div class="h-10 w-10 rounded-full bg-primary-container/10 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">radar</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-on-surface">Automatic Scan</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Trigger immediate re-scan</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+</label>
+<label class="relative flex cursor-pointer rounded-lg border border-outline-variant bg-surface-container-lowest p-md hover:bg-surface-container-low transition-colors has-[:checked]:border-primary-container has-[:checked]:bg-primary-container/5">
+<input class="peer sr-only" name="verification_method" type="radio" value="manual"/>
+<div class="flex w-full items-center justify-between">
+<div class="flex items-center space-x-md">
+<div class="h-10 w-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">fact_check</span>
+</div>
+<div>
+<p class="font-body-md text-body-md font-semibold text-on-surface">Manual Review</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Requires analyst approval</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-primary opacity-0 peer-checked:opacity-100 transition-opacity">check_circle</span>
+</div>
+</label>
+</div>
+</fieldset>
+</div>
+<!-- Remediation Notes -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-xs" for="remediation-notes">Remediation Notes</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Describe the steps taken to resolve this vulnerability.</p>
+<div class="relative">
+<textarea class="block w-full rounded border-outline-variant bg-surface-container-lowest font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary transition-shadow resize-none" id="remediation-notes" name="remediation_notes" placeholder="e.g., Applied security patch v2.4.1 to affected production servers..." rows="4"></textarea>
+</div>
+</div>
+<!-- Evidence Upload -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface mb-xs">Evidence Upload</label>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-sm">Attach screenshots, configuration files, or logs.</p>
+<div class="mt-2 flex justify-center rounded-lg border border-dashed border-outline-variant px-lg py-xl hover:bg-surface-variant/30 transition-colors group cursor-pointer">
+<div class="text-center">
+<span class="material-symbols-outlined text-[32px] text-on-surface-variant group-hover:text-primary transition-colors">cloud_upload</span>
+<div class="mt-sm flex justify-center text-sm leading-6 text-gray-600">
+<label class="relative cursor-pointer rounded-md font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-container" for="file-upload">
+<span class="font-body-md text-body-md">Upload a file</span>
+<input class="sr-only" id="file-upload" name="file-upload" type="file"/>
+</label>
+<p class="pl-1 font-body-md text-body-md text-on-surface-variant">or drag and drop</p>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">PNG, JPG, PDF up to 10MB</p>
+</div>
+</div>
+<!-- Uploaded File Item (Hidden by default, shown for UI completeness) -->
+<div class="mt-sm flex items-center justify-between p-sm border border-outline-variant/50 rounded bg-surface-container-lowest">
+<div class="flex items-center space-x-sm overflow-hidden">
+<span class="material-symbols-outlined text-secondary">description</span>
+<span class="font-mono-md text-mono-md text-on-surface truncate max-w-[200px]">patch_deployment_log.txt</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">1.2 MB</span>
+</div>
+<button aria-label="Remove file" class="text-on-surface-variant hover:text-error transition-colors p-xs rounded hover:bg-surface-variant" type="button">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="px-lg py-md border-t border-outline-variant/30 bg-surface-container-lowest/50 flex items-center justify-end space-x-md">
+<button class="px-md py-sm rounded border border-outline-variant bg-transparent font-label-md text-label-md text-on-surface hover:bg-surface-variant transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1" type="button">
+                    Cancel
+                </button>
+<button class="px-md py-sm rounded border border-transparent bg-primary-container font-label-md text-label-md text-on-primary-container hover:bg-surface-tint shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 flex items-center space-x-xs" type="button">
+<span class="material-symbols-outlined text-[18px]">send</span>
+<span>Submit for Verification</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

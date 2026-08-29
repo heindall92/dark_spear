@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Auditor - Start Panel</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Brand Anchors -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f7fafe",
+                        "on-secondary-fixed-variant": "#394760",
+                        "on-secondary-fixed": "#0c1c32",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "outline": "#717783",
+                        "on-surface": "#181c1f",
+                        "tertiary-container": "#0a8575",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-variant": "#e0e3e7",
+                        "outline-variant": "#c0c7d4",
+                        "surface-tint": "#0060ab",
+                        "primary-fixed": "#d3e3ff",
+                        "on-surface-variant": "#404752",
+                        "surface": "#f7fafe",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-background": "#181c1f",
+                        "tertiary": "#006a5c",
+                        "surface-bright": "#f7fafe",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "secondary": "#505f79",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001c39",
+                        "secondary-fixed": "#d5e3ff",
+                        "tertiary-fixed": "#91f4e1",
+                        "error": "#ba1a1a",
+                        "primary-container": "#0078d4",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#a3c9ff",
+                        "on-tertiary-fixed": "#00201b",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-container-high": "#e5e8ec",
+                        "inverse-surface": "#2d3134",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface-container": "#ebeef2",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "on-primary-container": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "primary": "#005faa",
+                        "on-secondary-container": "#54637d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "mono-md": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom styles for specific effects not easily mapped to base Tailwind utilities */
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        
+        .fluent-input {
+            border: 1px solid theme('colors.surface-variant');
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .fluent-input:focus {
+            outline: none;
+            border-color: theme('colors.surface-variant');
+            border-bottom: 2px solid theme('colors.primary-container');
+            box-shadow: none;
+        }
+
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-background to-secondary-fixed min-h-screen font-sans text-on-surface flex flex-col relative overflow-x-hidden">
+<!-- TopNavBar (Shared Component JSON) -->
+<header class="bg-white/70 dark:bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm fixed top-0 w-full z-50 flex items-center justify-between px-lg h-16">
+<div class="flex items-center gap-md">
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed tracking-tight">Auditor</span>
+</div>
+<!-- Search Bar (on_left implies left of trailing actions, centeredish here) -->
+<div class="hidden md:flex flex-1 max-w-md mx-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-sm top-1/2 transform -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-xl pr-md py-sm bg-surface-container-low rounded-full border-none font-body-md text-body-md text-on-surface focus:ring-1 focus:ring-primary-container transition-all" placeholder="Search resources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-all duration-200 p-sm rounded-full active:scale-95 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-low/50 transition-all duration-200 p-sm rounded-full active:scale-95 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-surface-variant object-cover ml-sm cursor-pointer hover:opacity-80 transition-opacity" data-alt="A professional headshot of a corporate user, smiling slightly, set against a neutral gray background, representing an active profile avatar in a clean, modern style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAkvFnh5izS9g_BIqISu7ulCuGYsBalvM8PnpRNrWesDOFSJvBuJPRdb_nteqveHtxqiCWkXe6guWRxCg1OXk7zIWEbSt5TIE7RqprOrJjHg-82Mx5IxIx5C7wUTMHW4AUX7IQ4PRSKUwyXeIw7LjFIl1X2TGPAXx1GcziCBvOWoVAQRzfi0D4i7SGpWH-mFg-cIvr_5GZxQW59uCzFRSdJOeFP9CMiwyt-Lkg21hPgowYfLxCfIoMfCA"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex items-center justify-center pt-24 pb-lg px-gutter relative z-10 w-full max-w-container-max mx-auto">
+<!-- Centered Glass Panel -->
+<div class="glass-panel w-full max-w-3xl border border-surface-variant rounded-xl p-xl ambient-shadow flex flex-col gap-xl">
+<!-- Header -->
+<div class="flex flex-col gap-base">
+<h1 class="font-headline-xl text-headline-xl text-on-surface">Initiate Engagement</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Configure target parameters and select required access keys to begin the automated audit process.</p>
+</div>
+<!-- Configuration Fields (Fluent Style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant">Target</label>
+<input class="fluent-input bg-surface-container-lowest rounded-DEFAULT px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., prod-cluster-01" type="text"/>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant">Scope</label>
+<input class="fluent-input bg-surface-container-lowest rounded-DEFAULT px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., us-east-1a" type="text"/>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant">Model</label>
+<select class="fluent-input bg-surface-container-lowest rounded-DEFAULT px-md py-sm font-body-md text-body-md text-on-surface w-full appearance-none">
+<option>Standard Compliance</option>
+<option>Deep Vulnerability Scan</option>
+<option>Asset Discovery</option>
+</select>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant">Endpoint</label>
+<input class="fluent-input bg-surface-container-lowest rounded-DEFAULT px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="https://api.internal.corp" type="text"/>
+</div>
+</div>
+<hr class="border-t border-surface-variant/50 w-full"/>
+<!-- "Gestionar keys" Section -->
+<div class="flex flex-col gap-md">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<span class="material-symbols-outlined text-secondary">key</span>
+                    Gestionar keys
+                </h2>
+<!-- Key Cards List -->
+<div class="flex flex-col gap-sm" id="key-list">
+<!-- Key Card 1 -->
+<label class="glass-panel border border-surface-variant rounded-lg p-md flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors group">
+<div class="flex items-center gap-md">
+<div class="bg-secondary-container text-on-secondary-container p-sm rounded-DEFAULT flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">cloud</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Production AWS</span>
+<span class="font-mono-md text-mono-md text-on-surface-variant">**** **** 8821</span>
+</div>
+</div>
+<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container cursor-pointer key-checkbox" name="selected_key" type="radio"/>
+</label>
+<!-- Key Card 2 -->
+<label class="glass-panel border border-surface-variant rounded-lg p-md flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors group">
+<div class="flex items-center gap-md">
+<div class="bg-surface-variant text-on-surface p-sm rounded-DEFAULT flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</div>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface">Staging SSH</span>
+<span class="font-mono-md text-mono-md text-on-surface-variant">**** **** 109A</span>
+</div>
+</div>
+<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container cursor-pointer key-checkbox" name="selected_key" type="radio"/>
+</label>
+</div>
+<!-- Add Key Mini-Form -->
+<div class="mt-sm p-md bg-surface-container-low/50 rounded-lg border border-surface-variant border-dashed flex flex-col sm:flex-row gap-sm items-end">
+<div class="flex flex-col gap-base w-full sm:w-1/3">
+<label class="font-label-md text-label-md text-on-surface-variant">Label</label>
+<input class="fluent-input bg-surface-container-lowest rounded-DEFAULT px-md py-sm font-body-sm text-body-sm text-on-surface w-full" placeholder="e.g., Azure Prod" type="text"/>
+</div>
+<div class="flex flex-col gap-base w-full sm:flex-1">
+<label class="font-label-md text-label-md text-on-surface-variant">Key Value</label>
+<input class="fluent-input bg-surface-container-lowest rounded-DEFAULT px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Enter secure key" type="password"/>
+</div>
+<button class="w-full sm:w-auto px-md py-sm border border-outline-variant text-secondary bg-transparent hover:bg-surface-variant/30 rounded-DEFAULT font-label-md text-label-md transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                        Add
+                    </button>
+</div>
+</div>
+<!-- Primary CTA -->
+<div class="mt-md">
+<button class="w-full bg-primary-container text-on-primary-container rounded-DEFAULT py-md font-label-md text-label-md text-center flex items-center justify-center gap-sm transition-all duration-200 disabled:opacity-50 disabled:bg-surface-variant disabled:text-on-surface-variant disabled:cursor-not-allowed hover:bg-primary shadow-sm hover:shadow-md" disabled="" id="primary-cta">
+<span class="material-symbols-outlined" data-icon="rocket_launch">rocket_launch</span>
+                    Iniciar engagement
+                </button>
+</div>
+</div>
+</main>
+<script>
+        // Simple interaction logic to enable CTA when a key is selected
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkboxes = document.querySelectorAll('.key-checkbox');
+            const ctaBtn = document.getElementById('primary-cta');
+
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const anyChecked = Array.from(checkboxes).some(c => c.checked);
+                    if (anyChecked) {
+                        ctaBtn.removeAttribute('disabled');
+                    } else {
+                        ctaBtn.setAttribute('disabled', 'true');
+                    }
+                });
+            });
+        });
+    </script>
+</body></html>

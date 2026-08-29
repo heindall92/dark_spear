@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Critical Findings - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#ffffff",
+                        "on-background": "#181c1f",
+                        "outline": "#717783",
+                        "surface-bright": "#f7fafe",
+                        "primary": "#005faa",
+                        "surface-container": "#ebeef2",
+                        "tertiary": "#006a5c",
+                        "on-tertiary-fixed": "#00201b",
+                        "outline-variant": "#c0c7d4",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "primary-container": "#0078d4",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#004883",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-variant": "#e0e3e7",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-surface": "#181c1f",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "surface-container-low": "#f1f4f8",
+                        "inverse-surface": "#2d3134",
+                        "on-surface-variant": "#404752",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ffffff",
+                        "primary-fixed": "#d3e3ff",
+                        "surface-dim": "#d7dade",
+                        "tertiary-container": "#0a8575",
+                        "on-secondary-container": "#54637d",
+                        "secondary-container": "#d1e0ff",
+                        "on-primary-fixed": "#001c39",
+                        "background": "#f7fafe",
+                        "surface-tint": "#0060ab",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface": "#f7fafe",
+                        "secondary-fixed": "#d5e3ff",
+                        "on-secondary-fixed": "#0c1c32",
+                        "surface-container-highest": "#e0e3e7",
+                        "secondary": "#505f79",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary-fixed-variant": "#394760",
+                        "on-tertiary-fixed-variant": "#005046"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "xs": "4px",
+                        "sm": "8px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "mono-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--tw-colors-outline-variant);
+        }
+        /* Custom scrollbar for data tables/snippets */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #c0c7d4; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #717783; }
+    </style>
+</head>
+<body class="bg-background text-on-background flex h-screen overflow-hidden antialiased">
+<!-- SideNavBar (Shared Component) -->
+<nav class="w-64 h-screen fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant/30 flex flex-col py-lg gap-sm z-50">
+<!-- Brand/Header -->
+<div class="px-lg mb-lg flex items-center gap-md">
+<div class="w-8 h-8 rounded-lg bg-primary-container text-on-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">Auditor</h1>
+<p class="font-label-md text-label-md text-on-surface-variant font-normal">Enterprise Security</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 px-sm flex flex-col gap-xs font-label-md text-label-md">
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">radar</span>
+<span>Active Scans</span>
+</a>
+<!-- Active State: Vulnerabilities matches intent of "Critical Findings" -->
+<a class="flex items-center gap-md bg-secondary-container text-on-secondary-container rounded-lg px-md py-sm active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+<span>Vulnerabilities</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span>Reporting</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Assets</span>
+</a>
+</div>
+<!-- Footer Links -->
+<div class="px-sm flex flex-col gap-xs font-label-md text-label-md mt-auto">
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+<a class="flex items-center gap-md text-on-surface-variant px-md py-sm hover:bg-surface-container-high rounded-lg transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col ml-64 relative w-full">
+<!-- TopNavBar (Shared Component) -->
+<header class="w-full h-16 sticky top-0 z-40 bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
+<div class="flex justify-between items-center px-lg w-full max-w-container-max mx-auto h-full">
+<!-- Left: Search Bar (per JSON requirement "search_bar": "on_left") -->
+<div class="flex items-center flex-1 max-w-md">
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-body-md font-body-md focus:outline-none focus:border-primary focus:border-b-2 transition-all" placeholder="Search findings, assets, or CVEs..." type="text"/>
+</div>
+</div>
+<!-- Right: Trailing Icon Actions & Profile -->
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high/50 active:opacity-80 transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high/50 active:opacity-80 transition-all">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-high/50 active:opacity-80 transition-all">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-variant ml-sm overflow-hidden border border-outline-variant/30">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A professional headshot of a corporate security analyst, neutral lighting, soft focus background, wearing a smart casual dark blue shirt, conveying trust and expertise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3cW_HMg-LwItDpCabt3xiY_vRT7vDV7lUtaTkvIle-QBHyO6KtEjrdx-G4xkgZ1SPFAu8-lryBCA_9aelo8CMyiqhGc4H2X90JLG5HKiZS3xWbp8zciW6bQM-vpHuXtk3zWCbRZ2gQv9gTnaoPVF8X-46L0EV5eJFz06a68z-JsJUM-K4otYXaRoEbc1q3CyKUwGpD-CO7q4JbN2TBHEEDx-ShmGCHoNlstSgoMALJ8yNDrvTshnlAQ"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Canvas -->
+<main class="flex-1 overflow-y-auto p-lg bg-surface-bright/50">
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<!-- Page Header & Filters -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<h2 class="font-headline-xl text-headline-xl text-on-background">Critical Findings</h2>
+<span class="inline-flex items-center justify-center bg-error-container text-on-error-container font-label-md text-label-md rounded-full px-3 py-1">
+                                12 Active
+                            </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Deep dive into urgent security risks requiring immediate remediation.</p>
+</div>
+<!-- Filters -->
+<div class="flex gap-sm">
+<select class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 font-body-md text-body-md focus:outline-none focus:border-primary focus:border-b-2 text-on-surface-variant shadow-sm appearance-none pr-8 relative">
+<option>Status: Open</option>
+<option>Status: In Progress</option>
+<option>Status: Resolved</option>
+</select>
+<select class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 font-body-md text-body-md focus:outline-none focus:border-primary focus:border-b-2 text-on-surface-variant shadow-sm appearance-none pr-8">
+<option>Asset: All Types</option>
+<option>Asset: External Web</option>
+<option>Asset: Internal API</option>
+</select>
+<button class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 flex items-center gap-2 hover:bg-surface-container-high transition-colors shadow-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span class="font-label-md text-label-md">More Filters</span>
+</button>
+</div>
+</div>
+<!-- Main Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
+<!-- Findings List (Takes up mostly space) -->
+<div class="lg:col-span-2 xl:col-span-3 flex flex-col gap-md">
+<!-- Card 1 -->
+<div class="glass-panel rounded-xl p-md flex flex-col gap-md relative overflow-hidden group hover:shadow-[0px_8px_32px_rgba(27,42,65,0.04)] transition-all">
+<!-- Severity Indicator Top Border -->
+<div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
+<!-- Card Header -->
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+<h3 class="font-headline-md text-headline-md text-on-background">Unauthenticated Remote Code Execution (RCE)</h3>
+</div>
+<div class="flex items-center gap-4 font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">dns</span> api.production.corp.internal</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">calendar_today</span> Discovered: 2 hrs ago</span>
+<span class="flex items-center gap-1 text-error"><span class="material-symbols-outlined text-[16px]">bug_report</span> CVSS: 9.8</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface-variant"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<!-- PoC Snippet -->
+<div class="bg-surface-variant/30 rounded-lg p-sm border border-outline-variant/20">
+<p class="font-label-md text-label-md text-on-surface-variant mb-xs">Proof of Concept / Payload</p>
+<pre class="font-mono-md text-mono-md text-on-background overflow-x-auto whitespace-pre-wrap"><code>POST /api/v2/system/diagnostic HTTP/1.1
+Host: api.production.corp.internal
+Content-Type: application/json
+
+{"cmd": "whoami; cat /etc/passwd"}</code></pre>
+</div>
+<!-- Card Footer / Actions -->
+<div class="flex items-center justify-between pt-sm mt-auto border-t border-outline-variant/20">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-surface-lowest flex items-center justify-center text-label-md text-on-surface-variant">?</div>
+<button class="w-8 h-8 rounded-full bg-surface-container border-2 border-surface-lowest flex items-center justify-center hover:bg-surface-variant transition-colors group-hover:z-10" title="Assign to">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">person_add</span>
+</button>
+</div>
+<div class="flex gap-sm">
+<button class="px-4 py-2 border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">Ignore</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">build</span> Remediate
+                                    </button>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="glass-panel rounded-xl p-md flex flex-col gap-md relative overflow-hidden group hover:shadow-[0px_8px_32px_rgba(27,42,65,0.04)] transition-all">
+<div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
+<div class="flex justify-between items-start">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<span class="material-symbols-outlined text-error text-[20px]">warning</span>
+<h3 class="font-headline-md text-headline-md text-on-background">SQL Injection (Blind) in Authentication Module</h3>
+</div>
+<div class="flex items-center gap-4 font-body-sm text-body-sm text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">language</span> login.customer-portal.com</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">calendar_today</span> Discovered: 5 hrs ago</span>
+<span class="flex items-center gap-1 text-error"><span class="material-symbols-outlined text-[16px]">bug_report</span> CVSS: 9.1</span>
+</div>
+</div>
+<button class="text-outline hover:text-on-surface-variant"><span class="material-symbols-outlined">more_vert</span></button>
+</div>
+<div class="bg-surface-variant/30 rounded-lg p-sm border border-outline-variant/20">
+<p class="font-label-md text-label-md text-on-surface-variant mb-xs">Observed Behavior</p>
+<p class="font-body-md text-body-md text-on-background">Time-based blind SQL injection detected on the 'username' parameter. A payload introducing a 5-second delay consistently resulted in a 5003ms response time increase.</p>
+</div>
+<div class="flex items-center justify-between pt-sm mt-auto border-t border-outline-variant/20">
+<div class="flex -space-x-2">
+<img alt="Assignee" class="w-8 h-8 rounded-full border-2 border-surface-lowest object-cover" data-alt="Small circular avatar of a female software engineer, professional portrait, soft lighting, smiling slightly." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxhRf_S20OvPUOFG9cDbsQDkLV577t9PsLtFpYTvl5pREHGbTZtSN10Pc81-HBnIQqYedtIlmV5pY8sSLhk81webH8WZpaHIrYGwRzYTJPsFuDPhQWJ1kw2rTHKePFrSpnfm-J36Zdi3KYMeHQ6i_be7FO8XdgKJXGFXSouFIsVy8-hymIGWGxMDkiUH4116bijPNGmK6rxW9wQLaT6JbPyoRfdygO58JvqrrCawhyfe889ixIKYXREw"/>
+</div>
+<div class="flex gap-sm">
+<button class="px-4 py-2 border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">Details</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">build</span> Remediate
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Sidebar / Risk Impact Widget -->
+<div class="lg:col-span-1 flex flex-col gap-md">
+<div class="glass-panel rounded-xl p-lg flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">analytics</span> Risk Impact Summary
+                            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Aggregated potential damage from currently active critical findings.</p>
+<div class="flex flex-col gap-sm mt-sm">
+<!-- Metric 1 -->
+<div>
+<div class="flex justify-between font-label-md text-label-md mb-xs">
+<span class="text-on-background">Data Exfiltration Risk</span>
+<span class="text-error">High (85%)</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 85%"></div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div>
+<div class="flex justify-between font-label-md text-label-md mb-xs">
+<span class="text-on-background">System Downtime Risk</span>
+<span class="text-error-container">Medium (45%)</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-primary h-1.5 rounded-full" style="width: 45%"></div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div>
+<div class="flex justify-between font-label-md text-label-md mb-xs">
+<span class="text-on-background">Compliance Violation Risk</span>
+<span class="text-error">Severe (95%)</span>
+</div>
+<div class="w-full bg-surface-variant rounded-full h-1.5">
+<div class="bg-error h-1.5 rounded-full" style="width: 95%"></div>
+</div>
+</div>
+</div>
+<div class="mt-md pt-md border-t border-outline-variant/30">
+<p class="font-label-md text-label-md text-on-surface-variant mb-sm">Affected Asset Types</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container rounded-md font-body-sm text-body-sm text-on-background border border-outline-variant/20">Internal APIs (5)</span>
+<span class="px-3 py-1 bg-surface-container rounded-md font-body-sm text-body-sm text-on-background border border-outline-variant/20">External Web (4)</span>
+<span class="px-3 py-1 bg-surface-container rounded-md font-body-sm text-body-sm text-on-background border border-outline-variant/20">Databases (3)</span>
+</div>
+</div>
+<button class="w-full mt-sm px-4 py-2 bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container transition-colors shadow-sm">
+                                Generate Impact Report
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>
