@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Plan de Remediación Priorizado - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "outline-variant": "#c0c7d4",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-container": "#0078d4",
+                        "tertiary": "#006a5c",
+                        "on-secondary-fixed": "#0c1c32",
+                        "on-tertiary-fixed": "#00201b",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-secondary-container": "#54637d",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#404752",
+                        "inverse-on-surface": "#eef1f5",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-bright": "#f7fafe",
+                        "surface": "#f7fafe",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "surface-container": "#ebeef2",
+                        "surface-variant": "#e0e3e7",
+                        "tertiary-container": "#0a8575",
+                        "on-primary-fixed": "#001c39",
+                        "on-secondary-fixed-variant": "#394760",
+                        "secondary": "#505f79",
+                        "on-surface": "#181c1f",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-tint": "#0060ab",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-surface": "#2d3134",
+                        "outline": "#717783",
+                        "primary": "#005faa",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "background": "#f7fafe",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-background": "#181c1f",
+                        "primary-fixed": "#d3e3ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "xs": "4px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "container-max": "1440px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "mono-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .acrylic-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen overflow-x-hidden">
+<!-- Shared Component: TopNavBar -->
+<header class="bg-white/70 backdrop-blur-md text-primary font-body-md text-body-md shadow-sm border-b border-outline-variant/30 fixed top-0 w-full z-50 flex justify-between items-center px-lg h-16">
+<div class="flex items-center gap-lg">
+<div class="font-headline-md text-headline-md font-bold text-primary">Auditor</div>
+<!-- Search Bar on_left -->
+<div class="relative hidden md:flex items-center">
+<span class="material-symbols-outlined absolute left-sm text-outline" data-icon="search">search</span>
+<input class="pl-xl pr-sm py-sm rounded-DEFAULT border border-outline-variant/30 bg-white focus:outline-none focus:border-b-2 focus:border-b-primary-container text-body-sm w-64 transition-all" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<!-- Trailing Icon Actions -->
+<button class="text-secondary hover:text-primary-container transition-colors cursor-pointer active:opacity-80 p-sm rounded-full hover:bg-surface-container-high/50">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-secondary hover:text-primary-container transition-colors cursor-pointer active:opacity-80 p-sm rounded-full hover:bg-surface-container-high/50">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-secondary hover:text-primary-container transition-colors cursor-pointer active:opacity-80 p-sm rounded-full hover:bg-surface-container-high/50">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="h-8 w-px bg-outline-variant/30 mx-xs"></div>
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden cursor-pointer border border-outline-variant/30">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="A professional corporate headshot of a person looking directly at the camera in a brightly lit modern office setting, with a clean white and light blue color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfsuheHoZzy3MtA53LYdVnEgpZCW5AvptqpVDpYC62WENQAP78Ot8KJtcgwKH5mjXP61iwEfu4v0cvL8xA9geBml4C5HpaT-mPZIsSHLz23ESsOqdi-oTOYUEAZIEpfy6WY5OjXd_GxcNIonCIqfpfbbS8BA86k3BFZqWFARs1ySztBRZTthQIodcaYnpv-sZJOJfyvkwHj6dYSyk-LVm3GeBWPq9M7DhA2SpS13wPGj9zu9mjAlW8YA"/>
+</div>
+</div>
+</header>
+<!-- Shared Component: SideNavBar -->
+<nav class="bg-surface-container-lowest/70 backdrop-blur-xl text-primary font-label-md text-label-md border-r border-outline-variant/20 fixed left-0 top-16 bottom-0 w-64 flex flex-col py-md z-40">
+<!-- Header -->
+<div class="px-md mb-lg flex items-center gap-sm">
+<div class="w-10 h-10 rounded-DEFAULT bg-primary text-on-primary flex items-center justify-center font-bold text-headline-sm">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm font-black text-on-surface">Enterprise Security</h2>
+<p class="font-body-sm text-body-sm text-secondary">Global Console</p>
+</div>
+</div>
+<!-- Main Navigation Tabs -->
+<div class="flex-1 overflow-y-auto flex flex-col gap-xs px-sm">
+<!-- Inactive -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                Reports
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+                Risk Matrix
+            </a>
+<!-- Active Tab (Compliance maps best to Remediation Plan) -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-primary bg-primary-container/10 border-r-4 border-primary transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="verified_user" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                Compliance
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                Assets
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+                Audits
+            </a>
+</div>
+<!-- Footer Navigation Tabs -->
+<div class="mt-auto flex flex-col gap-xs px-sm pt-md border-t border-outline-variant/20">
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+                Help Center
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-DEFAULT text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                Account
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-lg lg:p-xl max-w-container-max mx-auto">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-xs font-body-sm text-body-sm text-secondary mb-lg">
+<a class="hover:text-primary transition-colors" href="#">Compliance</a>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">Auditor Findings</a>
+<span class="material-symbols-outlined text-[16px]" data-icon="chevron_right">chevron_right</span>
+<span class="text-on-surface font-semibold">Remediation Plan</span>
+</nav>
+<!-- Page Header -->
+<header class="mb-xl flex justify-between items-end">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Plan de Remediación Priorizado</h1>
+<p class="font-body-lg text-body-lg text-secondary max-w-2xl">
+                    Estrategia escalonada para mitigar vulnerabilidades y alcanzar los objetivos de madurez de seguridad empresarial.
+                </p>
+</div>
+<div class="flex gap-md">
+<button class="px-md py-sm border border-outline-variant rounded-DEFAULT font-label-md text-label-md text-secondary hover:bg-surface-container transition-colors">
+                    Exportar PDF
+                </button>
+<button class="px-md py-sm bg-primary-container text-on-primary-container rounded-DEFAULT font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm">
+                    Aprobar Plan
+                </button>
+</div>
+</header>
+<!-- Phased Approach (Bento Grid) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-lg mb-xl">
+<!-- Phase 1 -->
+<div class="acrylic-panel rounded-xl border border-outline-variant/30 p-lg shadow-sm relative overflow-hidden flex flex-col">
+<div class="absolute top-0 left-0 w-full h-1 bg-tertiary"></div>
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-DEFAULT bg-tertiary-container/20 text-tertiary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+</div>
+<span class="px-sm py-xs bg-surface-container rounded-full font-label-md text-label-md text-secondary">0-3 Meses</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Fase 1: Victorias Rápidas</h3>
+<p class="font-body-md text-body-md text-secondary mb-lg flex-1">
+                    Bajo esfuerzo, alto impacto. Centrado en configuraciones por defecto, parches críticos y políticas de contraseñas.
+                </p>
+<div class="space-y-sm">
+<div class="flex items-center gap-sm font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-tertiary text-[18px]" data-icon="check_circle">check_circle</span>
+                        MFA obligatorio en todos los accesos VPN.
+                    </div>
+<div class="flex items-center gap-sm font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-tertiary text-[18px]" data-icon="check_circle">check_circle</span>
+                        Desactivación de cuentas inactivas &gt;30 días.
+                    </div>
+</div>
+</div>
+<!-- Phase 2 -->
+<div class="acrylic-panel rounded-xl border border-outline-variant/30 p-lg shadow-sm relative overflow-hidden flex flex-col">
+<div class="absolute top-0 left-0 w-full h-1 bg-primary-container"></div>
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-DEFAULT bg-primary-container/20 text-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="construction">construction</span>
+</div>
+<span class="px-sm py-xs bg-surface-container rounded-full font-label-md text-label-md text-secondary">3-6 Meses</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Fase 2: Infraestructura Crítica</h3>
+<p class="font-body-md text-body-md text-secondary mb-lg flex-1">
+                    Esfuerzo medio. Segmentación de red, actualización de firewalls legacy y cifrado de datos en reposo.
+                </p>
+<div class="space-y-sm">
+<div class="flex items-center gap-sm font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="pending">pending</span>
+                        Segmentación de red de servidores de BD.
+                    </div>
+<div class="flex items-center gap-sm font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-outline text-[18px]" data-icon="pending">pending</span>
+                        Migración a TLS 1.3 en endpoints.
+                    </div>
+</div>
+</div>
+<!-- Phase 3 -->
+<div class="acrylic-panel rounded-xl border border-outline-variant/30 p-lg shadow-sm relative overflow-hidden flex flex-col">
+<div class="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
+<div class="flex justify-between items-start mb-md">
+<div class="w-10 h-10 rounded-DEFAULT bg-secondary-container/50 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+</div>
+<span class="px-sm py-xs bg-surface-container rounded-full font-label-md text-label-md text-secondary">6-12 Meses</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Fase 3: Estrategia a Largo Plazo</h3>
+<p class="font-body-md text-body-md text-secondary mb-lg flex-1">
+                    Mejoras estructurales. Implementación de Zero Trust, monitoreo SOC 24/7 y automatización de respuestas.
+                </p>
+<div class="space-y-sm">
+<div class="flex items-center gap-sm font-body-sm text-body-sm text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                        Despliegue de arquitectura Zero Trust.
+                    </div>
+<div class="flex items-center gap-sm font-body-sm text-body-sm text-secondary">
+<span class="material-symbols-outlined text-[18px]" data-icon="schedule">schedule</span>
+                        Integración completa SIEM/SOAR.
+                    </div>
+</div>
+</div>
+</section>
+<!-- Maturity Target Timeline Chart -->
+<section class="acrylic-panel rounded-xl border border-outline-variant/30 p-lg shadow-sm">
+<header class="flex justify-between items-center mb-xl">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Proyección de Madurez de Seguridad</h3>
+<p class="font-body-sm text-body-sm text-secondary mt-xs">Modelo CMMI (Nivel 1 a 5) basado en la ejecución del plan.</p>
+</div>
+<div class="flex items-center gap-md">
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+<span class="font-body-sm text-body-sm text-secondary">Actual</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<span class="font-body-sm text-body-sm text-secondary">Objetivo</span>
+</div>
+</div>
+</header>
+<!-- Chart Area (SVG Representation) -->
+<div class="w-full h-[300px] relative">
+<svg height="100%" preserveaspectratio="none" viewbox="0 0 1000 300" width="100%">
+<!-- Grid Lines -->
+<line stroke="#e0e3e7" stroke-width="1" x1="50" x2="950" y1="250" y2="250"></line>
+<line stroke="#e0e3e7" stroke-dasharray="4 4" stroke-width="1" x1="50" x2="950" y1="190" y2="190"></line>
+<line stroke="#e0e3e7" stroke-dasharray="4 4" stroke-width="1" x1="50" x2="950" y1="130" y2="130"></line>
+<line stroke="#e0e3e7" stroke-dasharray="4 4" stroke-width="1" x1="50" x2="950" y1="70" y2="70"></line>
+<line stroke="#e0e3e7" stroke-dasharray="4 4" stroke-width="1" x1="50" x2="950" y1="10" y2="10"></line>
+<!-- Y Axis Labels -->
+<text fill="#717783" font-family="Inter" font-size="12" text-anchor="end" x="40" y="255">L1</text>
+<text fill="#717783" font-family="Inter" font-size="12" text-anchor="end" x="40" y="195">L2</text>
+<text fill="#717783" font-family="Inter" font-size="12" text-anchor="end" x="40" y="135">L3</text>
+<text fill="#717783" font-family="Inter" font-size="12" text-anchor="end" x="40" y="75">L4</text>
+<text fill="#717783" font-family="Inter" font-size="12" text-anchor="end" x="40" y="15">L5</text>
+<!-- X Axis Labels -->
+<text fill="#54637d" font-family="Inter" font-size="12" text-anchor="middle" x="50" y="280">Hoy</text>
+<text fill="#54637d" font-family="Inter" font-size="12" text-anchor="middle" x="350" y="280">Fin Fase 1 (Q1)</text>
+<text fill="#54637d" font-family="Inter" font-size="12" text-anchor="middle" x="650" y="280">Fin Fase 2 (Q2)</text>
+<text fill="#181c1f" font-family="Inter" font-size="12" font-weight="600" text-anchor="middle" x="950" y="280">Fin Fase 3 (Q4)</text>
+<!-- Target Area Fill -->
+<path d="M50 190 C 200 190, 300 130, 350 130 C 500 130, 600 70, 650 70 C 800 70, 850 70, 950 70 L 950 250 L 50 250 Z" fill="url(#blueGradient)" opacity="0.2"></path>
+<!-- Target Line -->
+<path d="M50 190 C 200 190, 300 130, 350 130 C 500 130, 600 70, 650 70 C 800 70, 850 70, 950 70" fill="none" stroke="#0078d4" stroke-width="3"></path>
+<!-- Data Points -->
+<circle cx="50" cy="190" fill="#ffffff" r="5" stroke="#0078d4" stroke-width="2"></circle>
+<circle cx="350" cy="130" fill="#ffffff" r="5" stroke="#0078d4" stroke-width="2"></circle>
+<circle cx="650" cy="70" fill="#ffffff" r="5" stroke="#0078d4" stroke-width="2"></circle>
+<circle cx="950" cy="70" fill="#0078d4" r="6"></circle>
+<!-- Gradients -->
+<defs>
+<lineargradient id="blueGradient" x1="0" x2="0" y1="0" y2="1">
+<stop offset="0%" stop-color="#0078d4"></stop>
+<stop offset="100%" stop-color="#ffffff" stop-opacity="0"></stop>
+</lineargradient>
+</defs>
+</svg>
+</div>
+</section>
+</main>
+</body></html>

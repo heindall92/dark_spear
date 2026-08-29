@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Auditor - Engagement Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f7fafe",
+                        "on-secondary-fixed-variant": "#394760",
+                        "on-secondary-fixed": "#0c1c32",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "outline": "#717783",
+                        "on-surface": "#181c1f",
+                        "tertiary-container": "#0a8575",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-variant": "#e0e3e7",
+                        "outline-variant": "#c0c7d4",
+                        "surface-tint": "#0060ab",
+                        "primary-fixed": "#d3e3ff",
+                        "on-surface-variant": "#404752",
+                        "surface": "#f7fafe",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-background": "#181c1f",
+                        "tertiary": "#006a5c",
+                        "surface-bright": "#f7fafe",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "secondary": "#505f79",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001c39",
+                        "secondary-fixed": "#d5e3ff",
+                        "tertiary-fixed": "#91f4e1",
+                        "error": "#ba1a1a",
+                        "primary-container": "#0078d4",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#a3c9ff",
+                        "on-tertiary-fixed": "#00201b",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-container-high": "#e5e8ec",
+                        "inverse-surface": "#2d3134",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface-container": "#ebeef2",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "on-primary-container": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "primary": "#005faa",
+                        "on-secondary-container": "#54637d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "mono-md": ["JetBrains Mono"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom Utilities for Corporate Modern Aesthetic */
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .glass-panel-blue {
+            background-color: rgba(211, 227, 255, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 120, 212, 0.2);
+        }
+        .ambient-shadow {
+            box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08);
+        }
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 0.5; }
+            100% { transform: scale(2.4); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar (Shared Component) -->
+<nav class="fixed left-0 top-0 h-full flex flex-col p-md z-40 bg-white/70 dark:bg-surface/70 backdrop-blur-xl docked left-0 h-full w-64 border-r border-outline-variant/30 flat no shadows hidden md:flex">
+<!-- Header -->
+<div class="mb-lg flex items-center gap-sm">
+<img class="w-10 h-10 rounded-DEFAULT object-cover" data-alt="A small, high-tech abstract geometric logo representing a secure system, in cool blues and slate grays, minimal and precise." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-z4iZ5BWyrt5CgXyd75gijqW9-df0K17g6SGwOutJcQL3j1lJSPG9q7fa0oqR3ftxv2VdxZM0vcQQam0irNyBjh1SAL3G6eUw-GMpOqhGfV-L9-RLkQg7FSKrgGZw3NY2Duz3Gg8zgfYlv1w20WTEjr5tldLeayvOouGq-aokgY5pZkN0TXQn7WKbNMnxzcreNXmrDDImSOsGlYSXKy3B5Pg9OHQiTsf0jIMMvOgrRbGzm_ukciuzCA"/>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Security Console</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">V3.2.1-Stable</p>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full bg-primary-container text-on-primary-container font-label-md text-label-md py-sm px-md rounded-DEFAULT mb-lg hover:bg-surface-tint transition-colors flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Audit
+        </button>
+<!-- Main Nav -->
+<div class="flex-1 flex flex-col gap-xs">
+<a class="text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<!-- Active State -->
+<a class="bg-secondary-container/50 text-on-secondary-container font-semibold rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined icon-fill">security_update_good</span>
+<span class="font-label-md text-label-md">Active Scans</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">bug_report</span>
+<span class="font-label-md text-label-md">Vulnerabilities</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">assessment</span>
+<span class="font-label-md text-label-md">Reporting</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">lan</span>
+<span class="font-label-md text-label-md">Assets</span>
+</a>
+</div>
+<!-- Footer Nav -->
+<div class="mt-auto flex flex-col gap-xs pt-md border-t border-outline-variant/30">
+<a class="text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-label-md text-label-md">Logs</span>
+</a>
+<a class="text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors flex items-center gap-sm p-sm active:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Layout Area -->
+<div class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 flex items-center justify-between px-lg h-16 max-w-container-max mx-auto bg-white/70 dark:bg-surface/70 backdrop-blur-xl text-primary dark:text-primary-fixed border-b border-outline-variant/30 shadow-sm md:w-[calc(100%-16rem)]">
+<div class="flex items-center gap-md">
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed tracking-tight">Auditor</span>
+<!-- Search (on_left as per JSON, but keeping minimal as this is dashboard view) -->
+<div class="hidden md:flex items-center bg-surface-container-low/50 rounded-full px-md py-xs border border-outline-variant/30">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px] mr-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-sm font-body-sm text-on-surface w-48 placeholder:text-outline" placeholder="Search logs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<button class="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low/50 transition-all duration-200 p-sm rounded-full active:scale-95 transition-transform">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-container-low/50 transition-all duration-200 p-sm rounded-full active:scale-95 transition-transform">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="bg-primary-container text-on-primary-container font-label-md text-label-md py-xs px-md rounded-DEFAULT hover:bg-surface-tint transition-colors active:scale-95 transition-transform">
+                    Iniciar engagement
+                </button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-outline-variant/50 ml-sm object-cover" data-alt="A professional headshot of a cybersecurity analyst, smiling subtly, wearing a dark blazer, neutral background, cool lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFIJA5KamiWVxwbzy-p9fXVNvlRjUK2CgeohjBum1gHESnC2mkzL6xboKpdNg-OKerZMytu1hT-68NT4yOC36xVx_wlfEsxgWepB9fwvKp9hz3QlyrU8ELoGBDH2_jKLlQe87E9wBPXLT2FAn6SwwnkWvai4lSbK8mDhv5KFtYaugmj3th6hVC2qs894K-4lV3nn17m1GbY0G5eliw101CTduNcgCXBcnqZmFCnGRC-d24P1reFnWWIQ"/>
+</div>
+</header>
+<!-- Page Content Canvas -->
+<main class="flex-1 pt-24 px-md md:px-lg pb-xl max-w-container-max mx-auto w-full">
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant mb-md">
+<a class="hover:text-primary transition-colors" href="#">Active Scans</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Target_Alpha_Main</span>
+</nav>
+<div class="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-lg gap-md">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Engagement Dashboard</h2>
+<p class="font-body-md text-body-md text-secondary">Real-time execution feed for Target_Alpha_Main</p>
+</div>
+</div>
+<!-- Top Phase Bar -->
+<div class="glass-panel rounded-lg p-md mb-xl flex flex-col md:flex-row justify-between items-center gap-md">
+<div class="flex-1 w-full flex items-center justify-between relative">
+<!-- Progress Line background -->
+<div class="absolute top-1/2 left-0 w-full h-[2px] bg-surface-variant -z-10 -translate-y-1/2"></div>
+<!-- Progress Line active -->
+<div class="absolute top-1/2 left-0 w-[33%] h-[2px] bg-primary-container -z-10 -translate-y-1/2"></div>
+<!-- Step 1: Intelligence (Complete) -->
+<div class="flex flex-col items-center gap-xs bg-white/80 px-sm py-xs rounded-lg backdrop-blur-sm">
+<div class="w-8 h-8 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center border-2 border-white shadow-sm">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<span class="font-label-md text-label-md text-on-surface">Intelligence</span>
+</div>
+<!-- Step 2: Enum/Vuln (Active) -->
+<div class="flex flex-col items-center gap-xs bg-white/80 px-sm py-xs rounded-lg backdrop-blur-sm">
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center border-2 border-primary-fixed shadow-md ring-4 ring-primary-container/20">
+<span class="material-symbols-outlined text-[16px]">search</span>
+</div>
+<span class="font-label-md text-label-md text-primary-container font-bold">Enum &amp; Vuln</span>
+</div>
+<!-- Step 3: Exploitation (Pending) -->
+<div class="flex flex-col items-center gap-xs bg-white/80 px-sm py-xs rounded-lg backdrop-blur-sm">
+<div class="w-8 h-8 rounded-full bg-surface-variant text-outline flex items-center justify-center border-2 border-white">
+<span class="font-label-md text-label-md">3</span>
+</div>
+<span class="font-label-md text-label-md text-outline">Exploitation</span>
+</div>
+<!-- Step 4: Post-Exploitation (Pending) -->
+<div class="flex flex-col items-center gap-xs bg-white/80 px-sm py-xs rounded-lg backdrop-blur-sm">
+<div class="w-8 h-8 rounded-full bg-surface-variant text-outline flex items-center justify-center border-2 border-white">
+<span class="font-label-md text-label-md">4</span>
+</div>
+<span class="font-label-md text-label-md text-outline">Post-Exploit</span>
+</div>
+</div>
+<div class="w-full md:w-auto md:pl-lg md:border-l border-outline-variant/30 flex justify-end">
+<button class="bg-primary-container text-on-primary-container font-label-md text-label-md py-sm px-lg rounded-DEFAULT hover:bg-surface-tint transition-colors flex items-center gap-sm">
+                        Avanzar fase
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Main Feed Area -->
+<div class="grid grid-cols-1 gap-md relative pb-24">
+<!-- Card 1: nmap (OK) -->
+<div class="glass-panel rounded-lg overflow-hidden flex flex-col group hover:shadow-md transition-shadow">
+<div class="p-md flex items-center justify-between border-b border-outline-variant/20 bg-surface-container-lowest/50">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-tertiary-container/10 flex items-center justify-center text-tertiary-container border border-tertiary-container/20">
+<span class="material-symbols-outlined">network_node</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">nmap</h3>
+<div class="flex items-center gap-xs mt-xs">
+<span class="material-symbols-outlined text-outline text-[14px]">terminal</span>
+<code class="font-mono-md text-mono-md text-secondary bg-surface-container-low px-xs rounded text-[11px]">-sV -p 80</code>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="px-sm py-xs rounded bg-tertiary-container/10 text-tertiary-container font-label-md text-label-md flex items-center gap-xs border border-tertiary-container/20">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                OK
+                            </span>
+<button class="text-on-surface-variant hover:bg-surface-variant/50 p-xs rounded transition-colors" onclick="this.closest('.glass-panel').querySelector('.output-panel').classList.toggle('hidden')">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Collapsible Output -->
+<div class="output-panel hidden bg-[#1e2329] p-md">
+<pre class="font-mono-md text-mono-md text-gray-300 text-[12px] whitespace-pre-wrap">Starting Nmap 7.93 ( https://nmap.org )
+Nmap scan report for target (192.168.1.100)
+Host is up (0.0020s latency).
+
+PORT   STATE SERVICE VERSION
+80/tcp open  http    Apache httpd 2.4.41 ((Ubuntu))
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+Nmap done: 1 IP address (1 host up) scanned in 6.43 seconds</pre>
+</div>
+</div>
+<!-- Card 2: gobuster (Error) -->
+<div class="glass-panel rounded-lg overflow-hidden flex flex-col group hover:shadow-md transition-shadow border-l-4 border-l-[amber-500]">
+<div class="p-md flex items-center justify-between border-b border-outline-variant/20 bg-surface-container-lowest/50">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-[#ffdad6] flex items-center justify-center text-[#ba1a1a] border border-[#ffdad6]">
+<span class="material-symbols-outlined">folder_open</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">gobuster</h3>
+<div class="flex items-center gap-xs mt-xs">
+<span class="material-symbols-outlined text-outline text-[14px]">terminal</span>
+<code class="font-mono-md text-mono-md text-secondary bg-surface-container-low px-xs rounded text-[11px]">dir -u http://target</code>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="px-sm py-xs rounded bg-[#ffdad6] text-[#ba1a1a] font-label-md text-label-md flex items-center gap-xs border border-[#ffdad6]/50">
+<span class="material-symbols-outlined text-[14px]">error</span>
+                                ERROR
+                            </span>
+<button class="text-on-surface-variant hover:bg-surface-variant/50 p-xs rounded transition-colors" onclick="this.closest('.glass-panel').querySelector('.output-panel').classList.toggle('hidden')">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</div>
+<!-- Collapsible Output (Open by default to show error) -->
+<div class="output-panel bg-[#1e2329] p-md">
+<pre class="font-mono-md text-mono-md text-[#ffb4ab] text-[12px] whitespace-pre-wrap">Error: the server returns a status code that matches the provided options for non existing urls. =&gt; 403 Forbidden. To force processing of Wildcard responses, specify the '--wildcard' switch.</pre>
+</div>
+</div>
+<!-- Card 3: Waiting for Quota Banner -->
+<div class="glass-panel-blue rounded-lg p-md flex items-center gap-md">
+<div class="w-10 h-10 rounded-full bg-primary-container/20 flex items-center justify-center text-primary-container relative">
+<div class="absolute inset-0 rounded-full border border-primary-container pulse-ring"></div>
+<span class="material-symbols-outlined text-[20px]">hourglass_empty</span>
+</div>
+<div class="flex-1">
+<h4 class="font-headline-md text-headline-md text-on-surface text-sm">Resource Quota Reached</h4>
+<p class="font-body-sm text-body-sm text-secondary mt-xs">Execution paused. Waiting for computational resources to become available in the cluster.</p>
+</div>
+<button class="font-label-md text-label-md text-primary-container hover:text-surface-tint border border-primary-container/30 px-md py-xs rounded transition-colors bg-white/50">
+                        View Queue
+                    </button>
+</div>
+<!-- Card 4: metasploit (Waiting) -->
+<div class="glass-panel rounded-lg overflow-hidden flex flex-col group hover:shadow-md transition-shadow opacity-70">
+<div class="p-md flex items-center justify-between border-b border-outline-variant/20 bg-surface-container-lowest/50">
+<div class="flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-surface-variant flex items-center justify-center text-secondary border border-outline-variant/30">
+<span class="material-symbols-outlined">pest_control</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">metasploit</h3>
+<div class="flex items-center gap-xs mt-xs">
+<span class="material-symbols-outlined text-outline text-[14px]">terminal</span>
+<code class="font-mono-md text-mono-md text-secondary bg-surface-container-low px-xs rounded text-[11px]">exploit/linux/http/...</code>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<span class="px-sm py-xs rounded bg-primary-fixed text-on-primary-fixed font-label-md text-label-md flex items-center gap-xs border border-primary-fixed-dim">
+<span class="material-symbols-outlined text-[14px] animate-spin">sync</span>
+                                WAITING_FOR_QUOTA
+                            </span>
+<button class="text-on-surface-variant hover:bg-surface-variant/50 p-xs rounded transition-colors opacity-50 cursor-not-allowed">
+<span class="material-symbols-outlined">expand_more</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Sticky Bottom Right FAB -->
+<button class="fixed bottom-xl right-xl bg-white text-on-surface font-label-md text-label-md py-sm px-md rounded-full ambient-shadow hover:bg-surface-container-lowest transition-all border border-outline-variant/30 flex items-center gap-sm z-50 group hover:pr-lg">
+<span class="material-symbols-outlined text-[20px] text-primary">download</span>
+<span class="hidden group-hover:inline-block whitespace-nowrap overflow-hidden transition-all duration-300">Export JSON</span>
+</button>
+</div>
+</body></html>

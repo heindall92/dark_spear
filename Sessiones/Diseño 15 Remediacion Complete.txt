@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Remediation Timeline &amp; Success - Auditor platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#91f4e1",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "on-primary-fixed": "#001c39",
+                        "surface-bright": "#f7fafe",
+                        "inverse-primary": "#a3c9ff",
+                        "primary-container": "#0078d4",
+                        "outline": "#717783",
+                        "tertiary-container": "#0a8575",
+                        "surface-container-low": "#f1f4f8",
+                        "primary": "#005faa",
+                        "surface-container-highest": "#e0e3e7",
+                        "primary-fixed": "#d3e3ff",
+                        "on-background": "#181c1f",
+                        "surface": "#f7fafe",
+                        "on-secondary-container": "#54637d",
+                        "error-container": "#ffdad6",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#d1e0ff",
+                        "on-secondary-fixed-variant": "#394760",
+                        "inverse-on-surface": "#eef1f5",
+                        "on-secondary-fixed": "#0c1c32",
+                        "tertiary": "#006a5c",
+                        "surface-dim": "#d7dade",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "on-surface-variant": "#404752",
+                        "surface-container-high": "#e5e8ec",
+                        "surface-container": "#ebeef2",
+                        "outline-variant": "#c0c7d4",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-container": "#ffffff",
+                        "inverse-surface": "#2d3134",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "error": "#ba1a1a",
+                        "on-surface": "#181c1f",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "secondary": "#505f79",
+                        "surface-tint": "#0060ab",
+                        "background": "#f7fafe",
+                        "on-primary-container": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed": "#d5e3ff",
+                        "surface-variant": "#e0e3e7",
+                        "on-tertiary-fixed": "#00201b",
+                        "tertiary-fixed-dim": "#75d8c5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "gutter": "16px",
+                        "sm": "8px",
+                        "base": "4px",
+                        "xs": "4px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "mono-md": ["jetbrainsMono"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-xl": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #F5F8FC; /* Fallback for theme */
+        }
+        .acrylic {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- TopNavBar -->
+<nav class="bg-surface/70 backdrop-blur-md fixed top-0 w-full z-50 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg h-16 max-w-container-max mx-auto">
+<div class="flex items-center space-x-md">
+<span class="font-headline-md text-headline-md font-bold text-primary">Auditor platform</span>
+<div class="hidden md:flex items-center bg-surface-container-low rounded-full px-sm py-xs border border-outline-variant/30 ml-xl">
+<span class="material-symbols-outlined text-on-surface-variant px-xs">search</span>
+<input class="bg-transparent border-none focus:ring-0 font-body-sm text-body-sm text-on-surface w-48" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-sm">
+<button class="p-sm rounded-full text-on-surface-variant hover:bg-primary/5 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-sm rounded-full text-on-surface-variant hover:bg-primary/5 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<button class="p-sm rounded-full text-on-surface-variant hover:bg-primary/5 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<img alt="Security Analyst Profile" class="w-8 h-8 rounded-full ml-sm object-cover border border-outline-variant/30" data-alt="A small, circular profile picture of a professional security analyst wearing glasses, in a brightly lit modern office setting, looking focused. Professional corporate photography, light mode aesthetics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCkwsmT7m7dAauspFYXqRJ2osB87YVFF3XH_xpPKiM6wTuXj_Dbh_evrvSvI_FxxjBOtvKuLIuJW7ig6zqoDQCGEgjQdYHCEtKtsseGQcNOa2Goc-msqr1PhTkeHNNUJIppZ_IAU29EiG3r1DK3zOevkdHFdZ3EYX483nIh7Sb3MtRM8b9IY0lqP_CP1kgXZpc6_NlUrSIeHbBoXxGDDBJHmQcQz2dCkcyr1EhAjSAkGQC3W6XaHHbb-w"/>
+</div>
+</nav>
+<div class="flex pt-16 h-screen overflow-hidden">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col bg-surface-container-low w-64 z-40 border-r border-outline-variant/30 py-lg space-y-base flex-shrink-0 h-full overflow-y-auto">
+<div class="px-md mb-lg">
+<div class="flex items-center space-x-sm">
+<img alt="Organization Logo" class="w-10 h-10 rounded" data-alt="A modern, abstract geometric logo representing a secure enterprise organization. Blue and white tones, sharp lines, minimalist and professional. Light mode." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCM0iI7CAVtwhzD2YPutdSgpj-yfjo7JCwcixaEPCVyPXB7AVwuFt9T-UDqpwQAlx0SYQEsv_F8HzSTBjTVsOtc926m4wqp3pU9WDj89YkuUKi96BIwwFUnVNR9NHj3ke2a2PFrcN4AfKO7iFzg9-51RCe76OxqXA5-BBdD1ZNdswkSMWxFg9oNuBy2Jtv2FmY8R1iNHWrTCAm386aS6nQ7fE7ZoJ3MFLob0ZVehoG0asJ1XUfLWAL07Q"/>
+<div>
+<div class="font-headline-sm text-headline-sm font-semibold text-primary">Enterprise Security</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Remediation Console</div>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-xs px-sm">
+<a class="flex items-center space-x-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+<!-- Active State Example: Assuming we navigated here from Vulnerabilities -->
+<a class="flex items-center space-x-md px-md py-sm rounded-lg bg-primary-container/20 text-primary font-semibold border-r-4 border-primary hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="font-label-md text-label-md">Vulnerabilities</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="gavel">gavel</span>
+<span class="font-label-md text-label-md">Compliance</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-label-md text-label-md">Audit Logs</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="font-label-md text-label-md">Reports</span>
+</a>
+</nav>
+<div class="mt-auto space-y-xs px-sm border-t border-outline-variant/30 pt-md">
+<a class="flex items-center space-x-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span class="font-label-md text-label-md">Support</span>
+</a>
+<a class="flex items-center space-x-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high transition-all active:translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-label-md text-label-md">Settings</span>
+</a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-md md:p-xl max-w-container-max mx-auto w-full">
+<!-- Breadcrumbs -->
+<div class="flex items-center space-x-xs font-body-sm text-body-sm text-on-surface-variant mb-lg">
+<a class="hover:text-primary transition-colors" href="#">Vulnerabilities</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<a class="hover:text-primary transition-colors" href="#">SQL Injection in User Login</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Remediation Success</span>
+</div>
+<!-- Success Banner -->
+<div class="bg-tertiary-container/10 border border-tertiary-container/30 rounded-lg p-md mb-xl flex items-center justify-between">
+<div class="flex items-center space-x-md">
+<div class="bg-tertiary text-on-tertiary rounded-full p-xs flex items-center justify-center">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+<div>
+<h2 class="font-headline-md text-headline-md text-tertiary font-bold">Vulnerability Successfully Remediated</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Finding ID: VULN-2023-0891 has been verified and permanently closed.</p>
+</div>
+</div>
+<button class="bg-primary-container text-on-primary-container px-md py-sm rounded hover:bg-primary transition-colors font-label-md text-label-md flex items-center space-x-xs">
+<span class="material-symbols-outlined text-[18px]">download</span>
+<span>Download Remediation Report</span>
+</button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-xl">
+<!-- Left Column: Metrics & Details -->
+<div class="lg:col-span-1 flex flex-col space-y-xl">
+<!-- Metrics Card -->
+<div class="acrylic rounded-xl p-lg flex flex-col space-y-md">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Key Metrics</h3>
+<div class="flex flex-col space-y-sm">
+<span class="font-label-md text-label-md text-on-surface-variant">Time to Remediate (TTR)</span>
+<div class="flex items-end space-x-sm">
+<span class="font-headline-xl text-headline-xl text-primary font-bold">4.2</span>
+<span class="font-body-md text-body-md text-on-surface-variant mb-1">Days</span>
+</div>
+<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden mt-xs">
+<div class="h-full bg-tertiary w-3/4"></div> <!-- visual indicator of good TTR -->
+</div>
+<span class="font-body-sm text-body-sm text-tertiary mt-xs">Faster than SLA by 2.8 days</span>
+</div>
+<div class="border-t border-outline-variant/30 pt-md mt-sm">
+<div class="flex justify-between items-center mb-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Severity at Discovery</span>
+<span class="bg-error-container text-on-error-container font-label-md text-label-md px-2 py-0.5 rounded">Critical</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="font-label-md text-label-md text-on-surface-variant">Current Status</span>
+<span class="bg-surface-container-highest text-on-surface-variant font-label-md text-label-md px-2 py-0.5 rounded">Closed</span>
+</div>
+</div>
+</div>
+<!-- Assignees Card -->
+<div class="acrylic rounded-xl p-lg flex flex-col space-y-md">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Involved Personnel</h3>
+<ul class="space-y-sm">
+<li class="flex items-center space-x-sm">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Small circular headshot of a female security engineer, modern corporate environment, neutral background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL2VEohJ5XNwzf9IiOCSzkcJD4XQHSwIbkq_mVY5CDsvKFluJ6MUCnKX5JDN68E46cJySos6uhzlJvx_fjpCEtmQtc-yOvpc2fQvWlF8dnPTi8AS7_Kcbt_7d65GClgFnzr2kN6SAN_QkoQ4MWMQCa4Ft6O8fYAsEDHGLuufmZxgcab0JlSxOo4nZCqwIpl883192if2JlSWwF46-LneqtqDIVb7cuHuK06wdwbkPdoxFRaNuatimAbQ"/>
+<div>
+<div class="font-label-md text-label-md text-on-surface">Sarah Jenkins</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Lead Resolver</div>
+</div>
+</li>
+<li class="flex items-center space-x-sm">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Small circular headshot of a male auditor, professional attire, well-lit modern office." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXYi9mHzNH77rKgmYhYie5QgLrN873SiFkmifHF0Xdu5J1inbCknUd-ruXePp9-YN6ruer1uad_8EMPQWic01CVsDm8UnT8XRitAVAmr-WRhtxyd3wtDPMWLSM09WpCf2jvAFq5kLnjQ_QHU2QnOV-S12YPr5iCLbW0at-thzudJd5DGtBtUJMZfl1_dYRkF4tdiZs6gvSNvunTQtz1saTJ3mpHpgNFVk0icV4wN42wEdJcFvxjBgAPg"/>
+<div>
+<div class="font-label-md text-label-md text-on-surface">David Chen</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Verifier</div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Right Column: Timeline -->
+<div class="lg:col-span-2">
+<div class="acrylic rounded-xl p-lg h-full">
+<h3 class="font-headline-md text-headline-md text-on-surface font-semibold mb-xl">Remediation Lifecycle</h3>
+<div class="relative pl-6 border-l-2 border-surface-container-highest space-y-xl">
+<!-- Closed -->
+<div class="relative">
+<div class="absolute -left-[35px] top-1 bg-tertiary text-on-tertiary rounded-full p-1 border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[16px]">done_all</span>
+</div>
+<div class="mb-xs flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Closed</h4>
+<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 26, 14:30 UTC</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Finding officially closed in the registry. Audit trail locked.</p>
+</div>
+<!-- Verification -->
+<div class="relative">
+<div class="absolute -left-[35px] top-1 bg-primary text-on-primary rounded-full p-1 border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[16px]">fact_check</span>
+</div>
+<div class="mb-xs flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Verification Passed</h4>
+<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 26, 10:15 UTC</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-sm">Automated DAST scan confirmed the SQL injection payload is no longer effective. Manual review by David Chen approved.</p>
+<div class="bg-surface-container-low p-sm rounded font-mono-md text-mono-md text-on-surface text-xs border border-outline-variant/20">
+                                    Scan ID: SCN-992-B | Status: Clean
+                                </div>
+</div>
+<!-- Remediation -->
+<div class="relative">
+<div class="absolute -left-[35px] top-1 bg-secondary text-on-secondary rounded-full p-1 border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[16px]">build</span>
+</div>
+<div class="mb-xs flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Remediation Applied</h4>
+<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 24, 16:45 UTC</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Implemented parameterized queries in the authentication module. Code merged to main branch.</p>
+</div>
+<!-- Assignment -->
+<div class="relative">
+<div class="absolute -left-[35px] top-1 bg-surface-variant text-on-surface-variant rounded-full p-1 border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[16px]">person_add</span>
+</div>
+<div class="mb-xs flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Assigned</h4>
+<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 22, 09:00 UTC</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Ticket assigned to Sarah Jenkins (Backend Security Team) with SLA of 7 days.</p>
+</div>
+<!-- Discovery -->
+<div class="relative">
+<div class="absolute -left-[35px] top-1 bg-error-container text-error rounded-full p-1 border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-[16px]">bug_report</span>
+</div>
+<div class="mb-xs flex items-center justify-between">
+<h4 class="font-headline-sm text-headline-sm font-semibold text-on-surface">Discovery</h4>
+<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 22, 04:12 UTC</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant">Vulnerability detected during scheduled weekly SAST scan. Marked as Critical severity.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

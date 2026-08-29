@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Auditor - Índice de Madurez de Seguridad</title>
+<!-- Fonts & Icons -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config injected by system -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                            "outline-variant": "#c0c7d4",
+                            "secondary-fixed": "#d5e3ff",
+                            "primary-container": "#0078d4",
+                            "tertiary": "#006a5c",
+                            "on-secondary-fixed": "#0c1c32",
+                            "on-tertiary-fixed": "#00201b",
+                            "surface-container-low": "#f1f4f8",
+                            "surface-container-highest": "#e0e3e7",
+                            "on-secondary-container": "#54637d",
+                            "error-container": "#ffdad6",
+                            "on-primary-fixed-variant": "#004883",
+                            "on-primary-container": "#ffffff",
+                            "on-surface-variant": "#404752",
+                            "inverse-on-surface": "#eef1f5",
+                            "on-tertiary-container": "#ffffff",
+                            "surface-bright": "#f7fafe",
+                            "surface": "#f7fafe",
+                            "surface-container-high": "#e5e8ec",
+                            "on-secondary": "#ffffff",
+                            "on-tertiary-fixed-variant": "#005046",
+                            "surface-container": "#ebeef2",
+                            "surface-variant": "#e0e3e7",
+                            "tertiary-container": "#0a8575",
+                            "on-primary-fixed": "#001c39",
+                            "on-secondary-fixed-variant": "#394760",
+                            "secondary": "#505f79",
+                            "on-surface": "#181c1f",
+                            "tertiary-fixed-dim": "#75d8c5",
+                            "surface-dim": "#d7dade",
+                            "secondary-container": "#d1e0ff",
+                            "error": "#ba1a1a",
+                            "on-error-container": "#93000a",
+                            "inverse-primary": "#a3c9ff",
+                            "surface-tint": "#0060ab",
+                            "surface-container-lowest": "#ffffff",
+                            "on-error": "#ffffff",
+                            "on-primary": "#ffffff",
+                            "tertiary-fixed": "#91f4e1",
+                            "inverse-surface": "#2d3134",
+                            "outline": "#717783",
+                            "primary": "#005faa",
+                            "primary-fixed-dim": "#a3c9ff",
+                            "background": "#f7fafe",
+                            "on-tertiary": "#ffffff",
+                            "secondary-fixed-dim": "#b8c7e5",
+                            "on-background": "#181c1f",
+                            "primary-fixed": "#d3e3ff"
+                    },
+                    "borderRadius": {
+                            "DEFAULT": "0.25rem",
+                            "lg": "0.5rem",
+                            "xl": "0.75rem",
+                            "full": "9999px"
+                    },
+                    "spacing": {
+                            "xs": "4px",
+                            "base": "4px",
+                            "gutter": "16px",
+                            "xl": "32px",
+                            "md": "16px",
+                            "lg": "24px",
+                            "sm": "8px",
+                            "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                            "headline-lg": ["Inter"],
+                            "headline-xl": ["Inter"],
+                            "body-sm": ["Inter"],
+                            "headline-md": ["Inter"],
+                            "label-md": ["Inter"],
+                            "mono-md": ["jetbrainsMono"],
+                            "body-lg": ["Inter"],
+                            "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                            "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                            "headline-xl": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                            "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                            "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                            "mono-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                            "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                            "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .glass-panel { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid #D8E3F0; }
+        .glass-panel-dark { background: rgba(235, 238, 242, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid #c0c7d4; }
+    </style>
+</head>
+<body class="bg-background text-on-background h-full font-body-md overflow-hidden flex flex-col md:flex-row selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (Mobile Only) -->
+<nav class="md:hidden bg-white/70 backdrop-blur-md text-primary font-body-md text-body-md fixed top-0 w-full z-50 flex justify-between items-center px-lg h-16 border-b border-outline-variant/30 shadow-sm transition-colors">
+<div class="flex items-center gap-sm">
+<span class="font-headline-md text-headline-md font-bold text-primary">Auditor</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-primary-container active:opacity-80 transition-colors">notifications</span>
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-primary-container active:opacity-80 transition-colors">settings</span>
+<span class="material-symbols-outlined text-secondary cursor-pointer hover:text-primary-container active:opacity-80 transition-colors">help</span>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant/30 object-cover" data-alt="A professional headshot of a corporate user, smiling slightly, set against a modern light-mode office background. The image should be sharp, clear, and fit within a small circular avatar frame, conveying trust and competence in a corporate setting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZkyndYMIF4J4gYFZt9e3XS6U675mU_i45aDTdqWfE7UKxG-wCPZ6F1BKVGyJpaiOsB1QcTcoe7hbA1vwpt8LXP0n_P41vhNoQ91gjN-TzMbN6r2JzKogfvUAbNzZs6lbZYh3K0zVQvghDre_iQ6nz9dHmb4Xzd8ox8bZb1U9eEkVSBw-7WfQIFKmxsnN55vSewVcY-wcy0THnukGzFaulpIuepORmwQGbY_6kzIdV9RffVfv5ifnO4w"/>
+</div>
+</nav>
+<!-- SideNavBar (Desktop Only) -->
+<nav class="hidden md:flex bg-surface-container-lowest/70 backdrop-blur-xl text-primary font-label-md text-label-md fixed left-0 top-0 bottom-0 w-64 flex-col py-md border-r border-outline-variant/20 z-40">
+<div class="px-lg pb-lg mb-md border-b border-outline-variant/20 flex items-center gap-md">
+<div class="w-10 h-10 rounded bg-primary-container/10 flex items-center justify-center border border-primary/20">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface leading-tight">Enterprise Security</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Global Console</p>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto px-sm flex flex-col gap-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">assessment</span>
+                Reports
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+                Risk Matrix
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary bg-primary-container/10 border-r-4 border-primary transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                Compliance
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Assets
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+                Audits
+            </a>
+</div>
+<div class="mt-auto px-sm pt-md border-t border-outline-variant/20 flex flex-col gap-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                Help Center
+            </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-high/50 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">person</span>
+                Account
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 pt-16 md:pt-0 h-full overflow-y-auto bg-surface-bright relative">
+<!-- Abstract Background Decoration -->
+<div class="absolute top-0 right-0 w-[800px] h-[600px] bg-primary-fixed/20 rounded-full blur-[120px] -z-10 pointer-events-none transform translate-x-1/3 -translate-y-1/3"></div>
+<div class="absolute bottom-0 left-0 w-[600px] h-[600px] bg-tertiary-fixed/20 rounded-full blur-[100px] -z-10 pointer-events-none transform -translate-x-1/3 translate-y-1/3"></div>
+<div class="max-w-[1440px] mx-auto p-gutter md:p-lg xl:p-xl flex flex-col gap-gutter md:gap-lg">
+<!-- Header Area -->
+<header class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-sm">
+<div>
+<div class="flex items-center gap-sm text-secondary font-body-sm text-body-sm mb-xs">
+<span class="hover:text-primary cursor-pointer transition-colors">Compliance</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface">Índice de Madurez</span>
+</div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Índice de Madurez de Seguridad</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-xs max-w-2xl">Evaluación alineada con marcos NIST CSF 2.0 e ISO 27001, midiendo la capacidad actual frente a los objetivos estratégicos.</p>
+</div>
+<div class="flex gap-sm">
+<button class="px-md py-sm rounded-lg border border-outline-variant text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Exportar PDF
+                    </button>
+<button class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md shadow-sm hover:bg-primary transition-colors flex items-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+                        Reevaluar
+                    </button>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter md:gap-lg">
+<!-- Main Radar Chart (Left/Top) -->
+<section class="lg:col-span-8 glass-panel rounded-xl p-md lg:p-lg flex flex-col relative overflow-hidden shadow-[0_8px_32px_rgba(27,42,65,0.04)]">
+<div class="flex justify-between items-start mb-lg relative z-10">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Distribución por Dominio</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Brecha entre nivel actual y objetivo (Escala 1-5)</p>
+</div>
+<div class="flex items-center gap-md font-body-sm text-body-sm">
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 rounded-full bg-primary-container"></div>
+<span>Actual</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-3 h-3 rounded-full border-2 border-tertiary border-dashed"></div>
+<span>Objetivo</span>
+</div>
+</div>
+</div>
+<!-- Placeholder for Radar Chart Implementation -->
+<div class="flex-1 min-h-[400px] w-full relative flex items-center justify-center">
+<div class="absolute inset-0 bg-gradient-to-tr from-surface to-surface-bright rounded-lg border border-outline-variant/30 flex items-center justify-center">
+<!-- Visual representation of radar chart -->
+<div class="relative w-[300px] h-[300px] md:w-[380px] md:h-[380px]">
+<!-- Concentric circles -->
+<div class="absolute inset-0 rounded-full border border-outline-variant/20 flex items-center justify-center">
+<div class="w-[80%] h-[80%] rounded-full border border-outline-variant/20 flex items-center justify-center">
+<div class="w-[75%] h-[75%] rounded-full border border-outline-variant/20 flex items-center justify-center">
+<div class="w-[66%] h-[66%] rounded-full border border-outline-variant/20 flex items-center justify-center">
+<div class="w-[50%] h-[50%] rounded-full border border-outline-variant/20"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Axes -->
+<div class="absolute top-1/2 left-0 w-full h-px bg-outline-variant/30"></div>
+<div class="absolute top-0 left-1/2 w-px h-full bg-outline-variant/30"></div>
+<div class="absolute top-1/2 left-0 w-full h-px bg-outline-variant/30 transform rotate-45"></div>
+<div class="absolute top-1/2 left-0 w-full h-px bg-outline-variant/30 transform -rotate-45"></div>
+<!-- Fake Data Polygon (Actual) -->
+<svg class="absolute inset-0 w-full h-full overflow-visible z-10" viewbox="0 0 100 100">
+<polygon fill="rgba(0, 120, 212, 0.2)" points="50,15 80,35 75,70 50,85 20,60 30,25" stroke="#0078d4" stroke-linejoin="round" stroke-width="2"></polygon>
+</svg>
+<!-- Fake Data Polygon (Target) -->
+<svg class="absolute inset-0 w-full h-full overflow-visible z-0" viewbox="0 0 100 100">
+<polygon fill="none" points="50,5 90,30 85,80 50,95 10,70 15,20" stroke="#006a5c" stroke-dasharray="4 4" stroke-width="1.5"></polygon>
+</svg>
+<!-- Labels -->
+<span class="absolute -top-6 left-1/2 -translate-x-1/2 font-label-md text-label-md text-on-surface whitespace-nowrap">Gestión de Identidad (IAM)</span>
+<span class="absolute top-1/4 -right-24 font-label-md text-label-md text-on-surface whitespace-nowrap">Seguridad de Red</span>
+<span class="absolute bottom-1/4 -right-28 font-label-md text-label-md text-on-surface whitespace-nowrap">Protección de Datos</span>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-label-md text-label-md text-on-surface whitespace-nowrap">Respuesta a Incidentes</span>
+<span class="absolute bottom-1/4 -left-20 font-label-md text-label-md text-on-surface whitespace-nowrap">Concienciación</span>
+<span class="absolute top-1/4 -left-20 font-label-md text-label-md text-on-surface whitespace-nowrap">Gestión de Activos</span>
+</div>
+</div>
+</div>
+</section>
+<!-- High Level Stats (Right) -->
+<section class="lg:col-span-4 flex flex-col gap-gutter md:gap-lg">
+<!-- Overall Score Card -->
+<div class="glass-panel-dark rounded-xl p-md lg:p-lg flex flex-col shadow-[0_8px_32px_rgba(27,42,65,0.04)]">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-md">Índice Global</h3>
+<div class="flex items-end gap-md mb-lg">
+<span class="font-headline-xl text-headline-xl text-primary-container text-5xl">3.2</span>
+<span class="font-body-md text-body-md text-on-surface-variant pb-1">/ 5.0 Actual</span>
+</div>
+<div class="space-y-sm">
+<div class="flex justify-between font-label-md text-label-md">
+<span class="text-on-surface-variant">Progreso hacia el Objetivo (4.0)</span>
+<span class="text-primary-container">80%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-primary-container rounded-full" style="width: 80%;"></div>
+</div>
+</div>
+<div class="mt-lg pt-md border-t border-outline-variant/30 flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Última evaluación: 12 Oct 2023</span>
+<span class="px-2 py-1 rounded bg-secondary-container/50 text-on-secondary-container font-label-md text-[10px] uppercase">NIST CSF</span>
+</div>
+</div>
+<!-- Strategic Trajectory Roadmap mini -->
+<div class="glass-panel rounded-xl p-md lg:p-lg flex-1 flex flex-col shadow-[0_8px_32px_rgba(27,42,65,0.04)]">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Trayectoria Estratégica</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md">Hitos principales para alcanzar Nivel 4.</p>
+<div class="flex-1 flex flex-col gap-md relative">
+<!-- Timeline line -->
+<div class="absolute left-3 top-2 bottom-2 w-px bg-outline-variant/50"></div>
+<!-- Timeline items -->
+<div class="flex gap-sm relative z-10">
+<div class="w-6 h-6 rounded-full bg-tertiary-container flex items-center justify-center shrink-0 border-2 border-white shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-on-tertiary-container text-[14px]">check</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Fase 1: Visibilidad Total</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Completado Q3 2023</p>
+</div>
+</div>
+<div class="flex gap-sm relative z-10">
+<div class="w-6 h-6 rounded-full bg-primary-container flex items-center justify-center shrink-0 border-2 border-white shadow-sm mt-0.5">
+<span class="material-symbols-outlined text-on-primary-container text-[14px]">sync</span>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface">Fase 2: Automatización IAM</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant">En progreso (Q4 2023)</p>
+</div>
+</div>
+<div class="flex gap-sm relative z-10">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center shrink-0 border-2 border-white shadow-sm mt-0.5">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+</div>
+<div>
+<h4 class="font-label-md text-label-md text-on-surface-variant">Fase 3: Zero Trust Network</h4>
+<p class="font-body-sm text-body-sm text-outline">Planificado Q1 2024</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Detailed Domain Scores (Bottom Full Width) -->
+<section class="lg:col-span-12 glass-panel rounded-xl p-md lg:p-lg flex flex-col shadow-[0_8px_32px_rgba(27,42,65,0.04)] overflow-hidden">
+<div class="flex justify-between items-center mb-lg">
+<h3 class="font-headline-md text-headline-md text-on-surface">Desglose por Dominio de Control</h3>
+<div class="relative w-64 hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-[18px]">search</span>
+<input class="w-full pl-10 pr-3 py-1.5 bg-white border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-shadow" placeholder="Buscar dominio..." type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30 text-on-surface-variant font-label-md text-label-md uppercase">
+<th class="py-sm px-sm font-semibold">Dominio (NIST/ISO)</th>
+<th class="py-sm px-sm font-semibold text-center w-24">Nivel Actual</th>
+<th class="py-sm px-sm font-semibold text-center w-24">Objetivo</th>
+<th class="py-sm px-sm font-semibold w-64">Brecha (Gap)</th>
+<th class="py-sm px-sm font-semibold w-32">Estado</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md">
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-sm px-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-secondary-container/30 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">passkey</span>
+</div>
+<div>
+<div class="font-medium text-on-surface">Gestión de Identidad (IAM)</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Control de acceso lógico</div>
+</div>
+</div>
+</td>
+<td class="py-sm px-sm text-center font-mono-md text-on-surface">2.8</td>
+<td class="py-sm px-sm text-center font-mono-md text-on-surface-variant">4.0</td>
+<td class="py-sm px-sm">
+<div class="flex items-center gap-xs">
+<div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 30%;"></div>
+</div>
+<span class="font-mono-md text-error text-[12px] w-8 text-right">-1.2</span>
+</div>
+</td>
+<td class="py-sm px-sm">
+<span class="inline-flex items-center gap-xs px-2 py-1 rounded bg-error-container/50 text-on-error-container font-label-md text-[11px] uppercase border border-error-container">
+<span class="material-symbols-outlined text-[14px]">warning</span> Prioridad Alta
+                                        </span>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-sm px-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-secondary-container/30 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">security</span>
+</div>
+<div>
+<div class="font-medium text-on-surface">Seguridad de Red</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Defensa perimetral e interna</div>
+</div>
+</div>
+</td>
+<td class="py-sm px-sm text-center font-mono-md text-on-surface">3.5</td>
+<td class="py-sm px-sm text-center font-mono-md text-on-surface-variant">4.0</td>
+<td class="py-sm px-sm">
+<div class="flex items-center gap-xs">
+<div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full" style="width: 15%;"></div>
+</div>
+<span class="font-mono-md text-secondary text-[12px] w-8 text-right">-0.5</span>
+</div>
+</td>
+<td class="py-sm px-sm">
+<span class="inline-flex items-center gap-xs px-2 py-1 rounded bg-surface-container-highest text-on-surface font-label-md text-[11px] uppercase border border-outline-variant/30">
+                                            Estable
+                                        </span>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-low/50 transition-colors group">
+<td class="py-sm px-sm">
+<div class="flex items-center gap-sm">
+<div class="w-8 h-8 rounded bg-secondary-container/30 flex items-center justify-center text-primary-container">
+<span class="material-symbols-outlined text-[18px]">database</span>
+</div>
+<div>
+<div class="font-medium text-on-surface">Protección de Datos</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Cifrado y DLP</div>
+</div>
+</div>
+</td>
+<td class="py-sm px-sm text-center font-mono-md text-on-surface">3.8</td>
+<td class="py-sm px-sm text-center font-mono-md text-on-surface-variant">4.0</td>
+<td class="py-sm px-sm">
+<div class="flex items-center gap-xs">
+<div class="flex-1 h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-container rounded-full" style="width: 5%;"></div>
+</div>
+<span class="font-mono-md text-tertiary-container text-[12px] w-8 text-right">-0.2</span>
+</div>
+</td>
+<td class="py-sm px-sm">
+<span class="inline-flex items-center gap-xs px-2 py-1 rounded bg-tertiary-fixed/50 text-on-tertiary-fixed font-label-md text-[11px] uppercase border border-tertiary-fixed-dim/50">
+<span class="material-symbols-outlined text-[14px]">check_circle</span> Maduro
+                                        </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

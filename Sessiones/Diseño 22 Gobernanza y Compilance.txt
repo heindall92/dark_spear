@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Alineación de Gobernanza y Cumplimiento - Auditor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "outline-variant": "#c0c7d4",
+                        "secondary-fixed": "#d5e3ff",
+                        "primary-container": "#0078d4",
+                        "tertiary": "#006a5c",
+                        "on-secondary-fixed": "#0c1c32",
+                        "on-tertiary-fixed": "#00201b",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-secondary-container": "#54637d",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-primary-container": "#ffffff",
+                        "on-surface-variant": "#404752",
+                        "inverse-on-surface": "#eef1f5",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-bright": "#f7fafe",
+                        "surface": "#f7fafe",
+                        "surface-container-high": "#e5e8ec",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "surface-container": "#ebeef2",
+                        "surface-variant": "#e0e3e7",
+                        "tertiary-container": "#0a8575",
+                        "on-primary-fixed": "#001c39",
+                        "on-secondary-fixed-variant": "#394760",
+                        "secondary": "#505f79",
+                        "on-surface": "#181c1f",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "error": "#ba1a1a",
+                        "on-error-container": "#93000a",
+                        "inverse-primary": "#a3c9ff",
+                        "surface-tint": "#0060ab",
+                        "surface-container-lowest": "#ffffff",
+                        "on-error": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#91f4e1",
+                        "inverse-surface": "#2d3134",
+                        "outline": "#717783",
+                        "primary": "#005faa",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "background": "#f7fafe",
+                        "on-tertiary": "#ffffff",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "on-background": "#181c1f",
+                        "primary-fixed": "#d3e3ff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "xs": "4px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "xl": "32px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "sm": "8px",
+                        "container-max": "1440px"
+                    },
+                    fontFamily: {
+                        "headline-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "mono-md": ["jetbrainsMono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                },
+            }
+        }
+    </script>
+<style>
+        body { background-color: #F5F8FC; }
+        .glass-panel {
+            background-color: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid #D8E3F0;
+        }
+        .heatmap-cell { transition: all 0.2s ease; }
+        .heatmap-cell:hover { transform: scale(1.02); z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body class="font-body-md text-on-surface h-full flex overflow-hidden">
+<!-- TopNavBar (Mobile Only) -->
+<nav class="md:hidden fixed top-0 w-full z-50 flex justify-between items-center px-lg h-16 bg-white/70 dark:bg-surface-dim/70 backdrop-blur-md text-primary dark:text-primary-fixed-dim font-body-md text-body-md border-b border-outline-variant/30 shadow-sm cursor-pointer active:opacity-80">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined">search</span>
+</div>
+<div class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed-dim">
+            Auditor
+        </div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors" data-icon="settings">settings</span>
+<span class="material-symbols-outlined text-secondary dark:text-secondary-fixed-dim hover:text-primary-container transition-colors" data-icon="help">help</span>
+<img alt="User profile" class="w-8 h-8 rounded-full border border-outline-variant/30" data-alt="A small circular user profile picture showing a professional headshot in a modern corporate setting with cool lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAcEM5b5zuKPP9uivlS7PcrjuIkSiLzx7FrBFe4ME1MFRIhYOKDGMIxCStb_1O4OlKkRo4oDgyb_x2XH-9RD_HIav6wkS9ztwteoEGo0A7j1iihf16Hj5WXF4HeDUx05BnQPrBjfAf6FBNdJwn-W-JoEfZFJtbmKO6Muf0wXeFEaP7Ikbb_mwbdtqsY8OYJVuqVB-mHHQMqSiEDp7GN6ssZfmUJcShuWz26beFwG2OmybaM55oZEjh3xg"/>
+</div>
+</nav>
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex fixed left-0 top-0 bottom-0 w-64 flex-col py-md bg-surface-container-lowest/70 dark:bg-surface-container/70 backdrop-blur-xl border-r border-outline-variant/20 z-40">
+<div class="px-lg mb-8 flex items-center gap-3">
+<img alt="Organization Logo" class="w-10 h-10 rounded" data-alt="A minimalist enterprise security logo featuring a stylized shield and geometric nodes in deep blue and white." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAhLoXrtzj7BwLwLfOqXAhjodJ5MVlGArQrIhbNuTJHbnQu5a6UFCJTSV2mV2CJ4xTv5mO9bvC_J33qYfu8Wbix5ZCsX472nOAW73cv7uS5-LXWtH8proiDLbYegF2Id7A9JsCqOiuA0_V6gPzrS9CJ1eYCmG02FGpB3SwSSjUSr0vP3nWrYhOP1I5Ic7LRFO-T87ZGv14PoFJVf3svhw2zbqZr2DykxiM4CpypaW_OqPFnb55y9zB9dA"/>
+<div>
+<h1 class="font-headline-sm text-headline-sm font-black text-on-surface">Enterprise Security</h1>
+<p class="font-label-md text-label-md text-secondary">Global Console</p>
+</div>
+</div>
+<ul class="flex-1 space-y-1 px-sm">
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                    Dashboard
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                    Reports
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-primary dark:text-primary-fixed-dim bg-primary-container/10 border-r-4 border-primary transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view" data-weight="fill" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+                    Compliance
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="verified_user">verified_user</span>
+                    Risk Matrix
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+                    Assets
+                </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+                    Audits
+                </a>
+</li>
+</ul>
+<div class="mt-auto px-sm pt-4 border-t border-outline-variant/20">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+                        Help Center
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-md py-sm rounded-lg text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high/50 dark:hover:bg-surface-container-highest/50 transition-all duration-200 ease-in-out font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                        Account
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 ml-0 md:ml-64 mt-16 md:mt-0 p-gutter md:p-lg lg:p-xl overflow-y-auto h-full w-full max-w-container-max mx-auto">
+<!-- Header -->
+<header class="mb-8">
+<div class="flex items-center gap-2 text-secondary font-body-sm text-body-sm mb-2">
+<span>Auditor</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span>Gobernanza</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Cumplimiento Normativo</span>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface">Alineación RGPD</h2>
+<p class="font-body-md text-body-md text-secondary mt-1">Visión general del estado de cumplimiento y riesgos de sanción.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 border border-[#D8E3F0] rounded-DEFAULT font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors">Exportar Informe</button>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container rounded-DEFAULT font-label-md text-label-md hover:opacity-90 transition-opacity">Evaluar Riesgo</button>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter lg:gap-lg">
+<!-- Left Column: Progress & Mapping (Col span 8) -->
+<div class="lg:col-span-8 flex flex-col gap-gutter lg:gap-lg">
+<!-- Compliance Progress -->
+<section class="glass-panel rounded-lg p-lg">
+<h3 class="font-headline-md text-headline-md mb-6">Estado General de Cumplimiento</h3>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between font-label-md text-label-md mb-2">
+<span class="text-on-surface">Mapeo de Datos (Art. 30)</span>
+<span class="text-tertiary">92%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-tertiary h-full rounded-full" style="width: 92%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-md text-label-md mb-2">
+<span class="text-on-surface">Seguridad del Tratamiento (Art. 32)</span>
+<span class="text-primary">78%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-primary h-full rounded-full" style="width: 78%"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between font-label-md text-label-md mb-2">
+<span class="text-on-surface">Notificación de Brechas (Art. 33)</span>
+<span class="text-error">45%</span>
+</div>
+<div class="w-full bg-surface-container h-2 rounded-full overflow-hidden">
+<div class="bg-error h-full rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- Status Cards (Art 32, 33) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter lg:gap-lg">
+<article class="glass-panel rounded-lg p-md">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">security</span>
+<h4 class="font-label-md text-label-md text-secondary">Art. 32</h4>
+</div>
+<span class="px-2 py-1 bg-secondary-container/50 text-on-secondary-container rounded font-label-md text-[10px]">En Revisión</span>
+</div>
+<h5 class="font-headline-md text-headline-md text-on-surface mb-2">Cifrado de Datos</h5>
+<p class="font-body-sm text-body-sm text-secondary mb-4">Revisión de protocolos criptográficos en bases de datos europeas pendientes de actualización.</p>
+<div class="flex justify-between items-center mt-auto pt-4 border-t border-outline-variant/20">
+<span class="font-mono-md text-mono-md text-secondary">3 Tareas</span>
+<a class="font-label-md text-label-md text-primary-container hover:underline" href="#">Ver detalles</a>
+</div>
+</article>
+<article class="glass-panel rounded-lg p-md">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-error">warning</span>
+<h4 class="font-label-md text-label-md text-secondary">Art. 33</h4>
+</div>
+<span class="px-2 py-1 bg-error-container/50 text-on-error-container rounded font-label-md text-[10px]">Crítico</span>
+</div>
+<h5 class="font-headline-md text-headline-md text-on-surface mb-2">Protocolo de Brechas</h5>
+<p class="font-body-sm text-body-sm text-secondary mb-4">Procedimiento de notificación a la autoridad de control (72h) no estandarizado en filiales.</p>
+<div class="flex justify-between items-center mt-auto pt-4 border-t border-outline-variant/20">
+<span class="font-mono-md text-mono-md text-error">Atención Requerida</span>
+<a class="font-label-md text-label-md text-primary-container hover:underline" href="#">Resolver</a>
+</div>
+</article>
+</div>
+</div>
+<!-- Right Column: Risk & Matrix (Col span 4) -->
+<div class="lg:col-span-4 flex flex-col gap-gutter lg:gap-lg">
+<!-- Sanction Risk -->
+<section class="glass-panel rounded-lg p-lg bg-gradient-to-br from-white/70 to-error-container/10">
+<h3 class="font-headline-md text-headline-md mb-2">Estimación de Sanción</h3>
+<p class="font-body-sm text-body-sm text-secondary mb-6">Basado en hallazgos actuales de incumplimiento RGPD.</p>
+<div class="text-center py-4">
+<div class="font-headline-xl text-headline-xl text-error mb-1">€2.4M - €4.0M</div>
+<div class="font-label-md text-label-md text-secondary">Riesgo Financiero Potencial</div>
+</div>
+<div class="mt-4 pt-4 border-t border-outline-variant/20">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">info</span>
+<span>Calculado sobre el 2% del volumen de negocio global.</span>
+</div>
+</div>
+</section>
+<!-- 3x3 Risk Matrix -->
+<section class="glass-panel rounded-lg p-lg flex-1">
+<h3 class="font-headline-md text-headline-md mb-6">Matriz de Riesgos</h3>
+<div class="relative w-full aspect-square border-l-2 border-b-2 border-outline-variant/50 p-1 flex flex-col gap-1">
+<!-- Y Axis Label -->
+<div class="absolute -left-8 top-1/2 -translate-y-1/2 -rotate-90 font-label-md text-label-md text-secondary tracking-widest">IMPACTO</div>
+<!-- X Axis Label -->
+<div class="absolute -bottom-8 left-1/2 -translate-x-1/2 font-label-md text-label-md text-secondary tracking-widest">PROBABILIDAD</div>
+<!-- Row 3 (High Impact) -->
+<div class="flex-1 flex gap-1">
+<div class="flex-1 bg-tertiary/20 rounded-sm heatmap-cell flex items-center justify-center relative cursor-pointer" title="Impacto Alto, Probabilidad Baja">
+<span class="w-2 h-2 rounded-full bg-on-surface/50 absolute top-2 right-2"></span>
+</div>
+<div class="flex-1 bg-[#ffd54f]/40 rounded-sm heatmap-cell flex items-center justify-center relative cursor-pointer" title="Impacto Alto, Probabilidad Media">
+<span class="w-2 h-2 rounded-full bg-on-surface absolute top-2 right-2"></span>
+<span class="font-mono-md text-mono-md font-bold">2</span>
+</div>
+<div class="flex-1 bg-error/40 rounded-sm heatmap-cell flex items-center justify-center relative cursor-pointer border-2 border-error" title="Impacto Alto, Probabilidad Alta">
+<span class="w-3 h-3 rounded-full bg-error absolute top-2 right-2 animate-pulse"></span>
+<span class="font-mono-md text-mono-md font-bold text-on-error-container">Art.33</span>
+</div>
+</div>
+<!-- Row 2 (Medium Impact) -->
+<div class="flex-1 flex gap-1">
+<div class="flex-1 bg-tertiary/20 rounded-sm heatmap-cell flex items-center justify-center cursor-pointer" title="Impacto Medio, Probabilidad Baja"></div>
+<div class="flex-1 bg-tertiary/40 rounded-sm heatmap-cell flex items-center justify-center relative cursor-pointer" title="Impacto Medio, Probabilidad Media">
+<span class="w-2 h-2 rounded-full bg-on-surface/50 absolute top-2 right-2"></span>
+</div>
+<div class="flex-1 bg-[#ffd54f]/40 rounded-sm heatmap-cell flex items-center justify-center relative cursor-pointer" title="Impacto Medio, Probabilidad Alta">
+<span class="font-mono-md text-mono-md font-bold text-on-surface">Art.32</span>
+</div>
+</div>
+<!-- Row 1 (Low Impact) -->
+<div class="flex-1 flex gap-1">
+<div class="flex-1 bg-tertiary/10 rounded-sm heatmap-cell flex items-center justify-center cursor-pointer" title="Impacto Bajo, Probabilidad Baja"></div>
+<div class="flex-1 bg-tertiary/20 rounded-sm heatmap-cell flex items-center justify-center cursor-pointer" title="Impacto Bajo, Probabilidad Media"></div>
+<div class="flex-1 bg-tertiary/40 rounded-sm heatmap-cell flex items-center justify-center cursor-pointer" title="Impacto Bajo, Probabilidad Alta"></div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

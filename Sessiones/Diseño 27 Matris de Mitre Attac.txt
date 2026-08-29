@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Matriz MITRE ATT&amp;CK - Auditor Console</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-surface": "#2d3134",
+                      "tertiary": "#006a5c",
+                      "on-surface": "#181c1f",
+                      "on-error": "#ffffff",
+                      "secondary-fixed": "#d5e3ff",
+                      "on-primary": "#ffffff",
+                      "on-background": "#181c1f",
+                      "secondary-fixed-dim": "#b8c7e5",
+                      "inverse-primary": "#a3c9ff",
+                      "surface-dim": "#d7dade",
+                      "surface-tint": "#0060ab",
+                      "background": "#f7fafe",
+                      "surface-bright": "#f7fafe",
+                      "surface-variant": "#e0e3e7",
+                      "on-tertiary-fixed": "#00201b",
+                      "on-error-container": "#93000a",
+                      "on-primary-fixed": "#001c39",
+                      "outline-variant": "#c0c7d4",
+                      "surface-container": "#ebeef2",
+                      "on-tertiary-container": "#ffffff",
+                      "tertiary-fixed": "#91f4e1",
+                      "inverse-on-surface": "#eef1f5",
+                      "on-tertiary-fixed-variant": "#005046",
+                      "primary": "#005faa",
+                      "on-secondary-container": "#54637d",
+                      "outline": "#717783",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-container": "#0a8575",
+                      "on-primary-container": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#004883",
+                      "tertiary-fixed-dim": "#75d8c5",
+                      "on-secondary-fixed": "#0c1c32",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-container-highest": "#e0e3e7",
+                      "surface-container-low": "#f1f4f8",
+                      "secondary-container": "#d1e0ff",
+                      "secondary": "#505f79",
+                      "error": "#ba1a1a",
+                      "on-secondary": "#ffffff",
+                      "primary-fixed-dim": "#a3c9ff",
+                      "surface": "#f7fafe",
+                      "primary-container": "#0078d4",
+                      "surface-container-high": "#e5e8ec",
+                      "primary-fixed": "#d3e3ff",
+                      "on-surface-variant": "#404752",
+                      "on-secondary-fixed-variant": "#394760"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "4px",
+                      "lg": "24px",
+                      "sm": "8px",
+                      "xs": "4px",
+                      "md": "16px",
+                      "container-max": "1440px",
+                      "gutter": "16px",
+                      "xl": "32px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "mono-md": [
+                              "jetbrainsMono"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-xl": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "mono-md": [
+                              "13px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+          body {
+              background-color: #F5F8FC; /* Base Layer */
+          }
+          /* Custom scrollbar for matrix */
+          .matrix-scroll::-webkit-scrollbar {
+              width: 8px;
+              height: 8px;
+          }
+          .matrix-scroll::-webkit-scrollbar-track {
+              background: transparent;
+          }
+          .matrix-scroll::-webkit-scrollbar-thumb {
+              background-color: #c0c7d4;
+              border-radius: 4px;
+          }
+          .matrix-scroll::-webkit-scrollbar-thumb:hover {
+              background-color: #717783;
+          }
+      </style>
+</head>
+<body class="h-full font-body-md text-on-surface antialiased overflow-hidden flex">
+<!-- SideNavBar -->
+<nav class="bg-white/70 backdrop-blur-xl h-screen w-64 fixed left-0 top-0 border-r border-outline-variant shadow-sm flex flex-col h-full py-md px-sm z-50">
+<!-- Header -->
+<div class="px-md pb-lg pt-sm">
+<h1 class="text-headline-md font-headline-md font-bold text-on-surface">Auditor Console</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Enterprise Security</p>
+</div>
+<!-- Main Navigation -->
+<div class="flex-1 overflow-y-auto space-y-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Dashboard</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="radar">radar</span>
+<span class="font-body-md text-body-md">Active Scans</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span class="font-body-md text-body-md">Vulnerabilities</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="font-body-md text-body-md">Reporting</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md text-body-md">Assets</span>
+</a>
+<!-- Added MITRE ATT&CK as active -->
+<a class="flex items-center gap-md px-md py-sm rounded-lg bg-secondary-container text-on-secondary-container font-semibold transition-all duration-200 ease-in-out mt-sm" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-body-md text-body-md">MITRE ATT&amp;CK</span>
+</a>
+</div>
+<!-- Footer Navigation -->
+<div class="border-t border-outline-variant pt-sm mt-auto space-y-xs">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+<span class="font-body-md text-body-md">Support</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-body-md text-body-md">Account</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Wrapper -->
+<div class="ml-64 w-full flex flex-col h-screen">
+<!-- TopNavBar -->
+<header class="bg-white/70 backdrop-blur-xl fixed top-0 right-0 w-[calc(100%-16rem)] z-40 border-b border-outline-variant shadow-sm flex justify-between items-center h-16 px-lg w-full max-w-container-max mx-auto">
+<div class="flex items-center gap-md">
+<span class="text-headline-md font-headline-md font-bold text-primary">Auditor</span>
+<!-- Search Bar (on_left) -->
+<div class="relative ml-lg w-64 hidden lg:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="w-full h-10 pl-[36px] pr-sm rounded-lg border border-outline-variant bg-white font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:border-b-2 transition-all" placeholder="Buscar técnica o ID (ej. T1059)" type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-md">
+<!-- Trailing Primary Action -->
+<button class="bg-primary-container text-on-primary-container hover:bg-primary px-md py-sm rounded-lg font-label-md text-label-md transition-colors shadow-sm hidden md:block">
+                    Iniciar engagement
+                </button>
+<!-- Trailing Icon Actions -->
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 transition-transform p-xs">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors active:scale-95 transition-transform p-xs">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<!-- Profile -->
+<button class="ml-sm h-8 w-8 rounded-full overflow-hidden border border-outline-variant hover:border-primary transition-colors">
+<img alt="Auditor User" class="w-full h-full object-cover" data-alt="A small, professional headshot of an IT auditor with short dark hair, wearing a dark blazer over a light blue collared shirt, against a neutral light grey background. Soft, even lighting suitable for a corporate profile avatar. The mood is approachable yet authoritative." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEQZnF85C33gOQq_BGWERmPt9waMIDyFKKT48iJecajH-KI9TImFkOwdWGomVDV5a_b_if5L4IUrhcHmRZaj5rwkkSjHciULYk2vz5oOENEBYlPPciCUEvo1VxQCTQLF5eSLdqYuuGKZ9mfMVvM8m___KpdwBsT_TL_EmGHJZRmb0Rcf18A9h26Ahha9xifUZcmnuEqT3X8se0Xj6iTpB8OUsBmbG7IfhRihErawBFr25N_j4TSF6Giw"/>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 mt-16 p-lg overflow-hidden flex flex-col max-w-container-max mx-auto w-full">
+<!-- Page Header & Controls (Acrylic Panel) -->
+<div class="bg-white/70 backdrop-blur-[20px] border border-outline-variant rounded-xl p-md mb-lg flex flex-col gap-md shrink-0">
+<div class="flex justify-between items-start lg:items-center flex-col lg:flex-row gap-md">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Matriz MITRE ATT&amp;CK</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Enterprise Security • v14.1</p>
+</div>
+<!-- Action Toolbar -->
+<div class="flex flex-wrap items-center gap-sm">
+<!-- View Toggles (Segmented Control style) -->
+<div class="flex bg-surface-container rounded-lg p-[2px] border border-outline-variant">
+<button class="px-md py-xs rounded-md bg-white shadow-sm font-label-md text-label-md text-primary-fixed-variant transition-colors border border-outline-variant">
+                                Cobertura
+                            </button>
+<button class="px-md py-xs rounded-md text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md transition-colors border border-transparent">
+                                Inteligencia
+                            </button>
+<button class="px-md py-xs rounded-md text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md transition-colors border border-transparent">
+                                Observadas
+                            </button>
+</div>
+<!-- Export Options -->
+<div class="relative group">
+<button class="flex items-center gap-xs px-md py-sm rounded-lg border border-[#D8E3F0] bg-transparent text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="download">download</span>
+                                Exportar
+                                <span class="material-symbols-outlined text-[18px]" data-icon="expand_more">expand_more</span>
+</button>
+<!-- Dropdown mock -->
+<div class="absolute right-0 top-full mt-xs w-32 bg-white border border-outline-variant rounded-lg shadow-[0px_8px_32px_rgba(27,42,65,0.08)] hidden group-hover:block z-10 py-xs">
+<a class="block px-md py-xs font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low" href="#">JSON</a>
+<a class="block px-md py-xs font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low" href="#">SVG</a>
+<a class="block px-md py-xs font-body-sm text-body-sm text-on-surface hover:bg-surface-container-low" href="#">PDF</a>
+</div>
+</div>
+</div>
+</div>
+<!-- Legend -->
+<div class="flex items-center gap-md border-t border-outline-variant pt-md mt-xs">
+<span class="font-label-md text-label-md text-on-surface-variant">Leyenda:</span>
+<div class="flex items-center gap-xs">
+<div class="w-4 h-4 rounded-[2px] bg-primary"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Alta Cobertura</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-4 h-4 rounded-[2px] bg-secondary-fixed"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Cobertura Parcial</span>
+</div>
+<div class="flex items-center gap-xs">
+<div class="w-4 h-4 rounded-[2px] bg-surface-container-high border border-outline-variant"></div>
+<span class="font-body-sm text-body-sm text-on-surface">Sin Cobertura</span>
+</div>
+</div>
+</div>
+<!-- Matrix Grid Container (Acrylic Panel with Scroll) -->
+<div class="bg-white/70 backdrop-blur-[20px] border border-outline-variant rounded-xl flex-1 overflow-hidden flex flex-col relative">
+<!-- Fixed Headers -->
+<div class="flex shrink-0 border-b border-outline-variant bg-surface-container/50">
+<!-- Tactics Headers -->
+<div class="flex-1 min-w-[200px] p-sm border-r border-outline-variant">
+<h3 class="font-label-md text-label-md text-on-surface">Initial Access</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">9 técnicas</span>
+</div>
+<div class="flex-1 min-w-[200px] p-sm border-r border-outline-variant">
+<h3 class="font-label-md text-label-md text-on-surface">Execution</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">14 técnicas</span>
+</div>
+<div class="flex-1 min-w-[200px] p-sm border-r border-outline-variant">
+<h3 class="font-label-md text-label-md text-on-surface">Persistence</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">20 técnicas</span>
+</div>
+<div class="flex-1 min-w-[200px] p-sm border-r border-outline-variant">
+<h3 class="font-label-md text-label-md text-on-surface">Privilege Escalation</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">14 técnicas</span>
+</div>
+<div class="flex-1 min-w-[200px] p-sm">
+<h3 class="font-label-md text-label-md text-on-surface">Defense Evasion</h3>
+<span class="font-body-sm text-body-sm text-on-surface-variant">43 técnicas</span>
+</div>
+</div>
+<!-- Scrollable Grid Body -->
+<div class="flex-1 overflow-auto matrix-scroll flex p-sm gap-sm bg-surface-container-lowest/50">
+<!-- Column: Initial Access -->
+<div class="flex-1 min-w-[184px] flex flex-col gap-xs">
+<div class="bg-primary text-on-primary rounded-md p-xs border border-primary/20 shadow-sm cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1189</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Drive-by Compromise</span>
+</div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs border border-secondary-fixed-dim shadow-sm cursor-pointer hover:brightness-95 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1190</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Exploit Public-Facing Application</span>
+</div>
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant shadow-sm cursor-pointer hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md text-on-surface">T1133</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">External Remote Services</span>
+</div>
+<div class="bg-primary text-on-primary rounded-md p-xs border border-primary/20 shadow-sm cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1566</span>
+<span class="material-symbols-outlined text-[14px]" data-icon="dns">dns</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Phishing</span>
+</div>
+</div>
+<!-- Column: Execution -->
+<div class="flex-1 min-w-[184px] flex flex-col gap-xs">
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs border border-secondary-fixed-dim shadow-sm cursor-pointer hover:brightness-95 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1059</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Command and Scripting Interpreter</span>
+</div>
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant shadow-sm cursor-pointer hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md text-on-surface">T1203</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Exploitation for Client Execution</span>
+</div>
+<div class="bg-primary text-on-primary rounded-md p-xs border border-primary/20 shadow-sm cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1053</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Scheduled Task/Job</span>
+</div>
+</div>
+<!-- Column: Persistence -->
+<div class="flex-1 min-w-[184px] flex flex-col gap-xs">
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant shadow-sm cursor-pointer hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md text-on-surface">T1098</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Account Manipulation</span>
+</div>
+<div class="bg-primary text-on-primary rounded-md p-xs border border-primary/20 shadow-sm cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1197</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">BITS Jobs</span>
+</div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs border border-secondary-fixed-dim shadow-sm cursor-pointer hover:brightness-95 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1543</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Create or Modify System Process</span>
+</div>
+</div>
+<!-- Column: Privilege Escalation -->
+<div class="flex-1 min-w-[184px] flex flex-col gap-xs">
+<div class="bg-primary text-on-primary rounded-md p-xs border border-primary/20 shadow-sm cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1548</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Abuse Elevation Control Mechanism</span>
+</div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs border border-secondary-fixed-dim shadow-sm cursor-pointer hover:brightness-95 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1134</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Access Token Manipulation</span>
+</div>
+</div>
+<!-- Column: Defense Evasion -->
+<div class="flex-1 min-w-[184px] flex flex-col gap-xs">
+<div class="bg-surface-container-high text-on-surface-variant rounded-md p-xs border border-outline-variant shadow-sm cursor-pointer hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md text-on-surface">T1548</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Abuse Elevation Control Mechanism</span>
+</div>
+<div class="bg-primary text-on-primary rounded-md p-xs border border-primary/20 shadow-sm cursor-pointer hover:brightness-110 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1140</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Deobfuscate/Decode Files or Information</span>
+</div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs border border-secondary-fixed-dim shadow-sm cursor-pointer hover:brightness-95 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1070</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Indicator Removal</span>
+</div>
+<div class="bg-secondary-fixed text-on-surface rounded-md p-xs border border-secondary-fixed-dim shadow-sm cursor-pointer hover:brightness-95 transition-all">
+<div class="flex justify-between items-start mb-1">
+<span class="font-label-md text-label-md">T1202</span>
+</div>
+<span class="font-body-sm text-body-sm leading-tight block">Indirect Command Execution</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Auditor - Tool Approval Required</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#f7fafe",
+                        "on-secondary-fixed-variant": "#394760",
+                        "on-secondary-fixed": "#0c1c32",
+                        "secondary-fixed-dim": "#b8c7e5",
+                        "outline": "#717783",
+                        "on-surface": "#181c1f",
+                        "tertiary-container": "#0a8575",
+                        "surface-container-low": "#f1f4f8",
+                        "surface-variant": "#e0e3e7",
+                        "outline-variant": "#c0c7d4",
+                        "surface-tint": "#0060ab",
+                        "primary-fixed": "#d3e3ff",
+                        "on-surface-variant": "#404752",
+                        "surface": "#f7fafe",
+                        "surface-container-highest": "#e0e3e7",
+                        "on-background": "#181c1f",
+                        "tertiary": "#006a5c",
+                        "surface-bright": "#f7fafe",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dade",
+                        "secondary-container": "#d1e0ff",
+                        "secondary": "#505f79",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#001c39",
+                        "secondary-fixed": "#d5e3ff",
+                        "tertiary-fixed": "#91f4e1",
+                        "error": "#ba1a1a",
+                        "primary-container": "#0078d4",
+                        "on-error": "#ffffff",
+                        "inverse-primary": "#a3c9ff",
+                        "on-tertiary-fixed": "#00201b",
+                        "on-tertiary-container": "#ffffff",
+                        "surface-container-high": "#e5e8ec",
+                        "inverse-surface": "#2d3134",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#eef1f5",
+                        "surface-container": "#ebeef2",
+                        "primary-fixed-dim": "#a3c9ff",
+                        "on-primary-fixed-variant": "#004883",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed-dim": "#75d8c5",
+                        "on-primary-container": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005046",
+                        "primary": "#005faa",
+                        "on-secondary-container": "#54637d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xl": "32px",
+                        "base": "4px",
+                        "gutter": "16px",
+                        "lg": "24px",
+                        "container-max": "1440px",
+                        "xs": "4px",
+                        "md": "16px",
+                        "sm": "8px"
+                    },
+                    "fontFamily": {
+                        "mono-md": ["JetBrains Mono", "monospace"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "headline-xl": ["Inter", "sans-serif"],
+                        "label-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "mono-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex font-body-md text-body-md antialiased">
+<!-- Background Context: SideNavBar -->
+<nav class="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface-container-lowest/70 dark:bg-surface/70 backdrop-blur-xl border-r border-outline-variant/30 z-40 flex-col p-md">
+<!-- Header -->
+<div class="mb-xl flex items-center gap-sm">
+<div class="w-10 h-10 rounded bg-primary-container/10 flex items-center justify-center text-primary border border-primary/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-surface">Security Console</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">V3.2.1-Stable</p>
+</div>
+</div>
+<!-- CTA -->
+<button class="mb-lg w-full py-2 bg-primary text-on-primary rounded font-label-md text-label-md flex justify-center items-center gap-2 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Audit
+        </button>
+<!-- Navigation Links -->
+<div class="flex-1 flex flex-col gap-xs font-label-md text-label-md">
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 p-3 bg-secondary-container/50 text-on-secondary-container font-semibold rounded-lg hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">security_update_good</span> Active Scans
+            </a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">bug_report</span> Vulnerabilities
+            </a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">assessment</span> Reporting
+            </a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg hover:bg-primary-container/20 transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">lan</span> Assets
+            </a>
+</div>
+<!-- Footer Links -->
+<div class="mt-auto flex flex-col gap-xs font-label-md text-label-md pt-md border-t border-outline-variant/30">
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">terminal</span> Logs
+            </a>
+<a class="flex items-center gap-3 p-3 text-on-surface-variant hover:bg-surface-variant/30 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span> Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 flex flex-col md:ml-64 relative w-full h-full">
+<!-- Background Context: TopNavBar -->
+<header class="fixed top-0 w-full md:w-[calc(100%-16rem)] z-50 flex items-center justify-between px-lg h-16 max-w-container-max mx-auto bg-surface-container-lowest/70 dark:bg-surface/70 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
+<div class="flex items-center gap-md w-1/3">
+<div class="relative w-full max-w-sm hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full pl-10 pr-4 py-1.5 bg-surface-container-low border border-outline-variant/50 rounded text-body-sm focus:outline-none focus:border-primary focus:border-b-2 transition-all" placeholder="Search assets, scans..." type="text"/>
+</div>
+</div>
+<div class="flex items-center justify-center w-1/3">
+<span class="font-headline-lg text-headline-lg font-black text-primary dark:text-primary-fixed tracking-tight">Auditor</span>
+</div>
+<div class="flex items-center justify-end gap-sm w-1/3">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low/50 rounded-full transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low/50 rounded-full transition-all duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[22px]">settings</span>
+</button>
+<button class="ml-2 px-4 py-1.5 bg-primary-container text-on-primary-container font-label-md text-label-md rounded hover:bg-primary transition-colors active:scale-95 hidden sm:block">
+                    Iniciar engagement
+                </button>
+<div class="ml-4 w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant/30 flex-shrink-0">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="A professional corporate headshot of a cybersecurity analyst in a modern, well-lit office environment. The lighting is bright and soft, consistent with a clean light-mode UI aesthetic. The subject is wearing business casual attire, projecting trust and competence." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAb4kC0OTgACuLUGd3XHIODYYEW5dNdM1IlEyaQPMrW7IFlKa6A6AEe-Zxzv7pO_TeDIf8uJk9XP805MxDQGuN3oNAW4ViCHV8x5N55bhUDJmphvVkuvWM6MsD0iR8OKjIbFaUIaA3hGeQNuxlIochgz6to4qwn-weH5QBaIeGhpY72LnIjbhHK3FtU7kRYDWJUTP4ugjU2RnaSfKtFpw6CfLxaR6DyOABLQu20dzC7rxhvtWVf8zHqog"/>
+</div>
+</div>
+</header>
+<!-- Background Context: Dashboard Content Mockup -->
+<main class="flex-1 pt-20 p-lg overflow-y-auto bg-background/50">
+<div class="max-w-4xl mx-auto space-y-md filter blur-[2px] opacity-60 pointer-events-none">
+<!-- Mockup Table -->
+<div class="bg-surface-container-lowest/70 backdrop-blur-[20px] border border-outline-variant/30 rounded-xl p-md">
+<h3 class="font-headline-sm text-headline-sm font-semibold mb-sm">Active Engagements</h3>
+<div class="space-y-sm">
+<div class="flex justify-between items-center p-sm border-b border-outline-variant/20">
+<span class="font-mono-md text-mono-md">TARGET-PROD-01</span>
+<span class="px-2 py-0.5 bg-tertiary-container/20 text-tertiary text-label-md rounded">Running</span>
+</div>
+<div class="flex justify-between items-center p-sm border-b border-outline-variant/20">
+<span class="font-mono-md text-mono-md">API-GATEWAY-EXT</span>
+<span class="px-2 py-0.5 bg-primary-container/20 text-primary text-label-md rounded">Initializing</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- ========================================== -->
+<!-- CORE COMPONENT: CONFIRMATION MODAL OVERLAY -->
+<!-- ========================================== -->
+<div class="fixed inset-0 z-[100] bg-on-surface/50 backdrop-blur-md flex items-center justify-center p-md">
+<!-- Modal Container (Acrylic/Glassmorphism) -->
+<div class="bg-surface-container-lowest/85 backdrop-blur-[24px] border border-outline-variant/40 rounded-xl shadow-[0px_8px_32px_rgba(27,42,65,0.12)] w-full max-w-[520px] p-xl flex flex-col gap-lg transform scale-100 transition-all">
+<!-- Header -->
+<div class="flex gap-md items-start">
+<!-- Warning Icon -->
+<div class="w-12 h-12 rounded-full bg-error-container flex items-center justify-center flex-shrink-0 ring-4 ring-error-container/30">
+<span class="material-symbols-outlined text-[28px] text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="pt-1">
+<h2 class="font-headline-md text-headline-md font-bold text-on-surface tracking-tight leading-tight">Dangerous Tool Approval Required</h2>
+</div>
+</div>
+<!-- Body Content -->
+<div class="flex flex-col gap-md pl-[64px]">
+<!-- Context Box -->
+<div class="bg-surface-container-low/80 rounded-lg p-md border border-outline-variant/40 flex flex-col gap-xs shadow-inner">
+<div class="grid grid-cols-[80px_1fr] items-baseline gap-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Tool</span>
+<span class="font-mono-md text-mono-md text-on-surface font-semibold bg-surface-variant/50 px-1.5 py-0.5 rounded text-[14px]">hydra</span>
+</div>
+<div class="grid grid-cols-[80px_1fr] items-baseline gap-sm">
+<span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Args</span>
+<span class="font-mono-md text-mono-md text-on-surface break-all">-P /wordlist -t 16</span>
+</div>
+</div>
+<!-- Warning Reasoning -->
+<div class="flex items-start gap-sm mt-sm p-sm bg-error/5 rounded border border-error/20">
+<span class="material-symbols-outlined text-error text-[20px] mt-0.5">info</span>
+<p class="font-body-md text-body-md text-error font-medium leading-relaxed">
+<strong class="font-semibold block mb-0.5">Reasoning:</strong>
+                            Brute forcing production endpoint may cause service degradation.
+                        </p>
+</div>
+</div>
+<!-- Actions -->
+<div class="flex items-center justify-end gap-md pt-sm mt-sm border-t border-outline-variant/20">
+<button class="px-lg py-2 rounded font-label-md text-label-md border border-outline-variant text-on-surface-variant hover:bg-surface-variant/50 hover:text-on-surface transition-colors focus:ring-2 focus:ring-outline/50 focus:outline-none" type="button">
+                        Rechazar
+                    </button>
+<button class="px-lg py-2 rounded font-label-md text-label-md bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-2 shadow-sm focus:ring-2 focus:ring-primary/50 focus:outline-none" type="button">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+                        Aprobar
+                    </button>
+</div>
+</div>
+</div>
+<!-- ========================================== -->
+</div>
+</body></html>
