@@ -1,5 +1,9 @@
 # Dark Spear
 
+
+https://github.com/user-attachments/assets/1c663f47-4240-4adf-a2bf-fd18078f3828
+
+
 ![Intro Dark Spear](panel/vendor/splash.mp4)
 
 Consola SecOps para auditorías autorizadas: engagement, hallazgos, grafo de ataque, MITRE ATT&CK, OSINT, remediación e informes.
