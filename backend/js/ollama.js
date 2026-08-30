@@ -41,8 +41,8 @@ Reporting a finding does NOT end the engagement — keep working after it.`;
 
 const JSON_RETRY_HINT = `
 
-CRITICAL: Your previous reply was not valid JSON. Reply with ONE JSON object only.
-Example: {"tool":"nmap","args":["-sV","-p","8888","127.0.0.1"],"reasoning":"service scan"}`;
+CRITICAL: Your previous reply was not valid JSON or omitted "tool"/"done"/"finding". Reply with ONE JSON object only.
+Example: {"tool":"curl","args":["-s","-i","http://127.0.0.1:8888/login.php"],"reasoning":"read login page"}`;
 
 function flattenContent(value) {
   if (value == null) return "";
@@ -205,7 +205,9 @@ function decisionFromParsed(parsed, raw) {
   }
   const nested = parsed.action && typeof parsed.action === "object" ? parsed.action : parsed;
   const tool = nested.tool || nested.command || nested.binary || nested.name;
-  if (!tool) throw new Error(`ollama_missing_tool_field: ${raw.slice(0, 200)}`);
+  if (!tool) {
+    throw new Error("ollama_missing_tool_field: el JSON no trae tool, done ni finding");
+  }
   const { tool: splitTool, args } = splitToolAndArgs(
     tool,
     nested.args ?? nested.argv ?? nested.parameters ?? nested.arguments ?? [],

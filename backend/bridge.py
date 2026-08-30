@@ -46,6 +46,10 @@ LOG_PATH = Path.home() / ".auditor" / "exec.log"
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 ALLOWED_HOSTS = {"127.0.0.1:8420", "localhost:8420"}
+CORS_ORIGINS = {
+    "http://127.0.0.1:8080",
+    "http://localhost:8080",
+}
 
 ALLOWED_TOOLS = {
     "nmap", "gobuster", "ffuf", "nikto", "whatweb", "hydra", "sqlmap",
@@ -122,6 +126,31 @@ def _sanitize_for_path(text: str) -> str:
 def _save_findings() -> None:
     findings_path = CURRENT_ENGAGEMENT_DIR / "findings.json"
     findings_path.write_text(json.dumps(FINDINGS, indent=2), encoding="utf-8")
+
+
+def _finding_fingerprint(title: str, asset: str = "") -> str:
+    blob = f"{title} {asset}".lower()
+    if ("cookie" in blob or "session" in blob) and any(
+        w in blob for w in ("security", "httponly", "secure", "low")
+    ):
+        return f"cookie-session:{(asset or '').lower()}"
+    words = sorted(set(re.findall(r"[a-z0-9]{4,}", blob)))[:6]
+    if words:
+        return "-".join(words)
+    return hashlib.sha256(blob.encode()).hexdigest()[:16]
+
+
+def _existing_finding(title: str, asset: str) -> dict | None:
+    fp = _finding_fingerprint(title, asset)
+    for finding in FINDINGS:
+        if finding.get("status") == "rejected":
+            continue
+        stored = finding.get("fingerprint") or _finding_fingerprint(
+            finding.get("title", ""), finding.get("asset", "")
+        )
+        if stored == fp:
+            return finding
+    return None
 
 
 def _next_finding_id() -> str:
@@ -211,11 +240,21 @@ def _earliest_reset_seconds() -> float:
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _apply_cors(self) -> None:
+        origin = self.headers.get("Origin", "")
+        if origin in CORS_ORIGINS:
+            self.send_header("Access-Control-Allow-Origin", origin)
+            self.send_header("Access-Control-Allow-Headers", "Content-Type, X-Auditor-Token")
+            self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            self.send_header("Access-Control-Max-Age", "600")
+            self.send_header("Vary", "Origin")
+
     def _send_json(self, status: int, payload: dict) -> None:
         body = json.dumps(payload).encode()
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        self._apply_cors()
         self.end_headers()
         self.wfile.write(body)
 
@@ -253,8 +292,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(data)))
+        self._apply_cors()
         self.end_headers()
         self.wfile.write(data)
+
+    def do_OPTIONS(self) -> None:
+        if not self._host_ok():
+            self._send_json(403, {"error": "forbidden_host"})
+            return
+        self.send_response(204)
+        self.send_header("Content-Length", "0")
+        self._apply_cors()
+        self.end_headers()
 
     def do_POST(self) -> None:
         try:
@@ -490,12 +539,17 @@ class Handler(BaseHTTPRequestHandler):
             if not isinstance(evidence_step_ids, list):
                 self._send_json(400, {"error": "evidence_step_ids_must_be_a_list"})
                 return
+            existing = _existing_finding(title, asset)
+            if existing:
+                self._send_json(200, {**existing, "duplicate": True})
+                return
             finding = {
                 "id": _next_finding_id(),
                 "title": title, "asset": asset, "severity": severity,
                 "description": description, "remediation": remediation,
                 "evidence_step_ids": evidence_step_ids, "evidence_hashes": [],
                 "status": "proposed",
+                "fingerprint": _finding_fingerprint(title, asset),
                 "created_at": time.time(), "reviewed_at": None,
             }
             FINDINGS.append(finding)
@@ -506,7 +560,7 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/findings/list":
             if CURRENT_SCOPE is None:
-                self._send_json(400, {"error": "no_active_engagement"})
+                self._send_json(200, [])
                 return
             self._send_json(200, FINDINGS)
             return
@@ -593,5 +647,6 @@ if __name__ == "__main__":
         raise SystemExit(1)
     print("Auditor bridge listening on http://127.0.0.1:8420")
     print(f"Session token (needed by the UI, auto-filled via URL): {AUTH_TOKEN}")
-    print(f"Open: http://127.0.0.1:8420/?token={AUTH_TOKEN}")
+    print(f"Motor:  http://127.0.0.1:8420/?token={AUTH_TOKEN}")
+    print(f"Panel:  http://127.0.0.1:8080/start-engagement.html?token={AUTH_TOKEN}")
     server.serve_forever()

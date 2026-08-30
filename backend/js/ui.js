@@ -1,4 +1,13 @@
 export function renderStep(step) {
+  if (step.tool === "(finding)") return;
+  if (step.tool === "(agent)" && step.verdict !== "waiting_for_quota") {
+    const msg = String(step.stderr || "");
+    if (step.verdict === "agent_error" && (msg.length > 180 || /ollama_|invalid_json|empty_content|missing_tool|bridge_error/.test(msg))) {
+      return;
+    }
+    if (step.verdict === "agent_error" && !msg) return;
+    if (step.verdict !== "agent_error") return;
+  }
   const feed = document.getElementById("steps-feed");
   const div = document.createElement("div");
   div.className = `step ${step.verdict || ""}`;
@@ -148,13 +157,38 @@ export function renderFindingsPanel(findings, { onAccept, onReject }) {
 
     container.appendChild(card);
   }
+
+  const strip = document.getElementById("findings-strip");
+  if (strip) {
+    strip.innerHTML = "";
+    for (const f of [...pending, ...others]) {
+      const card = document.createElement("div");
+      card.className = "finding-strip-card";
+      const p = document.createElement("p");
+      p.textContent = (f.description || f.remediation || "").slice(0, 280);
+      const head = document.createElement("strong");
+      head.textContent = `${f.severity} — ${f.title}`;
+      card.appendChild(head);
+      card.appendChild(p);
+      card.onclick = () => { document.getElementById("findings-panel").hidden = false; };
+      strip.appendChild(card);
+    }
+  }
 }
 
 export function renderFindingMarker(finding) {
   const feed = document.getElementById("steps-feed");
   const div = document.createElement("div");
   div.className = "step finding-marker";
-  div.textContent = `Hallazgo propuesto: ${finding.title}`;
+  const title = document.createElement("div");
+  title.textContent = `Hallazgo propuesto: ${finding.title}`;
+  div.appendChild(title);
+  if (finding.description) {
+    const pre = document.createElement("pre");
+    pre.className = "step-detail";
+    pre.textContent = finding.description;
+    div.appendChild(pre);
+  }
   div.onclick = () => { document.getElementById("findings-panel").hidden = false; };
   feed.appendChild(div);
   feed.scrollTop = feed.scrollHeight;
