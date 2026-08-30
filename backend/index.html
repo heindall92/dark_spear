@@ -27,10 +27,16 @@
       <button id="add-key-btn" type="button">Agregar key</button>
       <button id="close-keys-btn" type="button">Listo</button>
     </div>
+    <div id="findings-panel" hidden>
+      <h2>Hallazgos</h2>
+      <div id="findings-list"></div>
+      <button id="close-findings-btn" type="button">Cerrar</button>
+    </div>
     <section id="steps-panel" hidden>
       <div id="phase-bar">
         <span id="phase-indicator">Fase 1/4: Intelligence Gathering</span>
         <button id="advance-phase-btn" type="button">Avanzar fase</button>
+        <button id="findings-btn" type="button">Hallazgos (0 pendientes)</button>
       </div>
       <div id="steps-feed"></div>
       <button id="export-btn">Export JSON</button>

@@ -16,6 +16,7 @@ toy dev server.
   pentesting (e.g. "rm"), independent of the scope check.
 """
 import getpass
+import hashlib
 import json
 import re
 import secrets
@@ -119,11 +120,20 @@ def _sanitize_for_path(text: str) -> str:
 
 def _save_findings() -> None:
     findings_path = CURRENT_ENGAGEMENT_DIR / "findings.json"
-    findings_path.write_text(json.dumps(FINDINGS, indent=2))
+    findings_path.write_text(json.dumps(FINDINGS, indent=2), encoding="utf-8")
 
 
 def _next_finding_id() -> str:
     return f"f-{len(FINDINGS) + 1}"
+
+
+def _apply_finding_edits(finding: dict, edited_fields: dict) -> str | None:
+    for key in ("title", "asset", "severity", "description", "remediation"):
+        if key in edited_fields:
+            if key == "severity" and edited_fields[key] not in FINDING_SEVERITIES:
+                return f"invalid_severity: must be one of {sorted(FINDING_SEVERITIES)}"
+            finding[key] = edited_fields[key]
+    return None
 
 
 def audit_log(entry: dict) -> None:
@@ -478,6 +488,51 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "no_active_engagement"})
                 return
             self._send_json(200, FINDINGS)
+            return
+
+        if self.path == "/findings/review":
+            if CURRENT_SCOPE is None:
+                self._send_json(400, {"error": "no_active_engagement"})
+                return
+            body = self._read_json()
+            finding_id = body.get("finding_id", "")
+            action = body.get("action", "")
+            finding = next((f for f in FINDINGS if f["id"] == finding_id), None)
+            if finding is None:
+                self._send_json(404, {"error": "finding_not_found"})
+                return
+            if action not in {"accept", "reject", "edit"}:
+                self._send_json(400, {"error": "invalid_action"})
+                return
+
+            if action in ("edit", "accept"):
+                error = _apply_finding_edits(finding, body.get("edited_fields", {}))
+                if error:
+                    self._send_json(400, {"error": error})
+                    return
+
+            if action == "edit":
+                finding["status"] = "edited"
+                finding["reviewed_at"] = time.time()
+            elif action == "reject":
+                finding["status"] = "rejected"
+                finding["reviewed_at"] = time.time()
+            elif action == "accept":
+                evidence_texts = body.get("evidence_texts", [])
+                hashes = []
+                for entry in evidence_texts:
+                    output = entry.get("output", "")
+                    output_bytes = output.encode("utf-8")
+                    digest = hashlib.sha256(output_bytes).hexdigest()
+                    (CURRENT_ENGAGEMENT_DIR / "evidence" / f"{digest}.txt").write_bytes(output_bytes)
+                    hashes.append(digest)
+                finding["evidence_hashes"] = hashes
+                finding["status"] = "accepted"
+                finding["reviewed_at"] = time.time()
+
+            _save_findings()
+            audit_log({"event": "finding_reviewed", "id": finding_id, "action": action})
+            self._send_json(200, finding)
             return
 
         self._send_json(404, {"error": "unknown endpoint"})

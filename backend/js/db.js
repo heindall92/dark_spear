@@ -1,20 +1,25 @@
 const DB_NAME = "auditor";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export function initDB() {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = (event) => {
       const db = event.target.result;
-      const eng = db.createObjectStore("engagement", { keyPath: "id", autoIncrement: true });
-      eng.createIndex("status", "status");
-      const steps = db.createObjectStore("steps", { keyPath: "id", autoIncrement: true });
-      steps.createIndex("engagementId", "engagementId");
-      const findings = db.createObjectStore("findings", { keyPath: "id", autoIncrement: true });
-      findings.createIndex("engagementId", "engagementId");
-      const axis = db.createObjectStore("axis_ledger", { keyPath: "id", autoIncrement: true });
-      axis.createIndex("engagementId", "engagementId");
-      axis.createIndex("lookup", ["engagementId", "tool", "paramsHash"]);
+      if (event.oldVersion < 1) {
+        const eng = db.createObjectStore("engagement", { keyPath: "id", autoIncrement: true });
+        eng.createIndex("status", "status");
+        const steps = db.createObjectStore("steps", { keyPath: "id", autoIncrement: true });
+        steps.createIndex("engagementId", "engagementId");
+        const axis = db.createObjectStore("axis_ledger", { keyPath: "id", autoIncrement: true });
+        axis.createIndex("engagementId", "engagementId");
+        axis.createIndex("lookup", ["engagementId", "tool", "paramsHash"]);
+      }
+      if (event.oldVersion < 2) {
+        if (db.objectStoreNames.contains("findings")) {
+          db.deleteObjectStore("findings");
+        }
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -61,21 +66,24 @@ export function getSteps(db, engagementId) {
   });
 }
 
-export function addFinding(db, { engagementId, type, value, sourceStepId }) {
+export function getStepsByIds(db, stepIds) {
   return new Promise((resolve, reject) => {
-    const store = tx(db, "findings", "readwrite");
-    const req = store.add({ engagementId, type, value, sourceStepId, timestamp: Date.now() });
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-export function getFindings(db, engagementId) {
-  return new Promise((resolve, reject) => {
-    const store = tx(db, "findings");
-    const req = store.index("engagementId").getAll(engagementId);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    if (stepIds.length === 0) {
+      resolve([]);
+      return;
+    }
+    const store = tx(db, "steps");
+    const results = new Array(stepIds.length);
+    let remaining = stepIds.length;
+    stepIds.forEach((id, i) => {
+      const req = store.get(id);
+      req.onsuccess = () => {
+        results[i] = req.result;
+        remaining -= 1;
+        if (remaining === 0) resolve(results);
+      };
+      req.onerror = () => reject(req.error);
+    });
   });
 }
 
@@ -100,15 +108,12 @@ export function upsertAxisEntry(db, entry) {
 }
 
 export async function exportEngagementJSON(db, engagementId) {
-  const [steps, findings] = await Promise.all([
-    getSteps(db, engagementId),
-    getFindings(db, engagementId),
-  ]);
+  const steps = await getSteps(db, engagementId);
   const axis = await new Promise((resolve, reject) => {
     const store = tx(db, "axis_ledger");
     const req = store.index("engagementId").getAll(engagementId);
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
-  return { engagementId, steps, findings, axis_ledger: axis };
+  return { engagementId, steps, axis_ledger: axis };
 }
