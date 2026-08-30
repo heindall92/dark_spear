@@ -61,10 +61,30 @@ function isDangerous(tool, args) {
   return DANGEROUS_ARG_PATTERNS.some((re) => re.test(joined));
 }
 
+function stepOutput(step) {
+  const out = step.output ?? step.stdout ?? "";
+  const err = step.stderr ?? "";
+  const combined = [out, err].filter(Boolean).join("\n");
+  return combined.slice(0, 1200);
+}
+
+function normalizeStep(id, engagementId, fields) {
+  return {
+    id,
+    engagementId,
+    tool: fields.tool,
+    args: fields.args || [],
+    output: fields.output ?? fields.stdout ?? "",
+    stderr: fields.stderr ?? "",
+    exitCode: fields.exitCode ?? fields.exit_code ?? 0,
+    verdict: fields.verdict,
+  };
+}
+
 function buildUserPrompt(target, steps, axisWarning, phase) {
   const history = steps
     .slice(-10)
-    .map((s) => `[#${s.id} ${s.tool} ${JSON.stringify(s.args)}] -> exit=${s.exitCode} verdict=${s.verdict}\n${(s.output || "").slice(0, 300)}`)
+    .map((s) => `[#${s.id} ${s.tool} ${JSON.stringify(s.args)}] -> exit=${s.exitCode ?? s.exit_code} verdict=${s.verdict}\n${stepOutput(s) || "(no output)"}`)
     .join("\n---\n");
   const toolsNow = [...cumulativePhaseTools(phase)].join(", ");
   let prompt = `Target: ${target}\nFase actual: ${phase}/4 — ${PHASE_NAMES[phase]}.\nTools disponibles ahora: ${toolsNow}.\nRecent history:\n${history || "(no steps yet)"}`;
@@ -98,7 +118,11 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
           output: "", stderr: `all API keys exhausted, retry in ~${Math.ceil(err.retryAfterHint / 60)}min`,
           exitCode: -1, verdict: "waiting_for_quota",
         });
-        const step = { id: stepId, engagementId, tool: "(agent)", args: [], verdict: "waiting_for_quota" };
+        const step = normalizeStep(stepId, engagementId, {
+          tool: "(agent)", args: [],
+          stderr: `all API keys exhausted, retry in ~${Math.ceil(err.retryAfterHint / 60)}min`,
+          verdict: "waiting_for_quota",
+        });
         steps = [...steps, step];
         onStep(step);
         onWaitingForQuota(err.retryAfterHint);
@@ -111,13 +135,20 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
         engagementId, tool: "(agent)", args: [],
         output: "", stderr: err.message, exitCode: -1, verdict: "agent_error",
       });
-      const step = { id: stepId, engagementId, tool: "(agent)", args: [], verdict: "agent_error" };
+      const step = normalizeStep(stepId, engagementId, {
+        tool: "(agent)", args: [], stderr: err.message, verdict: "agent_error",
+      });
       steps = [...steps, step];
       onStep(step);
       if (consecutiveErrors >= MAX_CONSECUTIVE_AGENT_ERRORS) {
-        throw new Error(`agent_stuck: ${MAX_CONSECUTIVE_AGENT_ERRORS} consecutive malformed responses, last: ${err.message}`);
+        onStep(normalizeStep(null, engagementId, {
+          tool: "(agent)", args: [],
+          stderr: `El modelo devolvió ${MAX_CONSECUTIVE_AGENT_ERRORS} respuestas inválidas seguidas. Último error: ${err.message}`,
+          verdict: "agent_error",
+        }));
+        return;
       }
-      agentErrorHint = `\n\nYour last response was invalid: ${err.message}. Follow the JSON contract exactly.`;
+      agentErrorHint = `\n\nYour last response was invalid: ${err.message}. Follow the JSON contract exactly. Output ONLY the JSON object.`;
       continue;
     }
     consecutiveErrors = 0;
@@ -137,11 +168,18 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
           engagementId, tool: "(agent)", args: [],
           output: "", stderr: err.message, exitCode: -1, verdict: "agent_error",
         });
-        const step = { id: stepId, engagementId, tool: "(agent)", args: [], verdict: "agent_error" };
+        const step = normalizeStep(stepId, engagementId, {
+          tool: "(agent)", args: [], stderr: err.message, verdict: "agent_error",
+        });
         steps = [...steps, step];
         onStep(step);
         if (consecutiveErrors >= MAX_CONSECUTIVE_AGENT_ERRORS) {
-          throw new Error(`agent_stuck: ${MAX_CONSECUTIVE_AGENT_ERRORS} consecutive malformed responses, last: ${err.message}`);
+          onStep(normalizeStep(null, engagementId, {
+            tool: "(agent)", args: [],
+            stderr: `El modelo devolvió ${MAX_CONSECUTIVE_AGENT_ERRORS} hallazgos inválidos seguidos. Último error: ${err.message}`,
+            verdict: "agent_error",
+          }));
+          return;
         }
         agentErrorHint = `\n\nYour last finding proposal was invalid: ${err.message}. Follow the finding JSON contract exactly.`;
         continue;
@@ -158,24 +196,45 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
           engagementId, tool: decision.tool, args: decision.args,
           output: "", stderr: "rejected by operator", exitCode: -1, verdict: "rejected",
         });
-        const step = { id: stepId, engagementId, tool: decision.tool, args: decision.args, verdict: "rejected" };
+        const step = normalizeStep(stepId, engagementId, {
+          tool: decision.tool, args: decision.args,
+          stderr: "rejected by operator", verdict: "rejected",
+        });
         steps = [...steps, step];
         onStep(step);
         continue;
       }
     }
 
-    const result = await execTool(decision.tool, decision.args, target);
-    const stepId = await addStep(db, {
-      engagementId, tool: decision.tool, args: decision.args,
-      output: result.stdout, stderr: result.stderr,
-      exitCode: result.exit_code, verdict: result.verdict,
-    });
-    const step = { id: stepId, engagementId, tool: decision.tool, args: decision.args, ...result };
-    steps = [...steps, step];
-    onStep(step);
+    try {
+      const result = await execTool(decision.tool, decision.args, target);
+      const stepId = await addStep(db, {
+        engagementId, tool: decision.tool, args: decision.args,
+        output: result.stdout, stderr: result.stderr,
+        exitCode: result.exit_code, verdict: result.verdict,
+      });
+      const step = normalizeStep(stepId, engagementId, {
+        tool: decision.tool, args: decision.args,
+        output: result.stdout, stderr: result.stderr,
+        exitCode: result.exit_code, verdict: result.verdict,
+      });
+      steps = [...steps, step];
+      onStep(step);
 
-    const axisResult = await checkAndRecordAxis(db, engagementId, decision.tool, decision.args, result.stdout);
-    axisWarning = axisResult.warn;
+      const axisResult = await checkAndRecordAxis(db, engagementId, decision.tool, decision.args, result.stdout ?? "");
+      axisWarning = axisResult.warn;
+    } catch (err) {
+      if (err instanceof QuotaExhaustedError) throw err;
+      const stepId = await addStep(db, {
+        engagementId, tool: decision.tool, args: decision.args,
+        output: "", stderr: err.message, exitCode: -1, verdict: "error",
+      });
+      const step = normalizeStep(stepId, engagementId, {
+        tool: decision.tool, args: decision.args,
+        stderr: err.message, verdict: "error",
+      });
+      steps = [...steps, step];
+      onStep(step);
+    }
   }
 }

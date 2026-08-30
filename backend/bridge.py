@@ -22,6 +22,7 @@ import re
 import secrets
 import shutil
 import subprocess
+import sys
 import threading
 import time
 import urllib.error
@@ -40,7 +41,7 @@ ALLOWED_LLM_ENDPOINTS = {
     "http://localhost:11434/v1/chat/completions",
 }
 
-STATIC_DIR = Path(__file__).parent
+STATIC_DIR = Path(__file__).resolve().parent
 LOG_PATH = Path.home() / ".auditor" / "exec.log"
 LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -243,11 +244,11 @@ class Handler(BaseHTTPRequestHandler):
         if not file_path.is_file():
             self._send_json(404, {"error": "not found"})
             return
-        content_type = "text/html"
+        content_type = "text/html; charset=utf-8"
         if file_path.suffix == ".js":
-            content_type = "application/javascript"
+            content_type = "application/javascript; charset=utf-8"
         elif file_path.suffix == ".css":
-            content_type = "text/css"
+            content_type = "text/css; charset=utf-8"
         data = file_path.read_bytes()
         self.send_response(200)
         self.send_header("Content-Type", content_type)
@@ -256,6 +257,15 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def do_POST(self) -> None:
+        try:
+            self._handle_post()
+        except json.JSONDecodeError:
+            self._send_json(400, {"error": "invalid_json"})
+        except Exception as e:
+            audit_log({"event": "handler_error", "path": self.path, "error": str(e)})
+            self._send_json(500, {"error": "internal_error", "detail": str(e)})
+
+    def _handle_post(self) -> None:
         global CURRENT_SCOPE, CURRENT_PHASE, CURRENT_ENGAGEMENT_DIR, FINDINGS, KEYS, PASSPHRASE, ROTATION_STATE
         if not self._host_ok():
             self._send_json(403, {"error": "forbidden_host"})
@@ -325,7 +335,14 @@ class Handler(BaseHTTPRequestHandler):
 
             cmd = [resolved] + [str(a) for a in args]
             try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+                proc = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                    timeout=120,
+                )
                 result = {"stdout": _truncate_output(proc.stdout),
                           "stderr": _truncate_output(proc.stderr),
                           "exit_code": proc.returncode, "verdict": "ok"}
@@ -334,6 +351,9 @@ class Handler(BaseHTTPRequestHandler):
                           "exit_code": -1, "verdict": "timeout"}
             except FileNotFoundError:
                 result = {"stdout": "", "stderr": f"{tool}: command not found",
+                          "exit_code": -1, "verdict": "error"}
+            except OSError as e:
+                result = {"stdout": "", "stderr": str(e),
                           "exit_code": -1, "verdict": "error"}
             audit_log({"event": "exec", "tool": tool, "resolved_path": resolved,
                        "args": args, "target": target,
@@ -541,16 +561,35 @@ class Handler(BaseHTTPRequestHandler):
         pass
 
 
+def _read_passphrase() -> str:
+    prompt = "Auditor keystore passphrase (used to encrypt/decrypt your API keys): "
+    try:
+        if sys.stdin.isatty():
+            return getpass.getpass(prompt)
+    except (EOFError, OSError):
+        pass
+    return input(prompt)
+
+
 if __name__ == "__main__":
-    PASSPHRASE = getpass.getpass("Auditor keystore passphrase (used to encrypt/decrypt your API keys): ")
+    PASSPHRASE = _read_passphrase()
     try:
         KEYS = keystore.load_or_init(PASSPHRASE)
     except ValueError:
-        print("Wrong passphrase for existing keystore. Aborting.")
+        print("Passphrase incorrecta para el keystore existente (~/.auditor/keys.enc).")
+        print("Si la olvidaste, borralo y volvé a arrancar (tendrás que reingresar las API keys):")
+        print("  rm ~/.auditor/keys.enc")
         raise SystemExit(1)
     print(f"Loaded {len(KEYS)} stored API key(s).")
 
-    server = ThreadingHTTPServer(("127.0.0.1", 8420), Handler)
+    try:
+        server = ThreadingHTTPServer(("127.0.0.1", 8420), Handler)
+    except OSError as e:
+        print(f"No se pudo abrir 127.0.0.1:8420 ({e}).")
+        print("Hay otra instancia de bridge.py (u otro proceso) usando el puerto. Cerrala y reintentá:")
+        print("  sudo fuser -k 8420/tcp")
+        print("  python3 bridge.py")
+        raise SystemExit(1)
     print("Auditor bridge listening on http://127.0.0.1:8420")
     print(f"Session token (needed by the UI, auto-filled via URL): {AUTH_TOKEN}")
     print(f"Open: http://127.0.0.1:8420/?token={AUTH_TOKEN}")

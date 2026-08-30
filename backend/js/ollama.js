@@ -1,9 +1,7 @@
-import { llmChat } from "./bridge_client.js";
+import { llmChat, QuotaExhaustedError } from "./bridge_client.js";
 
 const DEFAULT_URL = "https://ollama.com/v1/chat/completions";
 
-// Kept in sync by hand with bridge.py's ALLOWED_TOOLS — this is what the
-// model is told exists, the bridge is what actually enforces it.
 const ALLOWED_TOOLS_HINT = [
   "nmap", "gobuster", "ffuf", "nikto", "whatweb", "hydra", "sqlmap",
   "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
@@ -18,7 +16,7 @@ const ALLOWED_TOOLS_HINT = [
 
 const SHELL_WRAPPERS = new Set(["bash", "sh", "zsh", "cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh"]);
 
-const RESPONSE_CONTRACT = `You must respond with ONLY a JSON object, no prose, no markdown fences.
+const RESPONSE_CONTRACT = `You must respond with ONLY a JSON object, no prose, no markdown fences, no <think> blocks.
 Either:
 {"tool": "<binary name>", "args": ["<arg1>", "<arg2>", ...], "reasoning": "<why>"}
 or, if the engagement objective is complete:
@@ -36,34 +34,191 @@ bash/sh/zsh/cmd/powershell, never a full command string:
 ${ALLOWED_TOOLS_HINT.join(", ")}
 "args" is that binary's own argv, each element a SEPARATE argument (the way
 you'd pass them to subprocess.run(["tool", "arg1", "arg2"]), never one
-combined command string.
+combined command string. Split flags: use ["-p","8888"] not ["-p 8888"].
+Read the Recent history outputs before repeating a scan. Do not re-run the same nmap/whatweb/curl if you already have the result.
 Reporting a finding does NOT end the engagement — keep working after it.`;
+
+const JSON_RETRY_HINT = `
+
+CRITICAL: Your previous reply was not valid JSON. Reply with ONE JSON object only.
+Example: {"tool":"nmap","args":["-sV","-p","8888","127.0.0.1"],"reasoning":"service scan"}`;
+
+function flattenContent(value) {
+  if (value == null) return "";
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    return value.map((part) => {
+      if (typeof part === "string") return part;
+      if (!part || typeof part !== "object") return "";
+      return part.text || part.content || part.reasoning || part.thinking || "";
+    }).join("\n");
+  }
+  if (typeof value === "object") {
+    return value.text || value.content || JSON.stringify(value);
+  }
+  return String(value);
+}
+
+function collectMessageText(data) {
+  const msg = data.choices?.[0]?.message ?? data.message ?? {};
+  const toolArgs = (msg.tool_calls || [])
+    .map((c) => c.function?.arguments || c.arguments || "")
+    .filter(Boolean)
+    .join("\n");
+  const parts = [
+    flattenContent(msg.content),
+    flattenContent(msg.reasoning),
+    flattenContent(msg.thinking),
+    flattenContent(data.response),
+    flattenContent(data.choices?.[0]?.text),
+    toolArgs,
+  ].filter((x) => typeof x === "string" && x.trim());
+  return parts.join("\n");
+}
+
+function stripReasoning(text) {
+  return String(text)
+    .replace(/<think>[\s\S]*?<\/think>/gi, "")
+    .replace(/<thinking>[\s\S]*?<\/thinking>/gi, "")
+    .replace(/<\|channel\|>analysis[\s\S]*?<\|channel\|>final/gi, "")
+    .replace(/<\|[^|>]+\|>/g, "\n")
+    .replace(/```(?:json)?/gi, "")
+    .trim();
+}
+
+function tryParseJson(text) {
+  const repaired = text
+    .replace(/,\s*}/g, "}")
+    .replace(/,\s*]/g, "]");
+  try {
+    return JSON.parse(text);
+  } catch {
+    return JSON.parse(repaired);
+  }
+}
+
+function parseAgentJson(raw) {
+  const cleaned = stripReasoning(raw);
+  const candidates = [cleaned];
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start >= 0 && end > start) {
+    candidates.push(cleaned.slice(start, end + 1));
+  }
+  const keyed = cleaned.match(/\{[\s\S]*?"(?:tool|done|finding|command|binary)"[\s\S]*\}/);
+  if (keyed) candidates.push(keyed[0]);
+
+  let lastErr;
+  for (const candidate of candidates) {
+    try {
+      return tryParseJson(candidate);
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw new Error(`ollama_invalid_json: ${String(raw).slice(0, 240)}${lastErr ? ` (${lastErr.message})` : ""}`);
+}
+
+function normalizeArgs(args) {
+  let list;
+  if (Array.isArray(args)) list = args.map(String);
+  else if (typeof args === "string" && args.trim()) {
+    list = args.match(/(?:[^\s"]+|"[^"]*")+/g)?.map((a) => a.replace(/^"|"$/g, "")) || [args];
+  } else if (args && typeof args === "object") {
+    list = Object.values(args).map(String);
+  } else {
+    list = [];
+  }
+  const out = [];
+  for (const item of list) {
+    if (/^-[A-Za-z]+\s+\S/.test(item)) out.push(...item.split(/\s+/));
+    else out.push(item);
+  }
+  return out;
+}
+
+function splitToolAndArgs(tool, args) {
+  const argv = normalizeArgs(args);
+  if (typeof tool === "string" && tool.includes(" ")) {
+    const parts = tool.trim().split(/\s+/);
+    return { tool: parts[0], args: [...parts.slice(1), ...argv] };
+  }
+  return { tool, args: argv };
+}
+
+function coerceFinding(finding) {
+  const sevMap = { critical: "Critical", high: "High", medium: "Medium", low: "Low", info: "Info" };
+  const severity = sevMap[String(finding.severity || "info").toLowerCase()] || "Info";
+  let ids = finding.evidence_step_ids;
+  if (!Array.isArray(ids)) ids = [];
+  ids = ids.map((id) => {
+    if (typeof id === "number" && Number.isFinite(id)) return id;
+    const n = parseInt(String(id).replace(/^#/, ""), 10);
+    return Number.isFinite(n) ? n : id;
+  });
+  return {
+    title: String(finding.title || "Untitled finding").trim() || "Untitled finding",
+    asset: String(finding.asset || "").trim() || "unknown",
+    severity,
+    description: String(finding.description || finding.impact || "").trim() || "(sin descripción)",
+    remediation: String(finding.remediation || finding.fix || "").trim() || "(sin remediación)",
+    evidence_step_ids: ids,
+  };
+}
+
+function decisionFromParsed(parsed, raw) {
+  if (parsed.done === true || parsed.action === "done") {
+    return { done: true, reasoning: parsed.reasoning ?? "" };
+  }
+  if (parsed.finding) {
+    return { finding: coerceFinding(parsed.finding), reasoning: parsed.reasoning ?? "" };
+  }
+  const nested = parsed.action && typeof parsed.action === "object" ? parsed.action : parsed;
+  const tool = nested.tool || nested.command || nested.binary || nested.name;
+  if (!tool) throw new Error(`ollama_missing_tool_field: ${raw.slice(0, 200)}`);
+  const { tool: splitTool, args } = splitToolAndArgs(
+    tool,
+    nested.args ?? nested.argv ?? nested.parameters ?? nested.arguments ?? [],
+  );
+  if (SHELL_WRAPPERS.has(splitTool)) {
+    throw new Error(`ollama_shell_wrapper_rejected: model proposed "${splitTool}" instead of a real tool`);
+  }
+  return { tool: splitTool, args, reasoning: parsed.reasoning ?? nested.reasoning ?? "" };
+}
+
+async function chatOnce(url, model, messages) {
+  const base = { model, stream: false, temperature: 0, messages };
+  let data;
+  try {
+    data = await llmChat(url, base);
+  } catch (err) {
+    throw err;
+  }
+  if (data.error && !data.choices && !data.message) {
+    const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error);
+    throw new Error(`llm_error: ${msg}`);
+  }
+  const raw = collectMessageText(data);
+  if (!raw.trim()) {
+    throw new Error("ollama_empty_content: the model returned no text");
+  }
+  return decisionFromParsed(parseAgentJson(raw), raw);
+}
 
 export async function askAgent({ model, systemPrompt, userPrompt, endpoint }) {
   const url = endpoint || DEFAULT_URL;
-
-  const data = await llmChat(url, {
-    model,
-    stream: false,
-    messages: [
-      { role: "system", content: `${systemPrompt}\n\n${RESPONSE_CONTRACT}` },
-      { role: "user", content: userPrompt },
-    ],
-  });
-  // OpenAI-compatible shape (cloud): data.choices[0].message.content
-  // Native ollama shape (local): data.message.content
-  const raw = data.choices?.[0]?.message?.content ?? data.message?.content ?? "";
-  let parsed;
-  try {
-    parsed = JSON.parse(raw.trim());
-  } catch (e) {
-    throw new Error(`ollama_invalid_json: ${raw.slice(0, 200)}`);
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const hint = attempt === 0 ? "" : JSON_RETRY_HINT;
+    try {
+      return await chatOnce(url, model, [
+        { role: "system", content: `${systemPrompt}\n\n${RESPONSE_CONTRACT}` },
+        { role: "user", content: userPrompt + hint },
+      ]);
+    } catch (err) {
+      if (err instanceof QuotaExhaustedError) throw err;
+      lastErr = err;
+    }
   }
-  if (parsed.done) return { done: true, reasoning: parsed.reasoning ?? "" };
-  if (parsed.finding) return { finding: parsed.finding, reasoning: parsed.reasoning ?? "" };
-  if (!parsed.tool) throw new Error(`ollama_missing_tool_field: ${raw.slice(0, 200)}`);
-  if (SHELL_WRAPPERS.has(parsed.tool)) {
-    throw new Error(`ollama_shell_wrapper_rejected: model proposed "${parsed.tool}" instead of a real tool`);
-  }
-  return { tool: parsed.tool, args: parsed.args ?? [], reasoning: parsed.reasoning ?? "" };
+  throw lastErr;
 }

@@ -38,12 +38,32 @@ Abre [http://127.0.0.1:8080/](http://127.0.0.1:8080/)
 
 ### Motor (`backend/`)
 
+El motor está pensado para **Kali/Linux** (herramientas de pentest en el PATH). Necesita Python 3.10+ y el paquete `cryptography`.
+
+En Kali, `pip install` a nivel sistema falla (`externally-managed-environment`). Usá apt o un venv:
+
 ```bash
-cd backend
+cd ~/dark_spear/backend
+
+# Opción A — paquete de Kali (la más simple)
+sudo apt install -y python3-cryptography
+
+# Opción B — venv (si preferís pip)
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
 python3 bridge.py
 ```
 
 Pide una passphrase (cifra el pool de API keys) e imprime una URL con token de sesión — abrí esa URL exacta que imprime, no `http://127.0.0.1:8420/` a secas.
+
+Si ya corriste el motor antes y no recordás la passphrase:
+
+```bash
+rm ~/.auditor/keys.enc
+python3 bridge.py
+```
 
 ## Qué incluye
 

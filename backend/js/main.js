@@ -104,7 +104,7 @@ async function main() {
       URL.revokeObjectURL(url);
     };
 
-    const systemPrompt = `Eres un agente de pentest autorizado. Target en scope: ${target}. Trabaja paso a paso, una herramienta a la vez.`;
+    const systemPrompt = `Eres un agente de pentest autorizado. Target en scope: ${target}. Laboratorio local (p.ej. DVWA u otra app web en un puerto alto). Trabaja paso a paso, una herramienta a la vez. Si el historial ya muestra un servidor HTTP, no repitas nmap: usa curl para leer la app (/, login, setup) y propone hallazgos con evidencia. Responde solo JSON.`;
 
     runAgentLoop({
       db, engagementId, model, target, systemPrompt, endpoint, phaseState,
@@ -117,6 +117,11 @@ async function main() {
         renderFindingMarker(finding);
         await refreshFindingsPanel();
       },
+    }).catch((err) => {
+      renderStep({
+        tool: "(agent)", args: [], verdict: "agent_error",
+        stderr: err.message || String(err),
+      });
     });
   };
 }
