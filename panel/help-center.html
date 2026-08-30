@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -225,15 +226,15 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>

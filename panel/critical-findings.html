@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -224,179 +225,34 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
 <div class="max-w-container-max mx-auto flex flex-col gap-lg">
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
 <div>
-<div class="flex items-center gap-sm mb-xs">
-<h2 class="font-headline-xl text-headline-xl text-on-background">Critical Findings</h2>
-<span class="inline-flex items-center justify-center bg-error-container text-on-error-container font-label-md text-label-md rounded-full px-3 py-1">12 Active</span>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="critical.title">Hallazgos críticos</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="critical.lead">Hallazgos de severidad crítica pendientes de remediación.</p>
 </div>
-<p class="font-body-md text-body-md text-on-surface-variant">Deep dive into urgent security risks requiring immediate remediation.</p>
-</div>
-<div class="flex gap-sm flex-wrap">
-<div class="relative">
-<select class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 font-body-md text-body-md focus:outline-none focus:border-primary focus:border-b-2 text-on-surface-variant shadow-sm appearance-none pr-8">
-<option>Status: Open</option>
-<option>Status: In Progress</option>
-<option>Status: Resolved</option>
-</select>
-<i data-lucide="chevron-down" class="icon-sm absolute right-2 top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
-</div>
-<div class="relative">
-<select class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 font-body-md text-body-md focus:outline-none focus:border-primary focus:border-b-2 text-on-surface-variant shadow-sm appearance-none pr-8">
-<option>Asset: All Types</option>
-<option>Asset: External Web</option>
-<option>Asset: Internal API</option>
-</select>
-<i data-lucide="chevron-down" class="icon-sm absolute right-2 top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
-</div>
-<button class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 flex items-center gap-2 hover:bg-surface-container-high transition-colors shadow-sm text-on-surface-variant" type="button">
-<i data-lucide="sliders-horizontal" class="icon-md"></i>
-<span class="font-label-md text-label-md">More Filters</span>
-</button>
-</div>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="triangle-alert" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-lg">
-<div class="lg:col-span-2 xl:col-span-3 flex flex-col gap-md">
-<div class="glass-panel rounded-xl p-md flex flex-col gap-md relative overflow-hidden group hover:shadow-[0px_8px_32px_rgba(27,42,65,0.04)] transition-all">
-<div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
-<div class="flex justify-between items-start">
-<div>
-<div class="flex items-center gap-sm mb-xs">
-<i data-lucide="triangle-alert" class="text-error"></i>
-<h3 class="font-headline-md text-headline-md text-on-background">Unauthenticated Remote Code Execution (RCE)</h3>
-</div>
-<div class="flex items-center gap-4 font-body-sm text-body-sm text-on-surface-variant flex-wrap">
-<span class="flex items-center gap-1"><i data-lucide="server" class="icon-sm"></i> api.production.corp.internal</span>
-<span class="flex items-center gap-1"><i data-lucide="calendar" class="icon-sm"></i> Discovered: 2 hrs ago</span>
-<span class="flex items-center gap-1 text-error"><i data-lucide="bug" class="icon-sm"></i> CVSS: 9.8</span>
-</div>
-</div>
-<button class="text-outline hover:text-on-surface-variant" type="button" aria-label="More actions"><i data-lucide="ellipsis-vertical"></i></button>
-</div>
-<div class="bg-surface-variant/30 rounded-lg p-sm border border-outline-variant/20">
-<p class="font-label-md text-label-md text-on-surface-variant mb-xs">Evidencia (vault)</p>
-<pre class="font-mono-md text-mono-md text-on-background overflow-x-auto whitespace-pre-wrap"><code>POST /api/v2/system/diagnostic HTTP/1.1
-Host: api.production.corp.internal
-Content-Type: application/json
-
-{"cmd": "[redacted — vault]"}</code></pre>
-</div>
-<div class="flex items-center justify-between pt-sm mt-auto border-t border-outline-variant/20">
-<div class="flex -space-x-2">
-<div class="w-8 h-8 rounded-full bg-surface-container-high border-2 border-white flex items-center justify-center text-on-surface-variant">
-<i data-lucide="circle-question-mark" class="icon-sm"></i>
-</div>
-<button class="w-8 h-8 rounded-full bg-surface-container border-2 border-white flex items-center justify-center hover:bg-surface-variant transition-colors" type="button" title="Assign to" aria-label="Assign to">
-<i data-lucide="user-plus" class="icon-sm text-on-surface-variant"></i>
-</button>
-</div>
-<div class="flex gap-sm">
-<button class="px-4 py-2 border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors" type="button">Ignore</button>
-<a href="remediation-detail.html" class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm flex items-center gap-2">
-<i data-lucide="wrench" class="icon-sm"></i> Remediate
-                                    </a>
-</div>
-</div>
-</div>
-
-<div class="glass-panel rounded-xl p-md flex flex-col gap-md relative overflow-hidden group hover:shadow-[0px_8px_32px_rgba(27,42,65,0.04)] transition-all">
-<div class="absolute top-0 left-0 w-full h-1 bg-error"></div>
-<div class="flex justify-between items-start">
-<div>
-<div class="flex items-center gap-sm mb-xs">
-<i data-lucide="triangle-alert" class="text-error"></i>
-<h3 class="font-headline-md text-headline-md text-on-background">SQL Injection (Blind) in Authentication Module</h3>
-</div>
-<div class="flex items-center gap-4 font-body-sm text-body-sm text-on-surface-variant flex-wrap">
-<span class="flex items-center gap-1"><i data-lucide="globe" class="icon-sm"></i> login.customer-portal.com</span>
-<span class="flex items-center gap-1"><i data-lucide="calendar" class="icon-sm"></i> Discovered: 5 hrs ago</span>
-<span class="flex items-center gap-1 text-error"><i data-lucide="bug" class="icon-sm"></i> CVSS: 9.1</span>
-</div>
-</div>
-<button class="text-outline hover:text-on-surface-variant" type="button" aria-label="More actions"><i data-lucide="ellipsis-vertical"></i></button>
-</div>
-<div class="bg-surface-variant/30 rounded-lg p-sm border border-outline-variant/20">
-<p class="font-label-md text-label-md text-on-surface-variant mb-xs">Observed Behavior</p>
-<p class="font-body-md text-body-md text-on-background">Time-based blind SQL injection detected on the 'username' parameter. A payload introducing a 5-second delay consistently resulted in a 5003ms response time increase.</p>
-</div>
-<div class="flex items-center justify-between pt-sm mt-auto border-t border-outline-variant/20">
-<div class="flex -space-x-2">
-<img alt="Assignee" class="w-8 h-8 rounded-full border-2 border-white object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxhRf_S20OvPUOFG9cDbsQDkLV577t9PsLtFpYTvl5pREHGbTZtSN10Pc81-HBnIQqYedtIlmV5pY8sSLhk81webH8WZpaHIrYGwRzYTJPsFuDPhQWJ1kw2rTHKePFrSpnfm-J36Zdi3KYMeHQ6i_be7FO8XdgKJXGFXSouFIsVy8-hymIGWGxMDkiUH4116bijPNGmK6rxW9wQLaT6JbPyoRfdygO58JvqrrCawhyfe889ixIKYXREw"/>
-</div>
-<div class="flex gap-sm">
-<a href="finding-detail.html" class="px-4 py-2 border border-outline-variant rounded-lg font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-low transition-colors">Details</a>
-<a href="remediation-detail.html" class="px-4 py-2 bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md hover:opacity-90 transition-opacity shadow-sm flex items-center gap-2">
-<i data-lucide="wrench" class="icon-sm"></i> Remediate
-                                    </a>
-</div>
-</div>
-</div>
-</div>
-
-<div class="lg:col-span-1 flex flex-col gap-md">
-<div class="glass-panel rounded-xl p-lg flex flex-col gap-md">
-<h3 class="font-headline-md text-headline-md text-on-background flex items-center gap-2">
-<i data-lucide="chart-column" class="text-primary"></i> Risk Impact Summary
-                            </h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Aggregated potential damage from currently active critical findings.</p>
-<div class="flex flex-col gap-sm mt-sm">
-<div>
-<div class="flex justify-between font-label-md text-label-md mb-xs">
-<span class="text-on-background">Data Exfiltration Risk</span>
-<span class="text-error">High (85%)</span>
-</div>
-<div class="w-full bg-surface-variant rounded-full h-1.5">
-<div class="bg-error h-1.5 rounded-full" style="width: 85%"></div>
-</div>
-</div>
-<div>
-<div class="flex justify-between font-label-md text-label-md mb-xs">
-<span class="text-on-background">System Downtime Risk</span>
-<span class="text-error">Medium (45%)</span>
-</div>
-<div class="w-full bg-surface-variant rounded-full h-1.5">
-<div class="bg-primary h-1.5 rounded-full" style="width: 45%"></div>
-</div>
-</div>
-<div>
-<div class="flex justify-between font-label-md text-label-md mb-xs">
-<span class="text-on-background">Compliance Violation Risk</span>
-<span class="text-error">Severe (95%)</span>
-</div>
-<div class="w-full bg-surface-variant rounded-full h-1.5">
-<div class="bg-error h-1.5 rounded-full" style="width: 95%"></div>
-</div>
-</div>
-</div>
-<div class="mt-md pt-md border-t border-outline-variant/30">
-<p class="font-label-md text-label-md text-on-surface-variant mb-sm">Affected Asset Types</p>
-<div class="flex flex-wrap gap-2">
-<span class="px-3 py-1 bg-surface-container rounded-md font-body-sm text-body-sm text-on-background border border-outline-variant/20">Internal APIs (5)</span>
-<span class="px-3 py-1 bg-surface-container rounded-md font-body-sm text-body-sm text-on-background border border-outline-variant/20">External Web (4)</span>
-<span class="px-3 py-1 bg-surface-container rounded-md font-body-sm text-body-sm text-on-background border border-outline-variant/20">Databases (3)</span>
-</div>
-</div>
-<button class="w-full mt-sm px-4 py-2 bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-label-md text-label-md text-primary hover:bg-surface-container transition-colors shadow-sm" type="button">
-                                Generate Impact Report
-                            </button>
-</div>
-</div>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
 </div>
 </main>

@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -232,34 +233,34 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-hidden p-lg pointer-events-none select-none blur-[4px] opacity-40">
-<div class="max-w-container-max mx-auto flex flex-col gap-md">
-<nav class="flex items-center gap-sm font-body-sm text-body-sm text-on-surface-variant">
-<span data-i18n="nav.critical">Critical Findings</span>
-<i data-lucide="chevron-right" class="icon-sm"></i>
-<span class="font-mono-md text-mono-md">CVE-2023-4567</span>
-</nav>
-<h2 class="font-headline-xl text-headline-xl text-on-background">Remote Code Execution in Core Service</h2>
-<div class="flex items-center gap-md">
-<span class="inline-flex items-center px-2 py-1 rounded bg-error-container/50 text-error font-label-md text-label-md border border-error-container">Critical</span>
-<span class="font-body-sm text-body-sm text-on-surface-variant">CVSS 9.8</span>
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="verify.title">Solicitud de verificación</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="verify.lead">Modal de verificación post-remediación.</p>
 </div>
-<div class="glass-panel rounded-lg p-lg max-w-3xl">
-<h3 class="font-headline-md text-headline-md mb-sm">Description</h3>
-<p class="font-body-md text-body-md text-on-surface-variant">A critical vulnerability in the core authentication service allows unauthenticated remote code execution via the legacy auth-v1 endpoint.</p>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="shield-check" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
+
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
 </div>
 </main>
@@ -270,7 +271,7 @@
 <div class="px-lg py-md border-b border-outline-variant/30 flex items-start justify-between gap-md">
 <div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface" id="modal-title">Request Verification</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Submit evidence for CVE-2023-4567 remediation.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="verify.modalLead">Enviá evidencia de remediación para verificación.</p>
 </div>
 <a href="remediation-detail.html" class="p-sm rounded-full hover:bg-surface-variant/50 text-on-surface-variant transition-colors shrink-0" aria-label="Close">
 <i data-lucide="x"></i>

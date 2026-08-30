@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -224,154 +225,35 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
 <div class="max-w-container-max mx-auto flex flex-col gap-lg">
-
-<nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant flex-wrap" aria-label="Breadcrumb">
-<a class="hover:text-primary transition-colors" href="critical-findings.html">Critical Findings</a>
-<i data-lucide="chevron-right" class="icon-sm text-outline"></i>
-<a class="hover:text-primary transition-colors" href="critical-findings.html">SQL Injection in User Login</a>
-<i data-lucide="chevron-right" class="icon-sm text-outline"></i>
-<span class="text-on-surface font-semibold">Remediation Success</span>
-</nav>
-
-<div class="bg-tertiary-container/10 border border-tertiary-container/30 rounded-lg p-md flex flex-col md:flex-row items-start md:items-center justify-between gap-md">
-<div class="flex items-center gap-md">
-<div class="bg-tertiary text-on-tertiary rounded-full p-xs flex items-center justify-center shrink-0">
-<i data-lucide="circle-check"></i>
-</div>
 <div>
-<h2 class="font-headline-md text-headline-md text-tertiary font-bold">Vulnerability Successfully Remediated</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant">Finding ID: VULN-2023-0891 has been verified and permanently closed.</p>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="rem.done">Remediación completada</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="rem.doneLead">Confirmación tras enviar evidencia de verificación.</p>
 </div>
-</div>
-<button class="bg-primary-container text-on-primary-container px-md py-sm rounded-lg hover:bg-primary transition-colors font-label-md text-label-md flex items-center gap-xs shrink-0" type="button">
-<i data-lucide="download" class="icon-md"></i>
-<span>Download Remediation Report</span>
-</button>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="circle-check" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-xl pb-lg">
-<div class="lg:col-span-1 flex flex-col gap-xl">
-<section class="glass-panel rounded-xl p-lg flex flex-col gap-md">
-<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Key Metrics</h3>
-<div class="flex flex-col gap-sm">
-<span class="font-label-md text-label-md text-on-surface-variant">Time to Remediate (TTR)</span>
-<div class="flex items-end gap-sm">
-<span class="font-headline-xl text-headline-xl text-primary font-bold">4.2</span>
-<span class="font-body-md text-body-md text-on-surface-variant mb-1">Days</span>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
-<div class="h-2 w-full bg-surface-container-high rounded-full overflow-hidden mt-xs">
-<div class="h-full bg-tertiary w-3/4"></div>
-</div>
-<span class="font-body-sm text-body-sm text-tertiary mt-xs">Faster than SLA by 2.8 days</span>
-</div>
-<div class="border-t border-outline-variant/30 pt-md mt-sm">
-<div class="flex justify-between items-center mb-xs">
-<span class="font-label-md text-label-md text-on-surface-variant">Severity at Discovery</span>
-<span class="bg-error-container text-on-error-container font-label-md text-label-md px-2 py-0.5 rounded">Critical</span>
-</div>
-<div class="flex justify-between items-center">
-<span class="font-label-md text-label-md text-on-surface-variant">Current Status</span>
-<span class="bg-surface-container-highest text-on-surface-variant font-label-md text-label-md px-2 py-0.5 rounded">Closed</span>
-</div>
-</div>
-</section>
-
-<section class="glass-panel rounded-xl p-lg flex flex-col gap-md">
-<h3 class="font-headline-md text-headline-md text-on-surface font-semibold">Involved Personnel</h3>
-<ul class="flex flex-col gap-sm">
-<li class="flex items-center gap-sm">
-<img alt="Sarah Jenkins" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDL2VEohJ5XNwzf9IiOCSzkcJD4XQHSwIbkq_mVY5CDsvKFluJ6MUCnKX5JDN68E46cJySos6uhzlJvx_fjpCEtmQtc-yOvpc2fQvWlF8dnPTi8AS7_Kcbt_7d65GClgFnzr2kN6SAN_QkoQ4MWMQCa4Ft6O8fYAsEDHGLuufmZxgcab0JlSxOo4nZCqwIpl883192if2JlSWwF46-LneqtqDIVb7cuHuK06wdwbkPdoxFRaNuatimAbQ"/>
-<div>
-<div class="font-label-md text-label-md text-on-surface">Sarah Jenkins</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant">Lead Resolver</div>
-</div>
-</li>
-<li class="flex items-center gap-sm">
-<img alt="David Chen" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXYi9mHzNH77rKgmYhYie5QgLrN873SiFkmifHF0Xdu5J1inbCknUd-ruXePp9-YN6ruer1uad_8EMPQWic01CVsDm8UnT8XRitAVAmr-WRhtxyd3wtDPMWLSM09WpCf2jvAFq5kLnjQ_QHU2QnOV-S12YPr5iCLbW0at-thzudJd5DGtBtUJMZfl1_dYRkF4tdiZs6gvSNvunTQtz1saTJ3mpHpgNFVk0icV4wN42wEdJcFvxjBgAPg"/>
-<div>
-<div class="font-label-md text-label-md text-on-surface">David Chen</div>
-<div class="font-body-sm text-body-sm text-on-surface-variant">Verifier</div>
-</div>
-</li>
-</ul>
-</section>
-</div>
-
-<section class="lg:col-span-2 glass-panel rounded-xl p-lg">
-<h3 class="font-headline-md text-headline-md text-on-surface font-semibold mb-xl">Remediation Lifecycle</h3>
-<div class="relative pl-6 border-l-2 border-surface-container-highest flex flex-col gap-xl">
-<div class="relative">
-<div class="absolute -left-[35px] top-1 bg-tertiary text-on-tertiary rounded-full border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
-<i data-lucide="check-check" class="icon-sm"></i>
-</div>
-<div class="mb-xs flex items-center justify-between gap-sm flex-wrap">
-<h4 class="font-semibold text-on-surface">Closed</h4>
-<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 26, 14:30 UTC</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant">Finding officially closed in the registry. Audit trail locked.</p>
-</div>
-<div class="relative">
-<div class="absolute -left-[35px] top-1 bg-primary text-on-primary rounded-full border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
-<i data-lucide="list-checks" class="icon-sm"></i>
-</div>
-<div class="mb-xs flex items-center justify-between gap-sm flex-wrap">
-<h4 class="font-semibold text-on-surface">Verification Passed</h4>
-<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 26, 10:15 UTC</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant mb-sm">Automated DAST scan confirmed the SQL injection payload is no longer effective. Manual review by David Chen approved.</p>
-<div class="bg-surface-container-low p-sm rounded font-mono-md text-mono-md text-on-surface text-xs border border-outline-variant/20">
-Scan ID: SCN-992-B | Status: Clean
-</div>
-</div>
-<div class="relative">
-<div class="absolute -left-[35px] top-1 bg-secondary text-on-secondary rounded-full border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
-<i data-lucide="wrench" class="icon-sm"></i>
-</div>
-<div class="mb-xs flex items-center justify-between gap-sm flex-wrap">
-<h4 class="font-semibold text-on-surface">Remediation Applied</h4>
-<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 24, 16:45 UTC</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant">Implemented parameterized queries in the authentication module. Code merged to main branch.</p>
-</div>
-<div class="relative">
-<div class="absolute -left-[35px] top-1 bg-surface-variant text-on-surface-variant rounded-full border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
-<i data-lucide="user-plus" class="icon-sm"></i>
-</div>
-<div class="mb-xs flex items-center justify-between gap-sm flex-wrap">
-<h4 class="font-semibold text-on-surface">Assigned</h4>
-<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 22, 09:00 UTC</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant">Ticket assigned to Sarah Jenkins (Backend Security Team) with SLA of 7 days.</p>
-</div>
-<div class="relative">
-<div class="absolute -left-[35px] top-1 bg-error-container text-error rounded-full border-4 border-surface w-8 h-8 flex items-center justify-center z-10">
-<i data-lucide="bug" class="icon-sm"></i>
-</div>
-<div class="mb-xs flex items-center justify-between gap-sm flex-wrap">
-<h4 class="font-semibold text-on-surface">Discovery</h4>
-<span class="font-mono-md text-mono-md text-on-surface-variant">Oct 22, 04:12 UTC</span>
-</div>
-<p class="font-body-md text-body-md text-on-surface-variant">Vulnerability detected during scheduled weekly SAST scan. Marked as Critical severity.</p>
-</div>
-</div>
-</section>
-</div>
-
 </div>
 </main>
 </div>

@@ -1,0 +1,22 @@
+.ds-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  text-align: center;
+}
+.ds-empty .ds-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ds-surface-container-low, #f1f4f8);
+  color: var(--ds-outline, #717783);
+}
+.ds-kpi-zero {
+  font-variant-numeric: tabular-nums;
+}

@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -117,144 +118,30 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span></button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
-<div class="max-w-container-max mx-auto">
-<div class="mb-lg flex flex-col md:flex-row md:justify-between md:items-end gap-md">
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <div>
-<nav aria-label="Breadcrumb" class="flex items-center gap-xs font-body-sm text-secondary mb-xs">
-<a class="hover:text-primary transition-colors" href="index.html">Dark Spear</a>
-<i data-lucide="chevron-right" class="icon-sm"></i>
-<span class="text-on-background">OSINT</span>
-</nav>
-<h2 class="font-headline-xl text-headline-xl text-on-background">Inteligencia de Fuentes Abiertas</h2>
-<p class="font-body-lg text-secondary mt-xs">Monitoreo de exposición de datos externos, credenciales filtradas e infraestructura pública. Target_Alpha_Main.</p>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="osint.title">OSINT</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="osint.lead">Inteligencia de fuentes abiertas vinculada al target.</p>
 </div>
-<div class="flex gap-sm flex-wrap">
-<button class="px-md py-sm bg-surface-container-lowest border border-outline-variant text-secondary font-label-md text-label-md rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-export="json"><i data-lucide="download" class="icon-md"></i> Exportar JSON</button>
-<button class="px-md py-sm bg-surface-container-lowest border border-outline-variant text-secondary font-label-md text-label-md rounded-lg hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-export="pdf"><i data-lucide="file-text" class="icon-md"></i> Exportar PDF</button>
-<button class="px-md py-sm bg-primary-container text-on-primary-container font-label-md text-label-md rounded-lg hover:bg-primary transition-colors flex items-center gap-xs" type="button"><i data-lucide="refresh-cw" class="icon-md"></i> Actualizar Datos</button>
-</div>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="binoculars" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-md mb-lg">
-<div class="glass-panel rounded-xl p-md flex flex-col justify-between">
-<div class="flex justify-between items-start mb-sm">
-<span class="font-label-md text-label-md text-secondary">Credenciales Filtradas</span>
-<div class="p-xs bg-error-container text-on-error-container rounded-md"><i data-lucide="shield-off" class="icon-md"></i></div>
-</div>
-<div class="font-headline-xl text-headline-xl text-on-background">1,248</div>
-<div class="font-body-sm text-error flex items-center gap-xs mt-xs"><i data-lucide="trending-up" class="icon-sm"></i> +12% vs mes anterior</div>
-</div>
-<div class="glass-panel rounded-xl p-md flex flex-col justify-between">
-<div class="flex justify-between items-start mb-sm">
-<span class="font-label-md text-label-md text-secondary">Subdominios Expuestos</span>
-<div class="p-xs bg-tertiary-container text-on-tertiary-container rounded-md"><i data-lucide="server" class="icon-md"></i></div>
-</div>
-<div class="font-headline-xl text-headline-xl text-on-background">342</div>
-<div class="font-body-sm text-tertiary flex items-center gap-xs mt-xs"><i data-lucide="trending-down" class="icon-sm"></i> −5% vs mes anterior</div>
-</div>
-<div class="glass-panel rounded-xl p-md flex flex-col justify-between">
-<div class="flex justify-between items-start mb-sm">
-<span class="font-label-md text-label-md text-secondary">Repositorios Públicos</span>
-<div class="p-xs bg-secondary-container text-on-secondary-container rounded-md"><i data-lucide="folder" class="icon-md"></i></div>
-</div>
-<div class="font-headline-xl text-headline-xl text-on-background">18</div>
-<div class="font-body-sm text-secondary flex items-center gap-xs mt-xs"><i data-lucide="minus" class="icon-sm"></i> Sin cambios</div>
-</div>
-<div class="glass-panel rounded-xl p-md flex flex-col justify-between">
-<div class="flex justify-between items-start mb-sm">
-<span class="font-label-md text-label-md text-secondary">Menciones Críticas (Social)</span>
-<div class="p-xs bg-error-container text-on-error-container rounded-md"><i data-lucide="audio-lines" class="icon-md"></i></div>
-</div>
-<div class="font-headline-xl text-headline-xl text-on-background">7</div>
-<div class="font-body-sm text-error mt-xs">Requiere atención inmediata</div>
-</div>
-</div>
-
-<div class="grid grid-cols-1 xl:grid-cols-3 gap-md">
-<div class="xl:col-span-2 glass-panel rounded-xl flex flex-col overflow-hidden">
-<div class="p-md border-b border-outline-variant/30 flex justify-between items-center">
-<h3 class="font-headline-md text-headline-md text-on-background">Últimas Credenciales Filtradas</h3>
-<a class="font-label-md text-label-md text-primary hover:underline" href="critical-findings.html">Ver todas</a>
-</div>
-<div class="overflow-x-auto">
-<table class="w-full text-left">
-<thead>
-<tr class="border-b border-outline-variant/30">
-<th class="font-label-md text-secondary p-sm">Email / Usuario</th>
-<th class="font-label-md text-secondary p-sm">Fuente (Breach)</th>
-<th class="font-label-md text-secondary p-sm">Fecha de Detección</th>
-<th class="font-label-md text-secondary p-sm">Severidad</th>
-</tr>
-</thead>
-<tbody class="font-mono-md text-on-background">
-<tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/50">
-<td class="p-sm">j.doe@empresa.com</td>
-<td class="p-sm">LinkedIn 2021 Dump</td>
-<td class="p-sm text-secondary font-body-sm">Hace 2 días</td>
-<td class="p-sm"><span class="inline-flex px-sm py-xs rounded-full bg-error-container text-on-error-container font-label-md">Crítica</span></td>
-</tr>
-<tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/50">
-<td class="p-sm">admin@dev.empresa.com</td>
-<td class="p-sm">Pastebin Exfiltration</td>
-<td class="p-sm text-secondary font-body-sm">Hace 5 días</td>
-<td class="p-sm"><span class="inline-flex px-sm py-xs rounded-full bg-error-container text-on-error-container font-label-md">Crítica</span></td>
-</tr>
-<tr class="border-b border-outline-variant/20 hover:bg-surface-container-low/50">
-<td class="p-sm">m.smith@empresa.com</td>
-<td class="p-sm">Canva Breach</td>
-<td class="p-sm text-secondary font-body-sm">Hace 1 semana</td>
-<td class="p-sm"><span class="inline-flex px-sm py-xs rounded-full bg-secondary-container text-on-secondary-container font-label-md">Media</span></td>
-</tr>
-<tr class="hover:bg-surface-container-low/50">
-<td class="p-sm">support@empresa.com</td>
-<td class="p-sm">Zendesk DB Leak</td>
-<td class="p-sm text-secondary font-body-sm">Hace 2 semanas</td>
-<td class="p-sm"><span class="inline-flex px-sm py-xs rounded-full bg-tertiary-container text-on-tertiary-container font-label-md">Baja</span></td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-
-<div class="glass-panel rounded-xl flex flex-col">
-<div class="p-md border-b border-outline-variant/30">
-<h3 class="font-headline-md text-headline-md text-on-background">Infraestructura Expuesta</h3>
-<p class="font-body-sm text-secondary mt-xs">Servicios detectados en IPs públicas</p>
-</div>
-<div class="p-sm flex-1 flex flex-col gap-xs">
-<a href="assets.html" class="p-sm border border-error/40 rounded-lg hover:bg-error-container/20 transition-colors">
-<div class="flex justify-between items-center mb-xs">
-<span class="font-mono-md font-bold">vpn.empresa.com</span>
-<i data-lucide="triangle-alert" class="icon-sm text-error"></i>
-</div>
-<p class="font-body-sm text-secondary">Puerto 443 abierto. Certificado SSL expira en 3 días.</p>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
 </a>
-<a href="assets.html" class="p-sm border border-error/40 rounded-lg hover:bg-error-container/20 transition-colors">
-<div class="flex justify-between items-center mb-xs">
-<span class="font-mono-md font-bold">test-db.empresa.com</span>
-<i data-lucide="triangle-alert" class="icon-sm text-error"></i>
-</div>
-<p class="font-body-sm text-secondary">Puerto 3306 (MySQL) expuesto a internet.</p>
-</a>
-<a href="assets.html" class="p-sm border border-tertiary/30 rounded-lg hover:bg-surface-container-low transition-colors">
-<div class="flex justify-between items-center mb-xs">
-<span class="font-mono-md font-bold">jira.empresa.com</span>
-<i data-lucide="circle-check" class="icon-sm text-tertiary"></i>
-</div>
-<p class="font-body-sm text-secondary">Puerto 443 abierto. Configuración segura verificada.</p>
-</a>
-</div>
-<a href="assets.html" class="m-sm mt-auto py-sm rounded-lg border border-outline-variant font-label-md text-label-md text-secondary hover:bg-surface-container-low flex items-center justify-center gap-xs"><i data-lucide="boxes" class="icon-md"></i> Ver Mapa de Activos Completo</a>
-</div>
 </div>
 </div>
 </main>

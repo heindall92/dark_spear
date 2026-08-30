@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -123,110 +124,32 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span></button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 p-lg flex gap-md overflow-hidden min-h-0">
-<div class="flex-1 glass-panel rounded-xl flex flex-col relative overflow-hidden min-h-0">
-<div class="p-sm border-b border-outline-variant/30 flex justify-between items-center bg-white shrink-0">
-<div class="flex items-center gap-sm">
-<button class="px-sm py-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary font-label-md hover:bg-surface-container-low flex items-center gap-xs" type="button"><i data-lucide="sliders-horizontal" class="icon-sm"></i> Filtros</button>
-<span class="font-body-sm text-secondary">Rutas activas: 3 críticas</span>
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="graph.title">Grafo de ataque</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="graph.lead">Visualización de rutas de ataque y pivotes.</p>
 </div>
-<div class="flex gap-xs items-center">
-<div class="relative group">
-<button class="px-sm py-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary font-label-md hover:bg-surface-container-low flex items-center gap-xs" type="button"><i data-lucide="download" class="icon-sm"></i> Exportar</button>
-<div class="absolute right-0 top-full mt-xs w-36 bg-white border border-outline-variant rounded-lg shadow-lg hidden group-hover:block z-10 py-xs">
-<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="json">JSON</a>
-<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="svg">SVG</a>
-<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="html">HTML</a>
-<a class="block px-md py-xs font-body-sm text-on-surface hover:bg-surface-container-low" href="#" data-export="pdf">PDF</a>
-</div>
-</div>
-<button class="min-h-[44px] min-w-[44px] p-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="zoom-in" title="Acercar" aria-label="Acercar"><i data-lucide="zoom-in" class="icon-md"></i></button>
-<button class="min-h-[44px] min-w-[44px] p-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="zoom-out" title="Alejar" aria-label="Alejar"><i data-lucide="zoom-out" class="icon-md"></i></button>
-<button class="min-h-[44px] min-w-[44px] p-xs rounded-lg border border-outline-variant bg-surface-container-lowest text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="zoom-fit" title="Restablecer vista" aria-label="Restablecer vista"><i data-lucide="maximize" class="icon-md"></i></button>
-</div>
-</div>
-<figure class="flex-1 relative overflow-hidden dot-grid min-h-[420px] m-0" role="region" aria-label="Grafo de perímetro. Nodos interactivos: Internet Externo, VPN-User-74, SRV-WEB-01 seleccionado con CVE-2023-4567, DB-PROD-Main.">
-<div id="graph-stage" class="absolute inset-0">
-<svg class="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
-<line stroke="#c0c7d4" stroke-dasharray="5 5" stroke-width="2" x1="22%" x2="50%" y1="32%" y2="52%"></line>
-<line stroke="#c0c7d4" stroke-width="2" x1="22%" x2="50%" y1="72%" y2="52%"></line>
-<line stroke="#ba1a1a" stroke-width="3.5" x1="54%" x2="76%" y1="50%" y2="40%"></line>
-</svg>
-<button class="absolute left-[15%] top-[22%] flex flex-col items-center" type="button" data-node="inet" aria-label="Internet Externo">
-<div class="h-12 w-12 rounded-full bg-surface-container-highest border-2 border-outline-variant flex items-center justify-center"><i data-lucide="globe" class="text-secondary"></i></div>
-<span class="mt-xs font-label-md bg-white px-xs rounded">Internet Externo</span>
-</button>
-<button class="absolute left-[15%] top-[64%] flex flex-col items-center" type="button" data-node="vpn" aria-label="VPN-User-74">
-<div class="h-10 w-10 rounded-lg bg-white border border-outline-variant flex items-center justify-center"><i data-lucide="laptop" class="text-secondary icon-md"></i></div>
-<span class="mt-xs font-label-md bg-white px-xs rounded">VPN-User-74</span>
-</button>
-<button class="absolute left-[44%] top-[42%] flex flex-col items-center" type="button" data-node="web" id="node-web" aria-label="SRV-WEB-01, seleccionado, CVE-2023-4567" aria-pressed="true">
-<div class="h-14 w-14 rounded-lg bg-white border-2 border-primary flex items-center justify-center ring-4 ring-primary-fixed/60"><i data-lucide="server" class="text-primary"></i></div>
-<span class="mt-xs font-label-md font-bold bg-white px-xs rounded border border-outline-variant">SRV-WEB-01</span>
-<span class="text-[10px] text-error font-bold mt-xs bg-error-container px-xs rounded">CVE-2023-4567</span>
-</button>
-<button class="absolute left-[70%] top-[30%] flex flex-col items-center" type="button" data-node="db" aria-label="DB-PROD-Main, activo crítico">
-<div class="h-12 w-12 rounded-lg bg-white border-2 border-error flex items-center justify-center"><i data-lucide="database" class="text-error"></i></div>
-<span class="mt-xs font-label-md bg-white px-xs rounded">DB-PROD-Main</span>
-<span class="text-[10px] text-on-surface-variant mt-xs">Activo crítico</span>
-</button>
-</div>
-<div class="absolute bottom-sm left-sm bg-white p-sm rounded-lg border border-outline-variant flex gap-md">
-<div class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-error"></span><span class="font-body-sm text-secondary">Ruta crítica</span></div>
-<div class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-outline-variant"></span><span class="font-body-sm text-secondary">Conexión segura</span></div>
-<div class="flex items-center gap-xs"><span class="w-4 h-4 rounded border-2 border-primary"></span><span class="font-body-sm text-secondary">Nodo seleccionado</span></div>
-</div>
-</figure>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="share-2" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<aside class="w-80 shrink-0 glass-panel rounded-xl flex flex-col overflow-hidden" id="detail-panel">
-<div class="p-md border-b border-outline-variant/30 flex justify-between items-start">
-<div>
-<div class="flex items-center gap-xs mb-xs"><i data-lucide="server" class="text-primary"></i><h2 class="font-headline-md font-bold">SRV-WEB-01</h2></div>
-<p class="font-mono-md text-secondary">IP: 192.168.10.45</p>
-</div>
-<button class="text-secondary hover:text-on-surface" type="button" id="close-panel" aria-label="Cerrar"><i data-lucide="x"></i></button>
-</div>
-<div class="flex-1 overflow-y-auto p-md flex flex-col gap-md">
-<div class="bg-surface-container-low rounded-lg p-sm border border-error/30 flex items-center justify-between">
-<div>
-<p class="font-label-md text-secondary">Puntuación de Riesgo</p>
-<div class="flex items-baseline gap-xs mt-xs"><span class="font-headline-xl text-error">8.4</span><span class="font-body-sm text-secondary">/ 10</span></div>
-</div>
-<div class="h-12 w-12 rounded-full bg-error-container flex items-center justify-center"><i data-lucide="triangle-alert" class="text-error"></i></div>
-</div>
-<div>
-<h3 class="font-label-md mb-sm border-b border-outline-variant/30 pb-xs">Vulnerabilidades explotables</h3>
-<ul class="flex flex-col gap-sm">
-<li class="bg-white border-l-4 border-error p-sm rounded">
-<div class="flex justify-between items-start mb-xs"><span class="font-mono-md font-bold">CVE-2023-4567</span><span class="bg-error-container text-error px-xs py-xs rounded text-[10px] font-bold uppercase">Alto</span></div>
-<p class="font-body-sm text-secondary">Desbordamiento de búfer en Apache HTTP. Impacto: ejecución remota.</p>
-</li>
-<li class="bg-white border-l-4 border-[#eab308] p-sm rounded">
-<div class="flex justify-between items-start mb-xs"><span class="font-mono-md font-bold">CVE-2022-1234</span><span class="bg-[#fef08a] text-[#854d0e] px-xs py-xs rounded text-[10px] font-bold uppercase">Medio</span></div>
-<p class="font-body-sm text-secondary">Exposición de información en cabeceras mal configuradas.</p>
-</li>
-</ul>
-</div>
-<div>
-<h3 class="font-label-md mb-sm border-b border-outline-variant/30 pb-xs">Contexto de ruta</h3>
-<p class="font-body-sm text-secondary mb-xs">Origen: <span class="px-sm py-xs rounded bg-surface-container font-label-md">Internet Externo</span></p>
-<p class="font-body-sm text-secondary">Destino potencial: <span class="text-error font-semibold">DB-PROD-Main</span></p>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
 </div>
-<div class="p-md border-t border-outline-variant/30 flex flex-col gap-sm">
-<a href="graph-evidence.html" class="w-full py-sm rounded-lg border border-outline-variant font-label-md text-label-md text-secondary hover:bg-surface-container-low text-center">Evidencia de grafo</a>
-<a href="remediation-detail.html" class="w-full py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md text-label-md hover:bg-primary text-center">Ver detalles de mitigación</a>
-</div>
-</aside>
 </main>
 </div>
 <script>
