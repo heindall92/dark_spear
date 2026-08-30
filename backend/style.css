@@ -20,3 +20,17 @@ button { cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid 
 #phase-indicator { font-size: 0.9rem; opacity: 0.85; }
 #advance-phase-btn { width: auto; margin: 0; }
 #advance-phase-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+#findings-btn { width: auto; margin: 0; }
+#findings-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+#findings-panel[hidden] { display: none; }
+#findings-panel > * { max-width: 600px; width: 100%; }
+#findings-list { display: flex; flex-direction: column; gap: 0.75rem; margin: 0.5rem 0; max-height: 70vh; overflow-y: auto; }
+.finding-card { background: #1a1e33; border-radius: 10px; padding: 1rem; border: 1px solid rgba(255,255,255,0.12); }
+.finding-card input, .finding-card textarea, .finding-card select { width: 100%; box-sizing: border-box; }
+.severity-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: bold; margin-bottom: 0.5rem; }
+.severity-Critical { background: #ff3860; }
+.severity-High { background: #ff7a3d; }
+.severity-Medium { background: #ffc23d; color: #1a1a1a; }
+.severity-Low { background: #3dd9ff; color: #1a1a1a; }
+.severity-Info { background: rgba(255,255,255,0.2); }
+.finding-marker { cursor: pointer; border-color: #3dd9ff; }

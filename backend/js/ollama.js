@@ -23,13 +23,21 @@ Either:
 {"tool": "<binary name>", "args": ["<arg1>", "<arg2>", ...], "reasoning": "<why>"}
 or, if the engagement objective is complete:
 {"done": true, "reasoning": "<why>"}
+or, if you have gathered enough evidence to report a real vulnerability finding:
+{"finding": {"title": "<short title>", "asset": "<host/url/target this applies to>",
+  "severity": "Critical"|"High"|"Medium"|"Low"|"Info",
+  "description": "<what it is and why it matters>",
+  "remediation": "<how to fix it>",
+  "evidence_step_ids": [<the #N ids shown before each step in Recent history that prove this>]},
+ "reasoning": "<why you're reporting this now>"}
 
 "tool" must be exactly one binary name from this list — never a shell like
 bash/sh/zsh/cmd/powershell, never a full command string:
 ${ALLOWED_TOOLS_HINT.join(", ")}
 "args" is that binary's own argv, each element a SEPARATE argument (the way
 you'd pass them to subprocess.run(["tool", "arg1", "arg2"]), never one
-combined command string.`;
+combined command string.
+Reporting a finding does NOT end the engagement — keep working after it.`;
 
 export async function askAgent({ model, systemPrompt, userPrompt, endpoint }) {
   const url = endpoint || DEFAULT_URL;
@@ -52,6 +60,7 @@ export async function askAgent({ model, systemPrompt, userPrompt, endpoint }) {
     throw new Error(`ollama_invalid_json: ${raw.slice(0, 200)}`);
   }
   if (parsed.done) return { done: true, reasoning: parsed.reasoning ?? "" };
+  if (parsed.finding) return { finding: parsed.finding, reasoning: parsed.reasoning ?? "" };
   if (!parsed.tool) throw new Error(`ollama_missing_tool_field: ${raw.slice(0, 200)}`);
   if (SHELL_WRAPPERS.has(parsed.tool)) {
     throw new Error(`ollama_shell_wrapper_rejected: model proposed "${parsed.tool}" instead of a real tool`);

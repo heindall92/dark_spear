@@ -74,3 +74,79 @@ export function renderWaitingForQuota(retryAfterHintSeconds) {
   feed.appendChild(div);
   feed.scrollTop = feed.scrollHeight;
 }
+
+export function renderFindingsPanel(findings, { onAccept, onReject }) {
+  const container = document.getElementById("findings-list");
+  container.innerHTML = "";
+  const pending = findings.filter((f) => f.status === "proposed" || f.status === "edited");
+  const others = findings.filter((f) => f.status === "accepted" || f.status === "rejected");
+  for (const f of [...pending, ...others]) {
+    const card = document.createElement("div");
+    card.className = "finding-card";
+
+    const badge = document.createElement("span");
+    badge.className = `severity-badge severity-${f.severity}`;
+    badge.textContent = `${f.severity} — ${f.status}`;
+    card.appendChild(badge);
+
+    const titleInput = document.createElement("input");
+    titleInput.value = f.title;
+    card.appendChild(titleInput);
+
+    const assetInput = document.createElement("input");
+    assetInput.value = f.asset;
+    card.appendChild(assetInput);
+
+    const severitySelect = document.createElement("select");
+    for (const sev of ["Critical", "High", "Medium", "Low", "Info"]) {
+      const opt = document.createElement("option");
+      opt.value = sev;
+      opt.textContent = sev;
+      if (sev === f.severity) opt.selected = true;
+      severitySelect.appendChild(opt);
+    }
+    card.appendChild(severitySelect);
+
+    const descInput = document.createElement("textarea");
+    descInput.value = f.description;
+    card.appendChild(descInput);
+
+    const remInput = document.createElement("textarea");
+    remInput.value = f.remediation;
+    card.appendChild(remInput);
+
+    const evidenceLine = document.createElement("div");
+    evidenceLine.textContent = `Evidencia: steps ${f.evidence_step_ids.join(", ") || "(ninguno)"}`;
+    card.appendChild(evidenceLine);
+
+    if (f.status === "proposed" || f.status === "edited") {
+      const acceptBtn = document.createElement("button");
+      acceptBtn.textContent = "Aceptar";
+      acceptBtn.onclick = () => onAccept(f.id, {
+        title: titleInput.value,
+        asset: assetInput.value,
+        severity: severitySelect.value,
+        description: descInput.value,
+        remediation: remInput.value,
+      }, f.evidence_step_ids);
+      card.appendChild(acceptBtn);
+
+      const rejectBtn = document.createElement("button");
+      rejectBtn.textContent = "Rechazar";
+      rejectBtn.onclick = () => onReject(f.id);
+      card.appendChild(rejectBtn);
+    }
+
+    container.appendChild(card);
+  }
+}
+
+export function renderFindingMarker(finding) {
+  const feed = document.getElementById("steps-feed");
+  const div = document.createElement("div");
+  div.className = "step finding-marker";
+  div.textContent = `💡 Hallazgo propuesto: ${finding.title}`;
+  div.onclick = () => { document.getElementById("findings-panel").hidden = false; };
+  feed.appendChild(div);
+  feed.scrollTop = feed.scrollHeight;
+}

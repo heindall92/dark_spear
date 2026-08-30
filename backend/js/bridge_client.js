@@ -59,3 +59,15 @@ export function selectKeys(labels) {
 export function advancePhase() {
   return postJSON("/phase/advance", {});
 }
+
+export function proposeFinding(finding) {
+  return postJSON("/findings/propose", finding);
+}
+
+export function listFindings() {
+  return postJSON("/findings/list", {});
+}
+
+export function reviewFinding(findingId, action, extra = {}) {
+  return postJSON("/findings/review", { finding_id: findingId, action, ...extra });
+}

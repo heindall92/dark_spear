@@ -1,7 +1,7 @@
-import { initDB, createEngagement, exportEngagementJSON } from "./db.js";
-import { startEngagement, setSessionToken, listKeys, addKey, selectKeys, advancePhase } from "./bridge_client.js";
+import { initDB, createEngagement, exportEngagementJSON, getStepsByIds } from "./db.js";
+import { startEngagement, setSessionToken, listKeys, addKey, selectKeys, advancePhase, listFindings, reviewFinding } from "./bridge_client.js";
 import { runAgentLoop, PHASE_NAMES } from "./agent.js";
-import { renderStep, showConfirmModal, renderKeyList, renderWaitingForQuota, renderPhaseIndicator } from "./ui.js";
+import { renderStep, showConfirmModal, renderKeyList, renderWaitingForQuota, renderPhaseIndicator, renderFindingsPanel, renderFindingMarker } from "./ui.js";
 
 async function main() {
   const params = new URLSearchParams(window.location.search);
@@ -37,6 +37,33 @@ async function main() {
 
   document.getElementById("close-keys-btn").onclick = () => {
     document.getElementById("key-manage-panel").hidden = true;
+  };
+
+  async function refreshFindingsPanel() {
+    const findings = await listFindings();
+    const pendingCount = findings.filter((f) => f.status === "proposed").length;
+    document.getElementById("findings-btn").textContent = `Hallazgos (${pendingCount} pendientes)`;
+    renderFindingsPanel(findings, {
+      onAccept: async (id, editedFields, evidenceStepIds) => {
+        const steps = await getStepsByIds(db, evidenceStepIds);
+        const evidence_texts = steps.filter(Boolean).map((s) => ({ step_id: s.id, output: s.output }));
+        await reviewFinding(id, "accept", { edited_fields: editedFields, evidence_texts });
+        await refreshFindingsPanel();
+      },
+      onReject: async (id) => {
+        await reviewFinding(id, "reject");
+        await refreshFindingsPanel();
+      },
+    });
+  }
+
+  document.getElementById("findings-btn").onclick = async () => {
+    await refreshFindingsPanel();
+    document.getElementById("findings-panel").hidden = false;
+  };
+
+  document.getElementById("close-findings-btn").onclick = () => {
+    document.getElementById("findings-panel").hidden = true;
   };
 
   document.getElementById("start-btn").onclick = async () => {
@@ -86,6 +113,10 @@ async function main() {
         showConfirmModal(decision, () => resolve(true), () => resolve(false));
       },
       onWaitingForQuota: renderWaitingForQuota,
+      onFindingProposed: async (finding) => {
+        renderFindingMarker(finding);
+        await refreshFindingsPanel();
+      },
     });
   };
 }
