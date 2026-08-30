@@ -81,7 +81,19 @@
       "start.lead": "Configurá target, modelo y keys del motor Auditor.",
       "engine.noKeys": "No hay keys en el motor. Agregá una de Ollama Cloud.",
       "profile.title": "Perfil",
-      "profile.lead": "Datos del operador en la consola."
+      "profile.lead": "Datos del operador en la consola.",
+      "eng.title": "Engagement activo",
+      "eng.feed": "Feed en vivo",
+      "export.noData": "No hay hallazgos para exportar",
+      "export.noEngagement": "No hay pasos ni hallazgos para exportar",
+      "export.jsonOk": "JSON descargado",
+      "export.csvOk": "CSV descargado",
+      "export.htmlOk": "HTML descargado",
+      "export.pdfOk": "Abriendo diálogo de impresión (PDF)",
+      "export.evidenceOk": "Evidencia JSON descargada",
+      "export.svgSoon": "Exportá el grafo cuando haya rutas documentadas",
+      "export.popupBlocked": "Permití ventanas emergentes para exportar PDF",
+      "export.signedOut": "Sesión cerrada"
     },
     en: {
       brand: "Dark Spear",
@@ -164,7 +176,19 @@
       "start.lead": "Configure target, model, and Auditor engine API keys.",
       "engine.noKeys": "No keys in the engine. Add an Ollama Cloud key.",
       "profile.title": "Profile",
-      "profile.lead": "Operator details in the console."
+      "profile.lead": "Operator details in the console.",
+      "eng.title": "Active Engagement",
+      "eng.feed": "Live feed",
+      "export.noData": "No findings to export",
+      "export.noEngagement": "No steps or findings to export",
+      "export.jsonOk": "JSON downloaded",
+      "export.csvOk": "CSV downloaded",
+      "export.htmlOk": "HTML downloaded",
+      "export.pdfOk": "Opening print dialog (PDF)",
+      "export.evidenceOk": "Evidence JSON downloaded",
+      "export.svgSoon": "Export the graph when attack paths are documented",
+      "export.popupBlocked": "Allow pop-ups to export PDF",
+      "export.signedOut": "Signed out"
     }
   };
 
