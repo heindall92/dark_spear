@@ -2,7 +2,16 @@ export function renderStep(step) {
   const feed = document.getElementById("steps-feed");
   const div = document.createElement("div");
   div.className = `step ${step.verdict || ""}`;
-  div.textContent = `[${step.tool} ${JSON.stringify(step.args)}] verdict=${step.verdict}`;
+  const title = document.createElement("div");
+  title.textContent = `[${step.tool} ${JSON.stringify(step.args)}] verdict=${step.verdict}`;
+  div.appendChild(title);
+  const detail = [step.output || step.stdout || "", step.stderr || ""].filter(Boolean).join("\n");
+  if (detail) {
+    const pre = document.createElement("pre");
+    pre.className = "step-detail";
+    pre.textContent = String(detail).slice(0, 2500);
+    div.appendChild(pre);
+  }
   feed.appendChild(div);
   feed.scrollTop = feed.scrollHeight;
 }
@@ -145,7 +154,7 @@ export function renderFindingMarker(finding) {
   const feed = document.getElementById("steps-feed");
   const div = document.createElement("div");
   div.className = "step finding-marker";
-  div.textContent = `💡 Hallazgo propuesto: ${finding.title}`;
+  div.textContent = `Hallazgo propuesto: ${finding.title}`;
   div.onclick = () => { document.getElementById("findings-panel").hidden = false; };
   feed.appendChild(div);
   feed.scrollTop = feed.scrollHeight;

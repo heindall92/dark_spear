@@ -5,11 +5,19 @@ keyed off an operator-supplied passphrase, never written to disk or logged.
 import base64
 import json
 import os
+import sys
 from pathlib import Path
 
-from cryptography.fernet import Fernet, InvalidToken
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+try:
+    from cryptography.fernet import Fernet, InvalidToken
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+except ModuleNotFoundError:
+    sys.stderr.write(
+        "Falta el paquete 'cryptography'. Instálalo desde backend/:\n"
+        "  python3 -m pip install -r requirements.txt\n"
+    )
+    raise SystemExit(1)
 
 KEYSTORE_PATH = Path.home() / ".auditor" / "keys.enc"
 SALT_LEN = 16
@@ -44,7 +52,10 @@ def save(passphrase: str, keys: list[dict]) -> None:
     # window where write_bytes()+chmod() briefly leaves the ciphertext
     # world-readable under the process umask.
     tmp_path = KEYSTORE_PATH.with_suffix(".tmp")
-    fd = os.open(tmp_path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    flags = os.O_WRONLY | os.O_CREAT | os.O_TRUNC
+    if hasattr(os, "O_BINARY"):
+        flags |= os.O_BINARY
+    fd = os.open(tmp_path, flags, 0o600)
     try:
         os.write(fd, salt + token)
     finally:

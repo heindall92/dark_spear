@@ -68,14 +68,21 @@ export function getSteps(db, engagementId) {
 
 export function getStepsByIds(db, stepIds) {
   return new Promise((resolve, reject) => {
-    if (stepIds.length === 0) {
+    const ids = Array.isArray(stepIds)
+      ? stepIds.map((id) => {
+          if (typeof id === "number" && Number.isFinite(id)) return id;
+          const n = parseInt(String(id).replace(/^#/, ""), 10);
+          return Number.isFinite(n) ? n : id;
+        })
+      : [];
+    if (ids.length === 0) {
       resolve([]);
       return;
     }
     const store = tx(db, "steps");
-    const results = new Array(stepIds.length);
-    let remaining = stepIds.length;
-    stepIds.forEach((id, i) => {
+    const results = new Array(ids.length);
+    let remaining = ids.length;
+    ids.forEach((id, i) => {
       const req = store.get(id);
       req.onsuccess = () => {
         results[i] = req.result;

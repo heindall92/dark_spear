@@ -7,6 +7,8 @@ button { cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid 
 .step { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 0.75rem; backdrop-filter: blur(6px); }
 .step.rejected { border-color: #d46a6a; }
 .step.scope_violation { border-color: #ff3860; }
+.step.agent_error { border-color: #ffc23d; }
+.step-detail { margin: 0.5rem 0 0; white-space: pre-wrap; word-break: break-word; font-size: 0.75rem; opacity: 0.85; max-height: 14rem; overflow: auto; font-family: ui-monospace, monospace; }
 #confirm-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; }
 #confirm-modal[hidden] { display: none; }
 #confirm-modal p { max-width: 500px; background: #1a1e33; padding: 1rem; border-radius: 10px; }
