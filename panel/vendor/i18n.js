@@ -54,7 +54,19 @@
       "settings.orgName": "Nombre de la organización",
       "settings.email": "Correo de soporte",
       "settings.tz": "Zona horaria",
-      "settings.save": "Guardar cambios"
+      "settings.save": "Guardar cambios",
+      "notif.title": "Centro de notificaciones",
+      "notif.lead": "Hallazgos únicos del engagement. El ruido del agente no se notifica.",
+      "notif.markAll": "Marcar todo como leído",
+      "notif.filter": "Filtrar notificaciones",
+      "notif.all": "Todas",
+      "notif.critical": "Crítico",
+      "notif.high": "Alto",
+      "notif.medium": "Medio",
+      "notif.low": "Bajo",
+      "notif.info": "Info",
+      "notif.empty": "Todavía no hay hallazgos",
+      "notif.emptyLead": "Los hallazgos únicos del engagement aparecen aquí. El ruido del agente no se notifica."
     },
     en: {
       brand: "Dark Spear",
@@ -110,7 +122,19 @@
       "settings.orgName": "Organization Name",
       "settings.email": "Support Email",
       "settings.tz": "Default Time Zone",
-      "settings.save": "Save Changes"
+      "settings.save": "Save Changes",
+      "notif.title": "Notification center",
+      "notif.lead": "Unique engagement findings. Agent noise is not notified.",
+      "notif.markAll": "Mark all as read",
+      "notif.filter": "Filter notifications",
+      "notif.all": "All",
+      "notif.critical": "Critical",
+      "notif.high": "High",
+      "notif.medium": "Medium",
+      "notif.low": "Low",
+      "notif.info": "Info",
+      "notif.empty": "No findings yet",
+      "notif.emptyLead": "Unique engagement findings show up here. Agent noise is not notified."
     }
   };
 

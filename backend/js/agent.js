@@ -61,11 +61,22 @@ function isDangerous(tool, args) {
   return DANGEROUS_ARG_PATTERNS.some((re) => re.test(joined));
 }
 
+function findingFingerprint(title, asset) {
+  const blob = `${title || ""} ${asset || ""}`.toLowerCase();
+  if ((/cookie|session/.test(blob)) && /security|httponly|secure|low/.test(blob)) {
+    return `cookie-session:${(asset || "").toLowerCase()}`;
+  }
+  return blob.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/)
+    .filter((w) => w.length > 3)
+    .sort()
+    .slice(0, 6)
+    .join("-");
+}
+
 function stepOutput(step) {
+  if (step.verdict === "agent_error" || step.tool === "(agent)") return "";
   const out = step.output ?? step.stdout ?? "";
-  const err = step.stderr ?? "";
-  const combined = [out, err].filter(Boolean).join("\n");
-  return combined.slice(0, 1200);
+  return String(out).slice(0, 800);
 }
 
 function normalizeStep(id, engagementId, fields) {
@@ -81,13 +92,17 @@ function normalizeStep(id, engagementId, fields) {
   };
 }
 
-function buildUserPrompt(target, steps, axisWarning, phase) {
+function buildUserPrompt(target, steps, axisWarning, phase, reportedTitles) {
   const history = steps
-    .slice(-10)
+    .filter((s) => s.verdict !== "agent_error" && s.tool !== "(agent)")
+    .slice(-8)
     .map((s) => `[#${s.id} ${s.tool} ${JSON.stringify(s.args)}] -> exit=${s.exitCode ?? s.exit_code} verdict=${s.verdict}\n${stepOutput(s) || "(no output)"}`)
     .join("\n---\n");
   const toolsNow = [...cumulativePhaseTools(phase)].join(", ");
-  let prompt = `Target: ${target}\nFase actual: ${phase}/4 — ${PHASE_NAMES[phase]}.\nTools disponibles ahora: ${toolsNow}.\nRecent history:\n${history || "(no steps yet)"}`;
+  const already = reportedTitles.length
+    ? `\nFindings already logged (do NOT repeat): ${reportedTitles.join("; ")}.`
+    : "";
+  let prompt = `Target: ${target}\nFase actual: ${phase}/4 — ${PHASE_NAMES[phase]}.\nTools disponibles ahora: ${toolsNow}.${already}\nRecent history:\n${history || "(no steps yet)"}`;
   if (axisWarning) {
     prompt += `\n\nWARNING: you already tried this exact (tool, args) 3 times with no new information. Change a parameter or try a different vector.`;
   }
@@ -100,7 +115,11 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
   let steps = await getSteps(db, engagementId);
   let axisWarning = false;
   let agentErrorHint = "";
+  let reportedTitles = [];
   let consecutiveErrors = 0;
+  let duplicateStreak = 0;
+  const seenFindings = new Set();
+  const JSON_ONLY_HINT = "\n\nJSON only: {\"tool\":\"...\",\"args\":[...]} or {\"finding\":{...}} or {\"done\":true}. No prose.";
 
   while (true) {
     let decision;
@@ -108,7 +127,7 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
       decision = await askAgent({
         model,
         systemPrompt,
-        userPrompt: buildUserPrompt(target, steps, axisWarning, phaseState.current) + agentErrorHint,
+        userPrompt: buildUserPrompt(target, steps, axisWarning, phaseState.current, reportedTitles) + agentErrorHint,
         endpoint,
       });
     } catch (err) {
@@ -131,24 +150,15 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
         continue;
       }
       consecutiveErrors += 1;
-      const stepId = await addStep(db, {
-        engagementId, tool: "(agent)", args: [],
-        output: "", stderr: err.message, exitCode: -1, verdict: "agent_error",
-      });
-      const step = normalizeStep(stepId, engagementId, {
-        tool: "(agent)", args: [], stderr: err.message, verdict: "agent_error",
-      });
-      steps = [...steps, step];
-      onStep(step);
+      agentErrorHint = JSON_ONLY_HINT;
       if (consecutiveErrors >= MAX_CONSECUTIVE_AGENT_ERRORS) {
         onStep(normalizeStep(null, engagementId, {
           tool: "(agent)", args: [],
-          stderr: `El modelo devolvió ${MAX_CONSECUTIVE_AGENT_ERRORS} respuestas inválidas seguidas. Último error: ${err.message}`,
+          stderr: "El modelo no devolvió JSON válido. Revisá el modelo y reiniciá el engagement.",
           verdict: "agent_error",
         }));
         return;
       }
-      agentErrorHint = `\n\nYour last response was invalid: ${err.message}. Follow the JSON contract exactly. Output ONLY the JSON object.`;
       continue;
     }
     consecutiveErrors = 0;
@@ -159,33 +169,45 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
     }
 
     if (decision.finding) {
+      const fp = findingFingerprint(decision.finding.title, decision.finding.asset);
+      if (seenFindings.has(fp)) {
+        duplicateStreak += 1;
+        agentErrorHint = `\n\nFinding already logged. Do not repeat it. Next: a different finding, a tool JSON, or {"done":true}.`;
+        if (duplicateStreak >= 12) return;
+        continue;
+      }
       try {
         const finding = await proposeFinding(decision.finding);
+        if (finding.duplicate) {
+          seenFindings.add(fp);
+          reportedTitles.push(finding.title);
+          duplicateStreak += 1;
+          agentErrorHint = `\n\nFinding already logged (${finding.title}). Do not repeat. Next: a different issue, a tool, or {"done":true}.`;
+          if (duplicateStreak >= 12) return;
+          continue;
+        }
+        seenFindings.add(fp);
+        reportedTitles.push(finding.title);
+        duplicateStreak = 0;
+        const summary = `${finding.title} [${finding.severity}] ${finding.asset}`;
+        const stepId = await addStep(db, {
+          engagementId, tool: "(finding)", args: [finding.id],
+          output: summary, stderr: "", exitCode: 0, verdict: "ok",
+        });
+        const step = normalizeStep(stepId, engagementId, {
+          tool: "(finding)", args: [finding.id],
+          output: summary, verdict: "ok",
+        });
+        steps = [...steps, step];
         onFindingProposed(finding);
       } catch (err) {
         consecutiveErrors += 1;
-        const stepId = await addStep(db, {
-          engagementId, tool: "(agent)", args: [],
-          output: "", stderr: err.message, exitCode: -1, verdict: "agent_error",
-        });
-        const step = normalizeStep(stepId, engagementId, {
-          tool: "(agent)", args: [], stderr: err.message, verdict: "agent_error",
-        });
-        steps = [...steps, step];
-        onStep(step);
-        if (consecutiveErrors >= MAX_CONSECUTIVE_AGENT_ERRORS) {
-          onStep(normalizeStep(null, engagementId, {
-            tool: "(agent)", args: [],
-            stderr: `El modelo devolvió ${MAX_CONSECUTIVE_AGENT_ERRORS} hallazgos inválidos seguidos. Último error: ${err.message}`,
-            verdict: "agent_error",
-          }));
-          return;
-        }
-        agentErrorHint = `\n\nYour last finding proposal was invalid: ${err.message}. Follow the finding JSON contract exactly.`;
+        agentErrorHint = JSON_ONLY_HINT;
+        if (consecutiveErrors >= MAX_CONSECUTIVE_AGENT_ERRORS) return;
         continue;
       }
       consecutiveErrors = 0;
-      agentErrorHint = "";
+      agentErrorHint = "\n\nFinding saved. Next JSON: a different finding or a tool. No prose.";
       continue;
     }
 
@@ -223,6 +245,7 @@ export async function runAgentLoop({ db, engagementId, model, target, systemProm
 
       const axisResult = await checkAndRecordAxis(db, engagementId, decision.tool, decision.args, result.stdout ?? "");
       axisWarning = axisResult.warn;
+      duplicateStreak = 0;
     } catch (err) {
       if (err instanceof QuotaExhaustedError) throw err;
       const stepId = await addStep(db, {

@@ -181,4 +181,10 @@
   });
 
   window.DarkSpearExport = { run: run, json: exportJSON, pdf: exportPDF, html: exportHTML };
+
+  if (!document.querySelector('script[src*="findings-inbox.js"]')) {
+    var inbox = document.createElement("script");
+    inbox.src = "vendor/findings-inbox.js";
+    document.head.appendChild(inbox);
+  }
 })();

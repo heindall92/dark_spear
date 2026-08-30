@@ -9,7 +9,7 @@ button { cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid 
 .step.scope_violation { border-color: #ff3860; }
 .step.agent_error { border-color: #ffc23d; }
 .step-detail { margin: 0.5rem 0 0; white-space: pre-wrap; word-break: break-word; font-size: 0.75rem; opacity: 0.85; max-height: 14rem; overflow: auto; font-family: ui-monospace, monospace; }
-#confirm-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; }
+#confirm-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; z-index: 210; }
 #confirm-modal[hidden] { display: none; }
 #confirm-modal p { max-width: 500px; background: #1a1e33; padding: 1rem; border-radius: 10px; }
 #key-manage-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
@@ -18,14 +18,18 @@ button { cursor: pointer; background: rgba(255,255,255,0.08); border: 1px solid 
 #key-list { background: #1a1e33; border-radius: 10px; padding: 0.5rem 1rem; margin: 0.5rem 0; }
 .key-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; }
 .key-row label { flex: 1; }
-#phase-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; }
+#phase-bar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; padding: 0.5rem 0.75rem; background: #161a2b; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; position: sticky; top: 0; z-index: 8; }
 #phase-indicator { font-size: 0.9rem; opacity: 0.85; }
 #advance-phase-btn { width: auto; margin: 0; }
 #advance-phase-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 #findings-btn { width: auto; margin: 0; }
-#findings-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; }
+#findings-strip { display: flex; flex-direction: column; gap: 0.5rem; margin: 0 0 1rem; position: sticky; top: 3.4rem; z-index: 7; }
+.finding-strip-card { background: #1a1e33; border: 1px solid #3dd9ff; border-radius: 10px; padding: 0.75rem 1rem; cursor: pointer; box-shadow: 0 8px 24px rgba(0,0,0,0.45); }
+.finding-strip-card strong { display: block; margin-bottom: 0.25rem; }
+.finding-strip-card p { margin: 0; font-size: 0.8rem; opacity: 0.85; }
+#findings-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.82); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; z-index: 200; }
 #findings-panel[hidden] { display: none; }
-#findings-panel > * { max-width: 600px; width: 100%; }
+#findings-panel > * { max-width: 640px; width: 100%; }
 #findings-list { display: flex; flex-direction: column; gap: 0.75rem; margin: 0.5rem 0; max-height: 70vh; overflow-y: auto; }
 .finding-card { background: #1a1e33; border-radius: 10px; padding: 1rem; border: 1px solid rgba(255,255,255,0.12); }
 .finding-card input, .finding-card textarea, .finding-card select { width: 100%; box-sizing: border-box; }

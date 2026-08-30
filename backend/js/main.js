@@ -116,6 +116,7 @@ async function main() {
       onFindingProposed: async (finding) => {
         renderFindingMarker(finding);
         await refreshFindingsPanel();
+        document.getElementById("findings-panel").hidden = false;
       },
     }).catch((err) => {
       renderStep({

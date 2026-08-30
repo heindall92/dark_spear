@@ -13,6 +13,7 @@
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
+<script src="vendor/findings-inbox.js" defer></script>
 <script src="vendor/splash.js" defer></script>
 <script id="tailwind-config">
         tailwind.config = {
@@ -129,6 +130,8 @@
             border-bottom-color: #0078D4;
             margin-bottom: -1px;
         }
+        .notif-item.unread h3 { font-weight: 700; }
+        .notif-item:not(.unread) { opacity: 0.88; }
         .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
         .skip-link:focus { left: 8px; top: 8px; }
         @media (prefers-reduced-motion: reduce) {
@@ -232,7 +235,7 @@
 <div class="flex items-center gap-md">
 <button class="w-10 h-10 rounded-full flex items-center justify-center text-primary bg-primary-container/10 relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" aria-current="page">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
@@ -248,71 +251,38 @@
 <div class="flex flex-wrap items-end justify-between gap-md">
 <div>
 <h2 class="font-headline-xl text-headline-xl text-on-surface" data-i18n="notif.title">Centro de notificaciones</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="notif.lead">Alertas de seguridad y actualizaciones del sistema.</p>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="notif.lead">Hallazgos únicos del engagement. El ruido del agente no se notifica.</p>
 </div>
 <div class="flex gap-sm items-center">
-<button class="px-md py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low flex items-center gap-xs" type="button" id="mark-all"><i data-lucide="check-check" class="icon-md"></i> Marcar todo como leído</button>
+<button class="px-md py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low flex items-center gap-xs" type="button" id="mark-all"><i data-lucide="check-check" class="icon-md"></i> <span data-i18n="notif.markAll">Marcar todo como leído</span></button>
 <div class="relative">
-<button class="min-h-[40px] min-w-[40px] p-sm rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="notif-filter-btn" aria-label="Filtrar notificaciones" aria-expanded="false" aria-haspopup="listbox">
+<button class="min-h-[40px] min-w-[40px] p-sm rounded-lg border border-outline-variant text-secondary hover:bg-surface-container-low flex items-center justify-center" type="button" id="notif-filter-btn" aria-label="Filtrar notificaciones" data-i18n-aria="notif.filter" aria-expanded="false" aria-haspopup="listbox">
 <i data-lucide="list-filter" class="icon-md"></i>
 </button>
 <div id="notif-filter-menu" class="hidden absolute right-0 top-full mt-xs w-40 glass-panel rounded-lg shadow-lg z-10 py-xs border border-outline-variant">
-<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="all">Todas</button>
-<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="critical">Crítico</button>
-<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="high">Alto</button>
-<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="medium">Medio</button>
-<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="info">Info</button>
+<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="all" data-i18n="notif.all">Todas</button>
+<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="critical" data-i18n="notif.critical">Crítico</button>
+<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="high" data-i18n="notif.high">Alto</button>
+<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="medium" data-i18n="notif.medium">Medio</button>
+<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="low" data-i18n="notif.low">Bajo</button>
+<button class="w-full text-left px-md py-xs font-body-sm hover:bg-surface-container-low" type="button" data-sev="info" data-i18n="notif.info">Info</button>
 </div>
 </div>
 </div>
 </div>
 
-<div class="flex flex-col gap-sm" id="notif-list">
-<a class="glass-panel rounded-lg p-md flex gap-md items-start border-l-4 border-error hover:border-primary notif-item unread" href="critical-findings.html" data-sev="critical">
-<div class="w-10 h-10 rounded-full bg-error-container flex items-center justify-center shrink-0"><i data-lucide="triangle-alert" class="text-error"></i></div>
-<div class="flex-1 min-w-0">
-<div class="flex justify-between gap-sm"><h3 class="font-semibold text-on-surface">Intento de acceso no autorizado detectado</h3><span class="font-mono-md text-[11px] text-on-surface-variant shrink-0">hace 5 min</span></div>
-<p class="font-body-sm text-on-surface-variant mt-xs">Múltiples intentos fallidos desde 192.168.1.105 hacia la base de datos.</p>
-<span class="inline-flex mt-sm px-sm py-xs rounded font-label-md text-[10px] bg-error/10 text-error">Crítico</span>
-</div>
-</a>
-<a class="glass-panel rounded-lg p-md flex gap-md items-start border-l-4 border-tertiary hover:border-primary notif-item unread" href="finding-detail.html" data-sev="high">
-<div class="w-10 h-10 rounded-full bg-tertiary-container/20 flex items-center justify-center shrink-0"><i data-lucide="bug" class="text-tertiary"></i></div>
-<div class="flex-1 min-w-0">
-<div class="flex justify-between gap-sm"><h3 class="font-semibold text-on-surface">Vulnerabilidad CVE-2023-4567 identificada</h3><span class="font-mono-md text-[11px] text-on-surface-variant shrink-0">hace 2 h</span></div>
-<p class="font-body-sm text-on-surface-variant mt-xs">Alta severidad en SRV-WEB-01 (lib-auth). Ver detalle del hallazgo.</p>
-<span class="inline-flex mt-sm px-sm py-xs rounded font-label-md text-[10px] bg-tertiary-container/20 text-tertiary">Alto</span>
-</div>
-</a>
-<a class="glass-panel rounded-lg p-md flex gap-md items-start border-l-4 border-outline hover:border-primary notif-item unread" href="assets.html" data-sev="medium">
-<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center shrink-0"><i data-lucide="shield" class="text-secondary"></i></div>
-<div class="flex-1 min-w-0">
-<div class="flex justify-between gap-sm"><h3 class="font-semibold text-on-surface">Cambio de configuración en firewall</h3><span class="font-mono-md text-[11px] text-on-surface-variant shrink-0">ayer 14:30</span></div>
-<p class="font-body-sm text-on-surface-variant mt-xs">Modificación en regla de entrada FW-402.</p>
-<span class="inline-flex mt-sm px-sm py-xs rounded font-label-md text-[10px] bg-surface-variant text-on-surface">Medio</span>
-</div>
-</a>
-<a class="glass-panel rounded-lg p-md flex gap-md items-start border-l-4 border-primary hover:border-primary notif-item" href="active-scans.html" data-sev="info">
-<div class="w-10 h-10 rounded-full bg-primary-container/15 flex items-center justify-center shrink-0"><i data-lucide="circle-check" class="text-primary"></i></div>
-<div class="flex-1 min-w-0">
-<div class="flex justify-between gap-sm"><h3 class="font-semibold text-on-surface">Actualización del sistema completada</h3><span class="font-mono-md text-[11px] text-on-surface-variant shrink-0">hoy 09:12</span></div>
-<p class="font-body-sm text-on-surface-variant mt-xs">Agentes actualizados a la versión 4.2.0.</p>
-<span class="inline-flex mt-sm px-sm py-xs rounded font-label-md text-[10px] bg-primary-container/15 text-primary">Info</span>
-</div>
-</a>
-</div>
+<div class="flex flex-col gap-sm" id="notif-list" data-filter="all"></div>
 </div>
 </main>
 </div>
 <script>
         lucide.createIcons();
         document.getElementById("mark-all").addEventListener("click", function () {
-            document.querySelectorAll(".notif-item").forEach(function (el) { el.classList.remove("unread"); });
-            var dots = document.querySelectorAll('[data-i18n-aria="aria.notifications"] .bg-error');
-            dots.forEach(function (d) { d.classList.add("hidden"); });
+            if (window.DarkSpearFindings) DarkSpearFindings.markAllRead();
         });
         var filterBtn = document.getElementById("notif-filter-btn");
         var filterMenu = document.getElementById("notif-filter-menu");
+        var list = document.getElementById("notif-list");
         filterBtn.addEventListener("click", function () {
             var open = filterMenu.classList.toggle("hidden") === false;
             filterBtn.setAttribute("aria-expanded", open ? "true" : "false");
@@ -321,9 +291,10 @@
         filterMenu.querySelectorAll("[data-sev]").forEach(function (opt) {
             opt.addEventListener("click", function () {
                 var sev = opt.getAttribute("data-sev");
-                document.querySelectorAll(".notif-item").forEach(function (el) {
-                    el.classList.toggle("hidden", sev !== "all" && el.getAttribute("data-sev") !== sev);
-                });
+                list.setAttribute("data-filter", sev);
+                if (window.DarkSpearFindings) {
+                    DarkSpearFindings.renderList(list, null, sev);
+                }
                 filterMenu.classList.add("hidden");
                 filterBtn.setAttribute("aria-expanded", "false");
             });
