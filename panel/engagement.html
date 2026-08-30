@@ -263,18 +263,29 @@
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
 <span class="text-on-surface font-semibold" id="engine-target-crumb">—</span>
 </nav>
-<div class="mb-lg flex flex-wrap items-start justify-between gap-md">
+<div class="mb-lg flex flex-wrap items-start justify-between gap-md" id="engine-header">
 <div>
-<h2 class="font-headline-xl text-headline-xl text-on-surface mb-xs">Engagement Dashboard</h2>
-<p class="font-body-md text-body-md text-secondary">Feed en vivo · <span id="engine-target-lead">—</span></p>
+<h2 class="font-headline-xl text-headline-xl text-on-surface mb-xs" data-i18n="eng.title">Engagement activo</h2>
+<p class="font-body-md text-body-md text-secondary"><span data-i18n="eng.feed">Feed en vivo</span> · <span id="engine-target-lead">—</span></p>
 </div>
-<div class="flex flex-wrap gap-sm">
+<div class="flex flex-wrap gap-sm" id="engine-toolbar">
 <button type="button" id="engine-findings-btn" class="px-md py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low">Hallazgos (0)</button>
 <button type="button" id="engine-export-btn" class="px-md py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low flex items-center gap-xs"><i data-lucide="download" class="icon-sm"></i> Export JSON</button>
 </div>
 </div>
 <div id="engine-banner" class="rounded-lg border border-outline-variant/40 bg-surface-container-low px-md py-sm font-body-sm text-on-surface mb-md" hidden></div>
 
+<div id="engine-idle" class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="activity" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
+</div>
+
+<div id="engine-live" hidden>
 <div class="glass-panel rounded-lg p-md mb-xl flex flex-col md:flex-row justify-between items-center gap-md">
 <div class="flex-1 w-full flex items-center justify-between relative">
 <div class="absolute top-1/2 left-0 w-full h-[2px] bg-surface-variant -z-10 -translate-y-1/2"></div>
@@ -313,6 +324,7 @@
 </div>
 
 <div id="engine-feed" class="grid grid-cols-1 gap-md"></div>
+</div>
 
 <aside id="engine-findings" class="fixed right-0 top-16 bottom-0 w-full max-w-md bg-white dark:bg-surface-container border-l border-outline-variant/30 shadow-lg p-lg overflow-y-auto z-40" hidden>
 <div class="flex items-center justify-between mb-md">
@@ -322,7 +334,7 @@
 <div id="engine-findings-list" class="flex flex-col gap-sm"></div>
 </aside>
 
-<div id="engine-confirm" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-lg" hidden>
+<div id="engine-confirm" class="fixed inset-0 bg-black/40 z-50 hidden items-center justify-center p-lg">
 <div class="glass-panel rounded-xl p-xl max-w-lg w-full flex flex-col gap-md">
 <h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="shield-alert" class="text-error"></i> Aprobar herramienta peligrosa</h3>
 <p id="engine-confirm-text" class="font-mono-md text-mono-md text-on-surface-variant whitespace-pre-wrap"></p>

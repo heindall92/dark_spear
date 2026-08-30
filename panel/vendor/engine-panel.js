@@ -125,15 +125,37 @@ function appendStep(step) {
   if (window.lucide) lucide.createIcons();
 }
 
+function showEngagementIdle() {
+  document.getElementById("engine-idle")?.removeAttribute("hidden");
+  document.getElementById("engine-live")?.setAttribute("hidden", "");
+  document.getElementById("engine-toolbar")?.setAttribute("hidden", "");
+  document.getElementById("engine-confirm")?.setAttribute("hidden", "");
+  document.getElementById("engine-findings")?.setAttribute("hidden", "");
+  const crumb = document.getElementById("engine-target-crumb");
+  const lead = document.getElementById("engine-target-lead");
+  if (crumb) crumb.textContent = "—";
+  if (lead) lead.textContent = "—";
+  if (window.lucide) lucide.createIcons();
+}
+
+function showEngagementLive() {
+  document.getElementById("engine-idle")?.setAttribute("hidden", "");
+  document.getElementById("engine-live")?.removeAttribute("hidden");
+  document.getElementById("engine-toolbar")?.removeAttribute("hidden");
+}
+
 function showConfirmModal(decision, onApprove, onReject) {
   const modal = document.getElementById("engine-confirm");
   const text = document.getElementById("engine-confirm-text");
+  if (!modal || !text) return;
   text.textContent = `${decision.tool} ${JSON.stringify(decision.args)} — ${decision.reasoning || ""}`;
-  modal.hidden = false;
+  modal.classList.add("flex");
+  modal.removeAttribute("hidden");
   const approve = document.getElementById("engine-confirm-approve");
   const reject = document.getElementById("engine-confirm-reject");
   const cleanup = () => {
-    modal.hidden = true;
+    modal.classList.remove("flex");
+    modal.setAttribute("hidden", "");
     approve.onclick = null;
     reject.onclick = null;
   };
@@ -284,11 +306,19 @@ async function bootStart() {
 async function bootEngagement() {
   const note = document.getElementById("engine-banner");
   const token = sessionStorage.getItem(TOKEN_KEY);
-  const run = JSON.parse(sessionStorage.getItem(RUN_KEY) || "null");
-  if (!token || !run) {
-    banner(note, "No hay engagement activo. Iniciá uno desde New Scan con el token del motor.", true);
+  let run = null;
+  try {
+    run = JSON.parse(sessionStorage.getItem(RUN_KEY) || "null");
+  } catch {
+    run = null;
+  }
+  const hasRun = run && run.target && run.scope && run.model;
+  if (!token || !hasRun) {
+    showEngagementIdle();
     return;
   }
+
+  showEngagementLive();
 
   document.getElementById("engine-target-crumb").textContent = run.target;
   document.getElementById("engine-target-lead").textContent = run.target;
@@ -297,6 +327,7 @@ async function bootEngagement() {
   try {
     api = await loadEngine(engineBase());
   } catch (err) {
+    showEngagementIdle();
     banner(note, "No se pudo cargar el motor. " + err.message, true);
     return;
   }
@@ -320,14 +351,38 @@ async function bootEngagement() {
   const engagementId = await api.db.createEngagement(db, { target: run.target, scope: run.scope });
 
   document.getElementById("engine-export-btn")?.addEventListener("click", async () => {
-    const data = await api.db.exportEngagementJSON(db, engagementId);
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `dark-spear-${run.target}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    try {
+      const data = await api.db.exportEngagementJSON(db, engagementId);
+      let findings = [];
+      try {
+        const raw = await api.bridge.listFindings();
+        findings = Array.isArray(raw) ? raw : [];
+      } catch {
+        /* bridge sin engagement activo */
+      }
+      if (window.DarkSpearExport?.downloadEngagementBundle) {
+        DarkSpearExport.downloadEngagementBundle({
+          findings,
+          steps: data.steps,
+          axis_ledger: data.axis_ledger,
+          engagementId,
+          target: run.target,
+          scope: run.scope,
+          model: run.model,
+        });
+        return;
+      }
+      const blob = new Blob([JSON.stringify({ ...data, findings, target: run.target, scope: run.scope }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `dark-spear-${run.target}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      const note = document.getElementById("engine-banner");
+      banner(note, err.message || String(err), true);
+    }
   });
 
   const findingsBtn = document.getElementById("engine-findings-btn");
