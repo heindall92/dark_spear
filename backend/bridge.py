@@ -334,6 +334,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             cmd = [resolved] + [str(a) for a in args]
+            timeout_s = 300 if tool == "nikto" else 120
             try:
                 proc = subprocess.run(
                     cmd,
@@ -341,13 +342,13 @@ class Handler(BaseHTTPRequestHandler):
                     text=True,
                     encoding="utf-8",
                     errors="replace",
-                    timeout=120,
+                    timeout=timeout_s,
                 )
                 result = {"stdout": _truncate_output(proc.stdout),
                           "stderr": _truncate_output(proc.stderr),
                           "exit_code": proc.returncode, "verdict": "ok"}
             except subprocess.TimeoutExpired:
-                result = {"stdout": "", "stderr": "timeout after 120s",
+                result = {"stdout": "", "stderr": f"timeout after {timeout_s}s",
                           "exit_code": -1, "verdict": "timeout"}
             except FileNotFoundError:
                 result = {"stdout": "", "stderr": f"{tool}: command not found",

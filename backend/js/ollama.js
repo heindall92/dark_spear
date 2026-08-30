@@ -36,6 +36,7 @@ ${ALLOWED_TOOLS_HINT.join(", ")}
 you'd pass them to subprocess.run(["tool", "arg1", "arg2"]), never one
 combined command string. Split flags: use ["-p","8888"] not ["-p 8888"].
 Read the Recent history outputs before repeating a scan. Do not re-run the same nmap/whatweb/curl if you already have the result.
+If history already identified DVWA (login.php, cookie security=low), propose a finding with that evidence instead of scanning again. Skip nikto unless the operator is in phase 2 and you still lack HTTP info.
 Reporting a finding does NOT end the engagement — keep working after it.`;
 
 const JSON_RETRY_HINT = `
@@ -50,7 +51,7 @@ function flattenContent(value) {
     return value.map((part) => {
       if (typeof part === "string") return part;
       if (!part || typeof part !== "object") return "";
-      return part.text || part.content || part.reasoning || part.thinking || "";
+      return part.text || part.content || part.output_text || part.reasoning || part.thinking || "";
     }).join("\n");
   }
   if (typeof value === "object") {
@@ -65,15 +66,44 @@ function collectMessageText(data) {
     .map((c) => c.function?.arguments || c.arguments || "")
     .filter(Boolean)
     .join("\n");
+  const harvested = harvestStrings(data).filter((s) => s.includes("{") && /tool|done|finding/.test(s));
   const parts = [
     flattenContent(msg.content),
     flattenContent(msg.reasoning),
+    flattenContent(msg.reasoning_content),
     flattenContent(msg.thinking),
+    flattenContent(msg.parsed),
     flattenContent(data.response),
     flattenContent(data.choices?.[0]?.text),
     toolArgs,
+    ...harvested,
   ].filter((x) => typeof x === "string" && x.trim());
-  return parts.join("\n");
+  return [...new Set(parts)].join("\n");
+}
+
+function harvestStrings(value, acc = []) {
+  if (typeof value === "string") {
+    if (value.trim()) acc.push(value);
+    return acc;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) harvestStrings(item, acc);
+    return acc;
+  }
+  if (value && typeof value === "object") {
+    for (const item of Object.values(value)) harvestStrings(item, acc);
+  }
+  return acc;
+}
+
+function apiSnapshot(data) {
+  const msg = data.choices?.[0]?.message ?? data.message ?? {};
+  return JSON.stringify({
+    keys: Object.keys(msg),
+    finish: data.choices?.[0]?.finish_reason,
+    contentType: typeof msg.content,
+    error: data.error || undefined,
+  }).slice(0, 400);
 }
 
 function stripReasoning(text) {
@@ -186,21 +216,28 @@ function decisionFromParsed(parsed, raw) {
   return { tool: splitTool, args, reasoning: parsed.reasoning ?? nested.reasoning ?? "" };
 }
 
-async function chatOnce(url, model, messages) {
+async function chatOnce(url, model, messages, { think } = { think: false }) {
   const base = { model, stream: false, temperature: 0, messages };
+  if (think === false) base.think = false;
   let data;
   try {
     data = await llmChat(url, base);
   } catch (err) {
+    if (think === false && /think|unknown.?field/i.test(err.message)) {
+      return chatOnce(url, model, messages, { think: true });
+    }
     throw err;
   }
   if (data.error && !data.choices && !data.message) {
     const msg = typeof data.error === "string" ? data.error : JSON.stringify(data.error);
+    if (think === false && /think|unknown.?field/i.test(msg)) {
+      return chatOnce(url, model, messages, { think: true });
+    }
     throw new Error(`llm_error: ${msg}`);
   }
   const raw = collectMessageText(data);
   if (!raw.trim()) {
-    throw new Error("ollama_empty_content: the model returned no text");
+    throw new Error(`ollama_empty_content: ${apiSnapshot(data)}`);
   }
   return decisionFromParsed(parseAgentJson(raw), raw);
 }
