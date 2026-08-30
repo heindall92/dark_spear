@@ -66,11 +66,12 @@ function findingFingerprint(title, asset) {
   if ((/cookie|session/.test(blob)) && /security|httponly|secure|low/.test(blob)) {
     return `cookie-session:${(asset || "").toLowerCase()}`;
   }
-  return blob.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/)
+  const words = blob.replace(/[^a-z0-9]+/g, " ").trim().split(/\s+/)
     .filter((w) => w.length > 3)
     .sort()
-    .slice(0, 6)
-    .join("-");
+    .slice(0, 6);
+  if (words.length) return words.join("-");
+  return blob.slice(0, 48) || "finding";
 }
 
 function stepOutput(step) {

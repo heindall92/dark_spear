@@ -10,10 +10,13 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
 <script src="vendor/splash.js" defer></script>
+<script type="module" src="vendor/engine-panel.js"></script>
 <script id="tailwind-config">
         tailwind.config = {
           darkMode: "class",
@@ -237,49 +240,47 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg flex items-center justify-center">
-<form class="glass-panel w-full max-w-3xl rounded-xl p-xl ambient-shadow flex flex-col gap-xl" id="start-form" action="engagement.html" method="get">
+<form class="glass-panel w-full max-w-3xl rounded-xl p-xl ambient-shadow flex flex-col gap-xl" id="start-form">
 <div class="flex flex-col gap-base">
-<h2 class="font-headline-xl text-headline-xl text-on-surface">Initiate Engagement</h2>
-<p class="font-body-md text-body-md text-on-surface-variant">Configure target parameters and select required access keys to begin the automated audit process.</p>
+<h2 class="font-headline-xl text-headline-xl text-on-surface" data-i18n="start.title">Initiate Engagement</h2>
+<p class="font-body-md text-body-md text-on-surface-variant" data-i18n="start.lead">Configurá target, modelo y keys del motor Auditor para arrancar el engagement.</p>
+<div id="engine-banner" class="rounded-lg border border-outline-variant/40 bg-surface-container-low px-md py-sm font-body-sm text-on-surface" hidden></div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="flex flex-col gap-base md:col-span-2">
+<label class="font-label-md text-label-md text-on-surface-variant" for="engine-token">Token del motor</label>
+<input id="engine-token" name="token" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Pegá el token de bridge.py o abrí la URL Panel" type="text" autocomplete="off"/>
+</div>
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="target">Target</label>
-<input id="target" name="target" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., prod-cluster-01" type="text"/>
+<input id="target" name="target" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., 127.0.0.1:8888" type="text"/>
 </div>
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="scope">Scope</label>
-<input id="scope" name="scope" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., us-east-1a" type="text"/>
+<input id="scope" name="scope" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., 127.0.0.1" type="text"/>
 </div>
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="model">Model</label>
-<div class="relative">
-<select id="model" name="model" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full appearance-none pr-xl">
-<option>Standard Compliance</option>
-<option>Deep Vulnerability Scan</option>
-<option>Asset Discovery</option>
-</select>
-<i data-lucide="chevron-down" class="icon-sm absolute right-md top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
-</div>
+<input id="model" name="model" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="gpt-oss:20b" type="text" value="gpt-oss:20b"/>
 </div>
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="endpoint">Endpoint</label>
-<input id="endpoint" name="endpoint" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="https://api.internal.corp" type="text"/>
+<input id="endpoint" name="endpoint" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="https://ollama.com/v1/chat/completions" type="text" value="https://ollama.com/v1/chat/completions"/>
 </div>
 </div>
 
@@ -290,42 +291,21 @@
 <i data-lucide="key" class="text-secondary"></i>
                     Gestionar keys
                 </h3>
-<div class="flex flex-col gap-sm" id="key-list">
-<label class="glass-panel rounded-lg p-md flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors">
-<div class="flex items-center gap-md">
-<div class="bg-secondary-container text-on-secondary-container p-sm rounded flex items-center justify-center">
-<i data-lucide="cloud"></i>
-</div>
-<div class="flex flex-col">
-<span class="font-label-md text-label-md text-on-surface">Production AWS</span>
-<span class="font-mono-md text-mono-md text-on-surface-variant">**** **** 8821</span>
-</div>
-</div>
-<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container cursor-pointer key-checkbox" name="selected_key" type="radio" value="aws-prod"/>
-</label>
-<label class="glass-panel rounded-lg p-md flex items-center justify-between cursor-pointer hover:bg-white/80 transition-colors">
-<div class="flex items-center gap-md">
-<div class="bg-surface-variant text-on-surface p-sm rounded flex items-center justify-center">
-<i data-lucide="monitor"></i>
-</div>
-<div class="flex flex-col">
-<span class="font-label-md text-label-md text-on-surface">Staging SSH</span>
-<span class="font-mono-md text-mono-md text-on-surface-variant">**** **** 109A</span>
-</div>
-</div>
-<input class="w-5 h-5 text-primary-container border-outline-variant focus:ring-primary-container cursor-pointer key-checkbox" name="selected_key" type="radio" value="ssh-staging"/>
-</label>
-</div>
+<div class="flex flex-col gap-sm" id="key-list"></div>
 <div class="mt-sm p-md bg-surface-container-low/50 rounded-lg border border-surface-variant border-dashed flex flex-col sm:flex-row gap-sm items-end">
-<div class="flex flex-col gap-base w-full sm:w-1/3">
+<div class="flex flex-col gap-base w-full sm:w-1/4">
 <label class="font-label-md text-label-md text-on-surface-variant" for="key-label">Label</label>
-<input id="key-label" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" placeholder="e.g., Azure Prod" type="text"/>
+<input id="key-label" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" placeholder="e.g., ollama-1" type="text"/>
 </div>
 <div class="flex flex-col gap-base w-full sm:flex-1">
-<label class="font-label-md text-label-md text-on-surface-variant" for="key-value">Key Value</label>
-<input id="key-value" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Enter secure key" type="password"/>
+<label class="font-label-md text-label-md text-on-surface-variant" for="key-value">API Key</label>
+<input id="key-value" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Ollama Cloud API key" type="password"/>
 </div>
-<button class="w-full sm:w-auto px-md py-sm border border-outline-variant text-secondary bg-transparent hover:bg-surface-variant/30 rounded font-label-md text-label-md transition-colors flex items-center justify-center gap-xs" type="button">
+<div class="flex flex-col gap-base w-full sm:w-24">
+<label class="font-label-md text-label-md text-on-surface-variant" for="key-window">Ventana (h)</label>
+<input id="key-window" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" type="number" min="1" step="1" value="24"/>
+</div>
+<button id="add-key-btn" class="w-full sm:w-auto px-md py-sm border border-outline-variant text-secondary bg-transparent hover:bg-surface-variant/30 rounded font-label-md text-label-md transition-colors flex items-center justify-center gap-xs" type="button">
 <i data-lucide="plus" class="icon-md"></i>
                         Add
                     </button>
@@ -343,16 +323,6 @@
 </div>
 <script>
         lucide.createIcons();
-        document.addEventListener("DOMContentLoaded", () => {
-            const checkboxes = document.querySelectorAll(".key-checkbox");
-            const ctaBtn = document.getElementById("primary-cta");
-            const syncCta = () => {
-                const anyChecked = Array.from(checkboxes).some((c) => c.checked);
-                if (anyChecked) ctaBtn.removeAttribute("disabled");
-                else ctaBtn.setAttribute("disabled", "true");
-            };
-            checkboxes.forEach((cb) => cb.addEventListener("change", syncCta));
-        });
     </script>
 </body>
 </html>

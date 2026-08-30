@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -225,37 +226,34 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg pointer-events-none select-none blur-[2px] opacity-60">
-<div class="max-w-container-max mx-auto flex flex-col gap-md">
-<h2 class="font-headline-xl text-headline-xl text-on-surface">Engagement Dashboard</h2>
-<p class="font-body-md text-body-md text-secondary">Real-time execution feed for Target_Alpha_Main</p>
-<div class="glass-panel rounded-xl p-md">
-<h3 class="font-headline-md text-headline-md text-on-surface mb-sm">Active tools</h3>
-<div class="flex justify-between items-center p-sm border-b border-outline-variant/20">
-<span class="font-mono-md text-mono-md">nmap</span>
-<span class="px-2 py-0.5 bg-tertiary-container/20 text-tertiary font-label-md text-label-md rounded">OK</span>
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="tool.approve">Aprobación de herramienta</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="tool.approveLead">Gate humano para herramientas peligrosas. Se abre desde Active Engagement.</p>
 </div>
-<div class="flex justify-between items-center p-sm border-b border-outline-variant/20">
-<span class="font-mono-md text-mono-md">hydra</span>
-<span class="px-2 py-0.5 bg-error-container text-error font-label-md text-label-md rounded">AWAITING_APPROVAL</span>
-</div>
-<div class="flex justify-between items-center p-sm">
-<span class="font-mono-md text-mono-md">metasploit</span>
-<span class="px-2 py-0.5 bg-primary-container/20 text-primary font-label-md text-label-md rounded">Waiting</span>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="shield-alert" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
+
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
 </div>
 </main>

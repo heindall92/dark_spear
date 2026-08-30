@@ -343,7 +343,9 @@ async function bootEngagement() {
       findingsBtn.textContent = `Hallazgos (${pending})`;
       findingsList.innerHTML = "";
       for (const f of findings) {
-        if (window.DarkSpearFindings) DarkSpearFindings.push(f);
+        if (f.status === "proposed" && window.DarkSpearFindings && !f.duplicate) {
+          DarkSpearFindings.push(f);
+        }
         const card = document.createElement("div");
         card.className = "glass-panel rounded-lg p-md flex flex-col gap-sm";
         card.innerHTML = `<span class="font-label-md">${f.severity} — ${f.status}</span>
@@ -404,9 +406,9 @@ async function bootEngagement() {
       appendStep({ tool: "(agent)", args: [], verdict: "waiting_for_quota", stderr: "Keys agotadas, esperando cuota." });
     },
     onFindingProposed: async (finding) => {
-      if (window.DarkSpearFindings) DarkSpearFindings.push(finding);
+      if (window.DarkSpearFindings && !finding.duplicate) DarkSpearFindings.push(finding);
       await refreshFindings();
-      findingsPanel.hidden = false;
+      if (!finding.duplicate) findingsPanel.hidden = false;
     },
   }).catch((err) => {
     appendStep({ tool: "(agent)", args: [], verdict: "agent_error", stderr: err.message });

@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -261,15 +262,15 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
@@ -280,7 +281,7 @@
 <nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant mb-sm flex-wrap" aria-label="Breadcrumb">
 <a class="hover:text-primary" href="reporting.html">Reporting</a>
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
-<a class="hover:text-primary" href="engagement.html">Target_Alpha_Main</a>
+<a class="hover:text-primary" href="engagement.html">—</a>
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
 <span class="font-semibold text-primary">Preview</span>
 </nav>
@@ -340,440 +341,21 @@
 </aside>
 
 <main id="main-content" class="flex-1 overflow-y-auto bg-surface-container p-lg">
-<div class="max-w-[210mm] mx-auto bg-white shadow-[0_8px_32px_rgba(27,42,65,0.12)] rounded-sm relative px-12 py-10 pdf-doc mb-lg">
-<div class="pdf-watermark" id="watermark">Confidencial</div>
-
-<div class="flex items-start justify-between gap-md pb-6 border-b border-outline-variant/40">
-<div class="flex items-center gap-sm" id="client-logo">
-<img class="brand-mark" src="vendor/logo.png" width="40" height="40" alt="Dark Spear"/>
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <div>
-<p class="font-bold text-primary text-[13px] leading-tight" data-i18n="brand">Dark Spear</p>
-<p class="text-[10px] text-on-surface-variant" data-i18n="brand.tagline">Consola SecOps</p>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="report.preview">Vista previa PDF</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="report.previewLead">Configuración y preview del informe exportable.</p>
 </div>
-</div>
-<p class="text-[10px] text-on-surface-variant text-right">AUD-ALPHA-2023-10-26-ES · Confidencial</p>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="file-search" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<p class="mt-8 text-[11px] uppercase tracking-[0.14em] text-primary font-semibold">Security Assessment Report</p>
-<h1 class="mt-2">Informe de Auditoría de Seguridad<br/>Target_Alpha_Main</h1>
-<p class="mt-2 text-on-surface-variant">Engagement: Target_Alpha_Main · Generated: October 26, 2023 · Ventana: 12–26 oct 2023 · 14 días</p>
-
-<section data-section="sec-00">
-<h2><span>00.</span> Control del documento</h2>
-<table>
-<tr><th style="width:34%">Campo</th><th>Detalle</th></tr>
-<tr><td>Título</td><td>Informe de Auditoría de Seguridad — Target_Alpha_Main (técnico + gobernanza)</td></tr>
-<tr><td>Versión</td><td>1.0</td></tr>
-<tr><td>Fecha</td><td>26 de octubre de 2023</td></tr>
-<tr><td>Cliente / dominio</td><td>TARGET_ALPHA · DC01</td></tr>
-<tr><td>Entorno</td><td>Directorio activo corporativo autorizado · datos de evidencia en vault</td></tr>
-<tr><td>Ventana de pruebas</td><td>12–26 octubre 2023</td></tr>
-<tr><td>Fuera de alcance</td><td>Producción de terceros, DoS, ingeniería social no autorizada</td></tr>
-<tr><td>Clasificación</td><td>Confidencial — no publicar hasta remediación acordada</td></tr>
-</table>
-<h3>Historial</h3>
-<table>
-<thead><tr><th>Versión</th><th>Fecha</th><th>Autor</th><th>Cambios</th></tr></thead>
-<tbody>
-<tr><td>1.0</td><td>26/10/2023</td><td>Auditor SecOps</td><td>Emisión: 3 críticos, 12 altos, 28 hallazgos totales + bloque GRC 08–08f.</td></tr>
-</tbody>
-</table>
-<h3>Revisión y firmas</h3>
-<table>
-<thead><tr><th>Rol</th><th>Nombre</th><th>Fecha</th><th>Firma</th></tr></thead>
-<tbody>
-<tr><td>Auditor</td><td>Equipo Auditor</td><td>26/10/2023</td><td></td></tr>
-<tr><td>Revisado por (QA)</td><td></td><td></td><td></td></tr>
-<tr><td>Recibido por (TARGET_ALPHA)</td><td></td><td></td><td></td></tr>
-</tbody>
-</table>
-</section>
-
-<section data-section="sec-00b">
-<h2><span>00b.</span> Índice</h2>
-<table>
-<thead><tr><th>Nº</th><th>Sección</th><th>Pág.</th></tr></thead>
-<tbody>
-<tr><td>00.</td><td>Control del documento</td><td>2</td></tr>
-<tr><td>00b.</td><td>Índice</td><td>3</td></tr>
-<tr><td>00c.</td><td>Alineación con el alcance</td><td>4</td></tr>
-<tr><td>00d.</td><td>Valoración de riesgo para lo que la empresa necesita</td><td>5</td></tr>
-<tr><td>01.</td><td>Resumen Ejecutivo</td><td>6</td></tr>
-<tr><td>02.</td><td>Resumen de Hallazgos</td><td>7</td></tr>
-<tr><td>03.</td><td>Análisis de Causa Raíz</td><td>9</td></tr>
-<tr><td>04.</td><td>Hallazgos Detallados</td><td>10</td></tr>
-<tr><td>05.</td><td>Controles Correctamente Implementados</td><td>14</td></tr>
-<tr><td>06.</td><td>Plan de Remediación Priorizado</td><td>15</td></tr>
-<tr><td>07.</td><td>Apéndice Técnico</td><td>17</td></tr>
-<tr><td>08.</td><td>Gobernanza y Cumplimiento Normativo</td><td>19</td></tr>
-<tr><td>08a–08f.</td><td>RGPD, matriz 3×3, madurez, Kill Chain / MITRE</td><td>20</td></tr>
-<tr><td>09.</td><td>Conclusiones, siguientes pasos y criterio de éxito</td><td>28</td></tr>
-</tbody>
-</table>
-</section>
-
-<section data-section="sec-00c">
-<h2><span>00c.</span> Alineación con el alcance</h2>
-<p>Este informe responde al alcance autorizado del engagement <strong>Target_Alpha_Main</strong>. El objetivo único autorizado fue el dominio <code>TARGET_ALPHA</code> (controlador DC01 y hosts en scope), autenticación corporativa y la superficie post-explotación documentada en el feed de Reporting.</p>
-<h3>Qué se auditó (dentro de alcance)</h3>
-<ul class="list-disc pl-5 space-y-1 text-on-surface-variant">
-<li>Inteligencia, enumeración y explotación controlada sobre activos en scope.</li>
-<li>Post-explotación: impacto de credenciales privilegiadas y caminos de movimiento lateral observados.</li>
-<li>Gobernanza: MFA, RAT, DPA, plan de incidentes y backups, contrastados con el cuestionario GRC del cliente.</li>
-</ul>
-<h3>Qué no se atravesó (fuera de alcance respetado)</h3>
-<ul class="list-disc pl-5 space-y-1 text-on-surface-variant">
-<li>Sistemas de terceros no listados, DoS, destrucción masiva e ingeniería social no autorizada.</li>
-<li>Reproducción de secretos en claro: se documenta el mecanismo; las credenciales viven en el evidence vault.</li>
-</ul>
-</section>
-
-<section data-section="sec-00d">
-<h2><span>00d.</span> Valoración de riesgo para lo que la empresa necesita</h2>
-<p>TARGET_ALPHA opera directorio activo, cuentas privilegiadas y datos de empleados. Un compromiso de Domain Admin no es “ver un share”: es control del bosque, de GPO y de la identidad corporativa. Este ejercicio demuestra que la causa raíz no es una herramienta concreta, sino <strong>secretos privilegiados reutilizados y un camino de delegación sin restricciones</strong> que conduce a DA.</p>
-<ul class="list-disc pl-5 space-y-1 text-on-surface-variant">
-<li><strong>Identidad:</strong> cuenta Administrator del dominio con secreto recuperable en evidencia de memoria y en un script de backup publicado internamente.</li>
-<li><strong>Directorio:</strong> unconstrained delegation entre el host comprometido y DC01.</li>
-<li><strong>Gobernanza:</strong> MFA incompleto en cuentas privilegiadas, sin RAT actualizado y sin IRP operable en 72 h (RGPD Arts. 32 y 33).</li>
-</ul>
-</section>
-
-<section data-section="sec-01">
-<h2><span>01.</span> Resumen Ejecutivo</h2>
-<p>La evaluación de <strong>Target_Alpha_Main</strong> identificó <strong>28 hallazgos</strong>: <strong>3 críticos</strong>, 12 altos y el resto medios/bajos/informativos. El impacto dominante es el compromiso de identidad de dominio: se confirmó la extracción de credenciales de <code>DOMAIN\Administrator</code> y un camino de movimiento lateral viable hacia el Domain Controller vía unconstrained delegation.</p>
-<p class="mt-3">Las consecuencias prácticas incluyen control efectivo del directorio, capacidad de persistencia vía GPO y exposición de datos de empleados. El bloque 08 documenta que, si el incidente se materializa, la organización llega <strong>sin IRP escrito, con MFA parcial y sin RAT demostrable</strong> ante la AEPD.</p>
-<div class="mt-4 h-28 rounded-lg border border-dashed border-outline-variant bg-surface-container-low flex items-center justify-center text-on-surface-variant text-[11px]">
-Gráfico de distribución de severidad (placeholder de informe)
-                </div>
-</section>
-
-<section data-section="sec-02">
-<h2><span>02.</span> Resumen de Hallazgos</h2>
-<div class="grid grid-cols-5 gap-2 my-3">
-<div class="pdf-stat"><div class="n text-error">3</div><div class="text-[10px] uppercase text-on-surface-variant">Críticos</div></div>
-<div class="pdf-stat"><div class="n text-error">12</div><div class="text-[10px] uppercase text-on-surface-variant">Altos</div></div>
-<div class="pdf-stat"><div class="n text-primary">8</div><div class="text-[10px] uppercase text-on-surface-variant">Medios</div></div>
-<div class="pdf-stat"><div class="n text-primary">3</div><div class="text-[10px] uppercase text-on-surface-variant">Bajos</div></div>
-<div class="pdf-stat"><div class="n text-on-surface">2</div><div class="text-[10px] uppercase text-on-surface-variant">Info</div></div>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
-<table>
-<thead><tr><th>ID</th><th>Título</th><th>Severidad</th><th>Categoría</th></tr></thead>
-<tbody>
-<tr><td><code>F-001</code></td><td>Domain Admin credentials extracted</td><td><span class="pdf-badge crit">Critical</span></td><td>Credential Access</td></tr>
-<tr><td><code>F-002</code></td><td>Service account DA password in backup script</td><td><span class="pdf-badge crit">Critical</span></td><td>Secret Exposure</td></tr>
-<tr><td><code>F-003</code></td><td>Lateral path via unconstrained delegation</td><td><span class="pdf-badge high">High</span></td><td>Lateral Movement</td></tr>
-<tr><td><code>F-004</code></td><td>Unauthenticated RCE on internal API</td><td><span class="pdf-badge crit">Critical</span></td><td>RCE</td></tr>
-<tr><td><code>F-005</code></td><td>Blind SQLi in authentication module</td><td><span class="pdf-badge high">High</span></td><td>Injection</td></tr>
-</tbody>
-</table>
-<h3>Leyenda de categorías y términos</h3>
-<table>
-<thead><tr><th style="width:28%">Término</th><th>Significado</th></tr></thead>
-<tbody>
-<tr><td><strong>Credential Access</strong></td><td>Obtención de secretos de cuentas (memoria, repositorios, vaults mal protegidos). Los valores no se reproducen; se indica el mecanismo.</td></tr>
-<tr><td><strong>Lateral Movement</strong></td><td>Camino observado entre host comprometido y activo de alto valor (DC01).</td></tr>
-<tr><td><strong>DA / Domain Admin</strong></td><td>Grupo privilegiado del bosque. Compromiso = control de identidad corporativa.</td></tr>
-<tr><td><strong>GRC / RGPD</strong></td><td>Gobernanza y obligaciones (Arts. 5, 28, 30, 32, 33–34) independientes del daño técnico.</td></tr>
-</tbody>
-</table>
-</section>
-
-<section data-section="sec-03">
-<h2><span>03.</span> Análisis de Causa Raíz</h2>
-<div class="rounded-lg border border-error/20 bg-error-container/30 p-md mb-3">
-<h3 class="mt-0 text-error">Causa raíz sistémica: secretos privilegiados sin control de ciclo de vida</h3>
-<p>Las cuentas de servicio y el Administrator de dominio reutilizan secretos de larga duración. Un script de backup en un repositorio interno y una captura de memoria de LSASS (evidencia en vault) convergen en el mismo privilegio. El AD no exige MFA en el grupo Domain Admins ni rota esos secretos.</p>
-</div>
-<p>El segundo defecto es de diseño de delegación: unconstrained delegation en un host de nivel medio convierte un compromiso local en un camino al DC. Remediación de causa raíz: <strong>rotar y vaultar secretos DA/servicio</strong>, <strong>eliminar unconstrained delegation</strong> y <strong>MFA privilegiado</strong>.</p>
-</section>
-
-<section data-section="sec-04">
-<h2><span>04.</span> Hallazgos Detallados</h2>
-<div class="border border-error/20 rounded-lg overflow-hidden mb-4">
-<div class="p-md border-b border-outline-variant/40 flex items-center gap-sm flex-wrap">
-<span class="pdf-badge crit">Critical</span>
-<span class="font-semibold">4.1 Domain Admin Credentials Extracted</span>
-<span class="text-[11px] text-on-surface-variant ml-auto">F-001 · CVSS 9.8</span>
-</div>
-<div class="p-md">
-<p>Se confirmó la captura de memoria LSASS y la presencia de credenciales en claro para <code>DOMAIN\Administrator</code>. Secretos almacenados en evidence vault; extracto redactado.</p>
-<p class="mt-2"><strong>Impacto:</strong> control del bosque, GPO y persistencia. <strong>Remediación:</strong> reset de DA, KRBTGT, revisión de logons privilegiados, MFA y PAM.</p>
-<pre>Evidence excerpt — credential dump (redacted)
-
-User Name  : Administrator
-Domain     : TARGET_ALPHA
-Logon Server : DC01
-NTLM       : [redacted]
-Password   : ********</pre>
-</div>
-</div>
-<div class="border border-error/15 rounded-lg overflow-hidden mb-4">
-<div class="p-md border-b border-outline-variant/40 flex items-center gap-sm flex-wrap">
-<span class="pdf-badge crit">Critical</span>
-<span class="font-semibold">4.2 Service account DA in public backup script</span>
-<span class="text-[11px] text-on-surface-variant ml-auto">F-002</span>
-</div>
-<div class="p-md">
-<p>Una cuenta de servicio opera con privilegios de Domain Administrator. Su secreto aparece en un script de backup interno (<code>backup_script.ps1</code>).</p>
-<pre># backup_script.ps1  (redacted)
-$svcUser  = "TARGET_ALPHA\svc-backup"
-$password = "********"</pre>
-</div>
-</div>
-<div class="border border-outline-variant rounded-lg overflow-hidden">
-<div class="p-md border-b border-outline-variant/40 flex items-center gap-sm flex-wrap">
-<span class="pdf-badge high">High</span>
-<span class="font-semibold">4.3 Capa lateral AD</span>
-<span class="text-[11px] text-on-surface-variant ml-auto">F-003 · lateral-ad</span>
-</div>
-<div class="p-md">
-<p><strong>Lateral AD</strong> (no sustituye el grafo de perímetro): WS01 → svc-backup → DOMAIN ADMINS → DC01 vía unconstrained delegation. Evidencia: <code>ad_lateral_ws01_dc01.png</code>. El perímetro (Attack Graph) es Internet Externo → SRV-WEB-01 → DB-PROD-Main.</p>
-<p class="mt-2"><strong>Impacto y remediación:</strong> restringir delegación a constrained/RBCD; quitar privilegios excesivos; monitorizar T1558.</p>
-</div>
-</div>
-</section>
-
-<section data-section="sec-05">
-<h2><span>05.</span> Controles Correctamente Implementados</h2>
-<div class="space-y-2">
-<div class="border border-tertiary-container/30 rounded-lg p-sm"><span class="pdf-badge pass">PASS</span> <strong>LDAP signing</strong> habilitado en DC01.</div>
-<div class="border border-tertiary-container/30 rounded-lg p-sm"><span class="pdf-badge pass">PASS</span> <strong>Segmentación de VLAN de servidores</strong> respecto a workstations de usuario.</div>
-<div class="border border-tertiary-container/30 rounded-lg p-sm"><span class="pdf-badge pass">PASS</span> <strong>Backup de AD</strong> programado (sin prueba de restore documentada — ver F-GRC-031).</div>
-</div>
-</section>
-
-<section data-section="sec-06">
-<h2><span>06.</span> Plan de Remediación Priorizado, por fases</h2>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-<div class="border border-error/20 rounded-lg p-sm bg-error-container/20">
-<h3 class="mt-0">Fase 1 · 48–72 h</h3>
-<p class="text-[11px] text-on-surface-variant mb-1">Contención de identidad</p>
-<ul class="list-disc pl-4 text-[11px] space-y-1">
-<li>Reset DA + KRBTGT (ciclo doble)</li>
-<li>Revocar sesiones privilegiadas</li>
-<li>Retirar secreto de <code>backup_script.ps1</code></li>
-</ul>
-</div>
-<div class="border border-outline-variant rounded-lg p-sm">
-<h3 class="mt-0">Fase 2 · 1–2 semanas</h3>
-<p class="text-[11px] text-on-surface-variant mb-1">Causa raíz AD</p>
-<ul class="list-disc pl-4 text-[11px] space-y-1">
-<li>Eliminar unconstrained delegation</li>
-<li>MFA / PAM en Domain Admins</li>
-<li>Vault de cuentas de servicio</li>
-</ul>
-</div>
-<div class="border border-outline-variant rounded-lg p-sm">
-<h3 class="mt-0">Fase 3 · 30–90 días</h3>
-<p class="text-[11px] text-on-surface-variant mb-1">GRC / RGPD</p>
-<ul class="list-disc pl-4 text-[11px] space-y-1">
-<li>RAT v1 + inventario de encargados</li>
-<li>IRP + simulacro de 72 h (Art. 33)</li>
-<li>Restore test con RTO/RPO</li>
-</ul>
-</div>
-</div>
-</section>
-
-<section data-section="sec-07">
-<h2><span>07.</span> Apéndice Técnico</h2>
-<h3>Metodología de prueba aplicada</h3>
-<ul class="list-disc pl-5 space-y-1 text-on-surface-variant">
-<li>Intelligence → Enumeration → Exploitation → Post-Exploitation (stepper del engagement).</li>
-<li>Revisión de evidencia de identidad y de la capa lateral AD (WS01 → DC01) dentro de scope, aparte del grafo de perímetro.</li>
-<li>Cuestionario GRC y contraste con Arts. 28, 30, 32, 33–34 RGPD.</li>
-</ul>
-<h3>CVSS 3.1 (críticos)</h3>
-<table>
-<thead><tr><th>ID</th><th>Score</th><th>Vector</th></tr></thead>
-<tbody>
-<tr><td>F-001</td><td>9.8</td><td><code>AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H</code></td></tr>
-<tr><td>F-002</td><td>9.0</td><td><code>AV:L/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H</code></td></tr>
-<tr><td>F-004</td><td>9.8</td><td><code>AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H</code></td></tr>
-</tbody>
-</table>
-<h3>OWASP — qué aplica</h3>
-<table>
-<thead><tr><th>Ref.</th><th>Nombre</th><th>¿Aplica?</th><th>Hallazgos</th></tr></thead>
-<tbody>
-<tr><td>A07:2021</td><td>Identification and Authentication Failures</td><td>Sí</td><td>F-001, F-002</td></tr>
-<tr><td>A01:2021</td><td>Broken Access Control</td><td>Sí</td><td>F-003, F-004</td></tr>
-<tr><td>A03:2021</td><td>Injection</td><td>Sí</td><td>F-005</td></tr>
-<tr><td>API1 / API5</td><td>BOLA / BFLA</td><td>Parcial</td><td>API interna (F-004)</td></tr>
-</tbody>
-</table>
-<h3>Evidencia condensada (hallazgos sin ficha extensa)</h3>
-<table>
-<thead><tr><th>ID</th><th>Artefacto</th><th>Notas</th></tr></thead>
-<tbody>
-<tr><td>F-005</td><td>login.customer-portal.com</td><td>Blind SQLi temporal en parámetro username</td></tr>
-<tr><td>F-006+</td><td>Vulnerabilities table</td><td>12 altos agregados; detalle en panel</td></tr>
-</tbody>
-</table>
-</section>
-
-<section data-section="sec-08">
-<h2><span>08.</span> Gobernanza y Cumplimiento Normativo</h2>
-<p>El bloque técnico (F-001–F-005) describe cómo un incidente de identidad puede comprometer el dominio. El bloque GRC describe si TARGET_ALPHA puede <strong>detectar, notificar y demostrar diligencia</strong>. Sin RAT, DPA y IRP, el mismo incidente es también un problema de accountability ante la AEPD.</p>
-</section>
-
-<section data-section="sec-08a">
-<h2><span>08a.</span> Fichas de cumplimiento RGPD y tramo sancionador</h2>
-<table>
-<thead><tr><th>ID</th><th>Hallazgo</th><th>Base legal</th><th>Tramo</th><th>Sev.</th></tr></thead>
-<tbody>
-<tr><td>F-025</td><td>MFA ausente en Domain Admins</td><td>Art. 32</td><td>83.4</td><td><span class="pdf-badge high">Alto</span></td></tr>
-<tr><td>F-027</td><td>DPA incompletos con encargados de IT</td><td>Art. 28</td><td>83.4</td><td><span class="pdf-badge high">Alto</span></td></tr>
-<tr><td>F-028</td><td>RAT no actualizado</td><td>Art. 30</td><td>83.4</td><td><span class="pdf-badge high">Alto</span></td></tr>
-<tr><td>F-029</td><td>Retención de logs/evidencias sin plazo</td><td>Art. 5.1.e</td><td>83.5</td><td><span class="pdf-badge med">Medio</span></td></tr>
-<tr><td>F-030</td><td>Sin plan de respuesta a incidentes</td><td>Arts. 33–34</td><td>83.4</td><td><span class="pdf-badge med">Medio</span></td></tr>
-<tr><td>F-031</td><td>Backups sin prueba de restauración</td><td>Art. 32</td><td>83.4</td><td><span class="pdf-badge med">Medio</span></td></tr>
-</tbody>
-</table>
-<div class="grid grid-cols-2 gap-2 mt-2">
-<div class="border border-outline-variant rounded-lg p-sm">
-<strong>Art. 83.4 — hasta 10 M€ o 2 %</strong>
-<p class="text-[11px] mt-1">Obligaciones operativas (28, 30, 32, 33–34). Incumplimientos objetivos: la AEPD no necesita un ataque exitoso.</p>
-</div>
-<div class="border border-outline-variant rounded-lg p-sm">
-<strong>Art. 83.5 — hasta 20 M€ o 4 %</strong>
-<p class="text-[11px] mt-1">Principios (p. ej. limitación del plazo de conservación, Art. 5.1.e). Tramo distinto; no se mezcla con 83.4.</p>
-</div>
-</div>
-<p class="mt-2 text-[11px] text-on-surface-variant">Art. 33: el reloj de 72 h corre desde el conocimiento del hecho. Sin IRP no hay dueño del reloj ni plantilla de notificación.</p>
-</section>
-
-<section data-section="sec-08b">
-<h2><span>08b.</span> Resumen del riesgo de cumplimiento</h2>
-<p>F-001/F-002 muestran cómo se compromete la identidad. F-025 a F-031 muestran que, ocurrido el hecho, la organización no puede demostrar MFA privilegiado, encargos, inventario de tratamientos ni notificación en 72 h. La combinación técnico + GRC eleva el riesgo por encima de cualquiera de los dos bloques por separado.</p>
-</section>
-
-<section data-section="sec-08c">
-<h2><span>08c.</span> Matriz de riesgo 3×3</h2>
-<p class="text-[11px] text-on-surface-variant mb-2">Severidad × probabilidad. Críticos en rojo. Ejes: operativo · reputacional · legal · €</p>
-<div class="mx-grid">
-<div></div><div class="mx-xlab">Baja</div><div class="mx-xlab">Media</div><div class="mx-xlab">Alta</div>
-<div class="mx-ylab">Alta</div>
-<div class="mx-cell"></div>
-<div class="mx-cell mid"><span class="chip">F-030 H</span><span class="chip">F-031 H</span></div>
-<div class="mx-cell hot"><span class="chip crit">F-001</span><span class="chip crit">F-002</span><span class="chip crit">F-004</span><span class="chip">F-003</span><span class="chip">F-025</span></div>
-<div class="mx-ylab">Media</div>
-<div class="mx-cell"></div>
-<div class="mx-cell mid"><span class="chip">F-005</span><span class="chip">F-029</span></div>
-<div class="mx-cell"></div>
-<div class="mx-ylab">Baja</div>
-<div class="mx-cell"><span class="chip">Info</span></div>
-<div class="mx-cell"></div>
-<div class="mx-cell"></div>
-</div>
-</section>
-
-<section data-section="sec-08d">
-<h2><span>08d.</span> Impacto de negocio y quick wins</h2>
-<h3>Impacto de negocio (crítico / alto)</h3>
-<ul class="list-disc pl-5 space-y-1 text-on-surface-variant">
-<li>Parada de identidad: reset masivo, bloqueo de DA, interrupción de GPO.</li>
-<li>Riesgo legal AEPD + contractual con clientes que dependen del AD.</li>
-<li>Coste de forense y de rotación de secretos de servicio.</li>
-</ul>
-<h3>Cinco quick wins</h3>
-<ol class="list-decimal pl-5 space-y-1">
-<li>Retirar secretos del repositorio y rotar <code>svc-backup</code>.</li>
-<li>MFA obligatorio en Domain Admins (horas, no meses).</li>
-<li>Deshabilitar unconstrained delegation en el host del camino F-003.</li>
-<li>Nombrar dueño del reloj Art. 33 (72 h).</li>
-<li>Ejecutar un restore test de AD y anotar RTO.</li>
-</ol>
-</section>
-
-<section data-section="sec-08e">
-<h2><span>08e.</span> Índice de madurez de seguridad</h2>
-<p>Media global: <strong>3.1 / 10</strong> (rango 0–3 = crítico). Escala: 0–3 crítico · 4–5 débil · 6–7 en desarrollo · 8–10 maduro.</p>
-<div class="grid grid-cols-4 gap-2 my-3">
-<div class="pdf-stat"><div class="n">3.1</div><div class="text-[10px]">Hoy</div></div>
-<div class="pdf-stat"><div class="n text-primary">5.0</div><div class="text-[10px]">3 meses</div></div>
-<div class="pdf-stat"><div class="n text-primary">6.5</div><div class="text-[10px]">6 meses</div></div>
-<div class="pdf-stat"><div class="n text-tertiary-container">8.0</div><div class="text-[10px]">Objetivo 12 m</div></div>
-</div>
-<table>
-<thead><tr><th>Área</th><th>Nota</th><th>0–10</th><th>Cómo cerrar el gap</th></tr></thead>
-<tbody>
-<tr><td>Governance &amp; RGPD</td><td>2</td><td><div class="h-1.5 bg-surface-variant rounded"><div class="mat-bar" style="width:20%"></div></div></td><td>RAT + DPA + IRP</td></tr>
-<tr><td>IAM &amp; privilegios</td><td>2</td><td><div class="h-1.5 bg-surface-variant rounded"><div class="mat-bar" style="width:20%"></div></div></td><td>MFA DA + PAM + rotación</td></tr>
-<tr><td>AppSec / AD</td><td>3</td><td><div class="h-1.5 bg-surface-variant rounded"><div class="mat-bar" style="width:30%"></div></div></td><td>Delegación + hardening DC</td></tr>
-<tr><td>Logging &amp; detección</td><td>4</td><td><div class="h-1.5 bg-surface-variant rounded"><div class="mat-bar" style="width:40%;background:#005faa"></div></div></td><td>Alertas T1003 / T1558 con dueño</td></tr>
-<tr><td>Backup &amp; recovery</td><td>4</td><td><div class="h-1.5 bg-surface-variant rounded"><div class="mat-bar" style="width:40%;background:#005faa"></div></div></td><td>Restore test con RTO/RPO</td></tr>
-</tbody>
-</table>
-<h3>Trayectoria objetivo</h3>
-<p>3.1 → 5.0 (90 días: identidad + MFA + IRP mínimo) → 6.5 (6 meses: GRC vivo) → 8.0 (12 meses: PAM y ejercicios de mesa trimestrales).</p>
-</section>
-
-<section data-section="sec-08f">
-<h2><span>08f.</span> Kill Chain — de host comprometido a Domain Admin</h2>
-<div class="grid grid-cols-4 gap-2 my-3">
-<div class="pdf-stat"><div class="n">5</div><div class="text-[10px]">Pasos en cadena</div></div>
-<div class="pdf-stat"><div class="n">5</div><div class="text-[10px]">Hallazgos usados</div></div>
-<div class="pdf-stat"><div class="n">DA</div><div class="text-[10px]">Impacto final</div></div>
-<div class="pdf-stat"><div class="n">0</div><div class="text-[10px]">Privilegios extra</div></div>
-</div>
-<h3>Cadena de ataque paso a paso</h3>
-<ol class="list-decimal pl-5 space-y-2">
-<li><strong>Reconocimiento / Intelligence.</strong> Superficie y activos en scope mapeados.</li>
-<li><strong>Enumeración.</strong> Hosts, grupos AD y caminos de delegación.</li>
-<li><strong>Acceso a secretos (F-001 / F-002).</strong> Credencial DA en vault de evidencia; script de backup con secreto de servicio DA.</li>
-<li><strong>Movimiento lateral (F-003).</strong> Camino unconstrained delegation hacia DC01.</li>
-<li><strong>Impacto.</strong> Control de dominio: identidad, GPO y persistencia. Sin MFA privilegiado el reloj de contención depende de detección humana.</li>
-</ol>
-<h3>Resumen de pasos y hallazgos encadenados</h3>
-<table>
-<thead><tr><th>Paso</th><th>Fase</th><th>Hallazgos</th></tr></thead>
-<tbody>
-<tr><td>1–2</td><td>Intel / Enum</td><td>Alcance Target_Alpha_Main</td></tr>
-<tr><td>3</td><td>Credential Access</td><td>F-001, F-002</td></tr>
-<tr><td>4</td><td>Lateral Movement</td><td>F-003</td></tr>
-<tr><td>5</td><td>Impact / DA</td><td>F-001 + F-003; GRC F-025 / F-030 amplifican</td></tr>
-</tbody>
-</table>
-<h3>Mapeo MITRE ATT&amp;CK (Enterprise)</h3>
-<table>
-<thead><tr><th>Táctica</th><th>Técnica</th><th>ID</th><th>Hallazgo</th></tr></thead>
-<tbody>
-<tr><td>Credential Access</td><td>OS Credential Dumping</td><td>T1003</td><td>F-001</td></tr>
-<tr><td>Credential Access</td><td>Unsecured Credentials</td><td>T1552</td><td>F-002</td></tr>
-<tr><td>Lateral Movement</td><td>Use Alternate Authentication Material</td><td>T1550</td><td>F-003</td></tr>
-<tr><td>Privilege Escalation</td><td>Valid Accounts</td><td>T1078</td><td>F-001</td></tr>
-<tr><td>Impact</td><td>Account Access Removal / Control</td><td>—</td><td>Dominio comprometido</td></tr>
-</tbody>
-</table>
-</section>
-
-<section data-section="sec-09">
-<h2><span>09.</span> Conclusiones y siguientes pasos</h2>
-<p>TARGET_ALPHA mantiene controles parciales (LDAP signing, segmentación). El fallo dominante es la <strong>deriva entre el modelo de privilegios declarado y el ciclo de vida real de los secretos DA</strong>, más un camino de delegación que convierte un host medio en puente al DC.</p>
-<h3>Criterio de éxito (por fases)</h3>
-<table>
-<thead><tr><th>Fase</th><th>Plazo</th><th>Se considera cerrado cuando…</th></tr></thead>
-<tbody>
-<tr><td>1</td><td>48–72 h</td><td>DA y KRBTGT rotados; secreto de backup fuera del repo; sesiones privilegiadas revocadas.</td></tr>
-<tr><td>2</td><td>1–2 semanas</td><td>Ningún host en el camino F-003 con unconstrained delegation; MFA en Domain Admins; cuentas de servicio en vault.</td></tr>
-<tr><td>3</td><td>30–90 días</td><td>RAT v1 publicado; IRP con dueño del reloj 72 h; restore de AD con RTO/RPO anotado.</td></tr>
-<tr><td>Objetivo</td><td>12 meses</td><td>Madurez ≥ 8.0; ejercicio de mesa trimestral; revalidación post-fix de F-001–F-003.</td></tr>
-</tbody>
-</table>
-<p class="mt-3">Trayectoria de madurez: <strong>3.1 → 5.0 (3 meses) → 8.0 (12 meses)</strong>.</p>
-</section>
-
-<section data-section="sec-gallery" class="hidden-section">
-<h2>Evidence Gallery</h2>
-<div class="grid grid-cols-3 gap-2">
-<div class="border border-outline-variant rounded p-sm text-center text-[11px]">perimetro_attack_graph.png</div>
-<div class="border border-outline-variant rounded p-sm text-center text-[11px]">ad_lateral_ws01_dc01.png</div>
-<div class="border border-outline-variant rounded p-sm text-center text-[11px]">lsass_dump_term.jpg</div>
-</div>
-</section>
-
-<p class="mt-10 pt-4 border-t border-outline-variant/40 text-[10px] text-on-surface-variant">Fin del preview · Target_Alpha_Main · 26 oct 2023 · Confidencial</p>
 </div>
 </main>
 </div>

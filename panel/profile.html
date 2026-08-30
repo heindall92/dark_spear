@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -230,96 +231,33 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
 <i data-lucide="bell"></i>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span>
 </button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings">
 <i data-lucide="settings"></i>
 </a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border-2 border-primary cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
-<div class="max-w-5xl mx-auto flex flex-col gap-md">
-<div class="flex flex-wrap items-end justify-between gap-md">
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <div>
-<h2 class="font-headline-xl text-headline-xl text-on-surface" data-i18n="profile.title">Configuración de perfil</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="profile.lead">Información personal, seguridad y preferencias de la cuenta.</p>
+<h2 class="font-headline-lg text-on-surface" data-i18n="profile.title">Perfil</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="profile.lead">Datos del operador en la consola.</p>
 </div>
-<div class="flex gap-sm">
-<a href="index.html" class="px-md py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low" data-i18n="profile.cancel">Cancelar</a>
-<button class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md hover:bg-primary" type="button" id="profile-save" data-i18n="settings.save">Guardar cambios</button>
-</div>
-</div>
-
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">
-<section class="lg:col-span-2 glass-panel rounded-xl p-lg">
-<h3 class="font-headline-md text-on-surface mb-md flex items-center gap-sm"><i data-lucide="user" class="text-primary"></i> Información personal</h3>
-<div class="flex flex-col sm:flex-row gap-lg items-start">
-<div class="flex flex-col items-center gap-sm shrink-0">
-<img id="profile-avatar" alt="Avatar" class="w-24 h-24 rounded-full object-cover border-2 border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
-<label class="font-label-md text-primary cursor-pointer hover:underline">
-<input id="profile-photo" class="hidden" type="file" accept="image/*"/>
-Cambiar foto
-</label>
-</div>
-<div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-md w-full">
-<div class="flex flex-col gap-xs">
+<div class="glass-panel rounded-xl p-xl max-w-xl flex flex-col gap-md">
+<div class="w-16 h-16 rounded-full bg-primary-container/15 text-primary flex items-center justify-center font-headline-md">—</div>
 <label class="font-label-md text-on-surface-variant" for="profile-name">Nombre</label>
-<input id="profile-name" class="bg-surface border border-outline-variant rounded-md px-md py-sm input-fluent font-body-md" type="text" value="Elena"/>
-</div>
-<div class="flex flex-col gap-xs">
-<label class="font-label-md text-on-surface-variant" for="profile-last">Apellidos</label>
-<input id="profile-last" class="bg-surface border border-outline-variant rounded-md px-md py-sm input-fluent font-body-md" type="text" value="Rodríguez"/>
-</div>
-<div class="flex flex-col gap-xs md:col-span-2">
-<label class="font-label-md text-on-surface-variant" for="profile-email">Correo electrónico</label>
-<input id="profile-email" class="bg-surface-container border border-outline-variant rounded-md px-md py-sm font-body-md" type="email" value="elena.rodriguez@darkspear.local" disabled/>
-<span class="font-body-sm text-on-surface-variant">Gestionado por el administrador de TI.</span>
-</div>
-<div class="flex flex-col gap-xs md:col-span-2">
-<label class="font-label-md text-on-surface-variant" for="profile-role">Cargo / rol</label>
-<input id="profile-role" class="bg-surface border border-outline-variant rounded-md px-md py-sm input-fluent font-body-md" type="text" value="Auditor Jefe de Seguridad"/>
-</div>
-</div>
-</div>
-</section>
-
-<aside class="flex flex-col gap-md">
-<section class="glass-panel rounded-xl p-md">
-<h3 class="font-headline-md mb-sm flex items-center gap-sm"><i data-lucide="shield" class="text-primary"></i> Seguridad</h3>
-<p class="font-body-sm text-on-surface-variant mb-sm">Último cambio de contraseña: hace 45 días.</p>
-<button class="w-full py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low flex items-center justify-center gap-xs" type="button" id="profile-password"><i data-lucide="key-round" class="icon-md"></i> Cambiar contraseña</button>
-<div class="mt-md pt-md border-t border-outline-variant/30 flex items-center justify-between">
-<div>
-<p class="font-label-md">Autenticación de 2 factores</p>
-<p class="font-body-sm text-on-surface-variant">Aplicación de autenticación</p>
-</div>
-<span class="px-sm py-xs rounded bg-tertiary-container text-on-tertiary-container font-label-md text-[10px] uppercase">Activo</span>
-</div>
-</section>
-<section class="glass-panel rounded-xl p-md">
-<h3 class="font-headline-md mb-sm flex items-center gap-sm"><i data-lucide="monitor-smartphone" class="text-primary"></i> Sesiones activas</h3>
-<div class="flex items-start justify-between gap-sm py-sm border-b border-outline-variant/20">
-<div>
-<p class="font-label-md">Windows · Chrome</p>
-<p class="font-body-sm text-on-surface-variant">Madrid · esta sesión</p>
-</div>
-<span class="font-label-md text-[10px] uppercase text-tertiary">Actual</span>
-</div>
-<div class="flex items-start justify-between gap-sm py-sm">
-<div>
-<p class="font-label-md">iOS 16 · Safari</p>
-<p class="font-body-sm text-on-surface-variant">Barcelona · hace 2 h</p>
-</div>
-<button class="text-error hover:bg-error-container/50 rounded p-xs" type="button" id="revoke-session" aria-label="Cerrar sesión remota"><i data-lucide="log-out" class="icon-md"></i></button>
-</div>
-</section>
-</aside>
+<input id="profile-name" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm" placeholder="—" type="text"/>
+<label class="font-label-md text-on-surface-variant" for="profile-email">Email</label>
+<input id="profile-email" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm" placeholder="—" type="email"/>
+<label class="font-label-md text-on-surface-variant" for="profile-role">Rol</label>
+<input id="profile-role" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm" placeholder="—" type="text"/>
 </div>
 </div>
 </main>
@@ -361,7 +299,16 @@ Cambiar foto
                 reader.readAsDataURL(file);
             });
             document.getElementById("profile-password").addEventListener("click", function () {
-                alert("En este mock la contraseña no se envía a un servidor. El cambio queda registrado en la sesión.");
+                var el = document.getElementById("ds-toast");
+                if (!el) {
+                    el = document.createElement("div");
+                    el.id = "ds-toast";
+                    el.className = "ds-toast";
+                    document.body.appendChild(el);
+                }
+                el.textContent = "Cambio de contraseña no configurado en esta instalación.";
+                el.classList.add("show");
+                setTimeout(function () { el.classList.remove("show"); }, 2200);
             });
             document.getElementById("revoke-session").addEventListener("click", function () {
                 this.closest("div").remove();

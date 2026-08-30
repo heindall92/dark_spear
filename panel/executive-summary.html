@@ -10,6 +10,7 @@
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
+<link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
@@ -127,128 +128,31 @@
 <input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
 </div>
 <div class="flex items-center gap-md">
-<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications"><i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white"></span></button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
+<i data-lucide="bell"></i><span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border border-white hidden"></span></button>
 <a class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors" href="settings.html" aria-label="Settings" data-i18n-aria="aria.settings"><i data-lucide="settings"></i></a>
 <div class="w-8 h-8 rounded-full bg-secondary-container overflow-hidden border border-outline-variant/30 cursor-pointer">
-<img alt="User profile avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCahiTLWm7G6wpnSGUmctOvHtvQBfF5aSPQG-k9fsDwzUjkvh9LmvGt3-qxJnCJmlPq1LBKFRZ25ZU5XTQFa-Izd9L3qPGhN4ehIgdtKoKJcjYUu9cAlQ3qzIxszVWksJT6dt3tHUumEsSvUU17TYvcY99SU2WKWOhCEwMf-z0MTieKKvQYApromfW-RaauU_EUIWNj8GtczCWDwHveYDVIbc6qZBYZIu0pLBwJXNIdrSl8EBmSGdL50A"/>
+<div class="w-full h-full flex items-center justify-center bg-primary-container/15 text-primary font-label-md" aria-hidden="true">DS</div>
 </div>
 </div>
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
-<nav class="chap-nav flex flex-wrap items-center gap-xs mb-md" aria-label="Capítulos del informe">
-<a href="comprehensive-report.html" data-i18n="chap.informe">Informe</a>
-<a class="active" href="executive-summary.html" data-i18n="chap.resumen">Resumen</a>
-<a href="finding-detail.html" data-i18n="chap.hallazgo">Hallazgo</a>
-<a href="findings-summary.html" data-i18n="chap.leyenda">Leyenda</a>
-<a href="remediation-plan.html" data-i18n="chap.remediacion">Remediación</a>
-<a href="gdpr-alignment.html" data-i18n="chap.rgpd">RGPD</a>
-<a href="maturity-index.html" data-i18n="chap.madurez">Madurez</a>
-<a href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>
-</nav>
-
-<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-lg">
+<div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <div>
-<h2 class="font-headline-xl text-headline-xl text-on-background">Resumen Ejecutivo</h2>
-<p class="font-body-md text-body-md text-secondary mt-xs">Evaluación de postura de seguridad — Target_Alpha_Main</p>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="exec.title">Resumen ejecutivo</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="exec.lead">Síntesis para stakeholders. Se genera desde Reporting.</p>
 </div>
-<div class="flex gap-sm flex-wrap">
-<a href="comprehensive-report.html" class="px-md py-sm rounded-lg font-label-md text-label-md border border-outline-variant text-secondary hover:bg-surface-container-low transition-colors flex items-center gap-sm" data-export="pdf"><i data-lucide="download" class="icon-md"></i> Exportar PDF</a>
-<a href="reporting.html" class="px-md py-sm rounded-lg font-label-md text-label-md bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-sm shadow-sm"><i data-lucide="share-2" class="icon-md"></i> Compartir</a>
-</div>
-</div>
+<div class="glass-panel rounded-xl ds-empty">
+<div class="ds-empty-icon"><i data-lucide="briefcase" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<div class="grid grid-cols-1 md:grid-cols-12 gap-md">
-<section class="glass-panel rounded-xl p-lg col-span-1 md:col-span-4 flex flex-col justify-center items-center text-center relative overflow-hidden">
-<i data-lucide="shield" class="absolute top-md right-md opacity-10 icon-lg" style="width:96px !important;height:96px !important;"></i>
-<h3 class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-md w-full text-left">Puntuación Global</h3>
-<div class="relative w-40 h-40 flex items-center justify-center mb-md">
-<svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-<circle cx="50" cy="50" fill="none" r="45" stroke="#e0e3e7" stroke-width="8"></circle>
-<circle cx="50" cy="50" fill="none" r="45" stroke="#0078d4" stroke-dasharray="282.7" stroke-dashoffset="50.9" stroke-linecap="round" stroke-width="8"></circle>
-</svg>
-<div class="absolute flex flex-col items-center">
-<span class="font-headline-xl text-primary" style="font-size:40px;line-height:40px;">B+</span>
-<span class="font-body-sm text-secondary mt-xs">82 / 100</span>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="nav.newScan">Nuevo escaneo</span>
+</a>
 </div>
-</div>
-<p class="font-body-md text-on-surface-variant">Postura de seguridad sólida. Riesgos críticos mitigados satisfactoriamente.</p>
-</section>
-
-<section class="glass-panel rounded-xl p-lg col-span-1 md:col-span-8 flex flex-col">
-<h3 class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-md">Hallazgos por Severidad</h3>
-<div class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-md">
-<div class="bg-error-container/30 border border-error-container p-md rounded-lg flex flex-col justify-between">
-<div class="flex items-center justify-between mb-sm">
-<i data-lucide="triangle-alert" class="text-error"></i>
-<span class="font-label-md text-label-md text-error bg-error-container px-sm py-xs rounded-full">Crítico</span>
-</div>
-<span class="font-headline-xl text-on-surface">3</span>
-<span class="font-body-sm text-secondary mt-xs">Requiere atención inmediata</span>
-</div>
-<div class="bg-[#FFEFE5]/50 border border-[#FFD0B5] p-md rounded-lg flex flex-col justify-between">
-<div class="flex items-center justify-between mb-sm">
-<i data-lucide="circle-alert" class="text-[#C25400]"></i>
-<span class="font-label-md text-label-md text-[#C25400] bg-[#FFEFE5] px-sm py-xs rounded-full">Alto</span>
-</div>
-<span class="font-headline-xl text-on-surface">12</span>
-<span class="font-body-sm text-secondary mt-xs">Planificar remediación a corto plazo</span>
-</div>
-<div class="bg-[#FFF4CE]/50 border border-[#FDE073] p-md rounded-lg flex flex-col justify-between">
-<div class="flex items-center justify-between mb-sm">
-<i data-lucide="info" class="text-[#795F00]"></i>
-<span class="font-label-md text-label-md text-[#795F00] bg-[#FFF4CE] px-sm py-xs rounded-full">Medio</span>
-</div>
-<span class="font-headline-xl text-on-surface">8</span>
-<span class="font-body-sm text-secondary mt-xs">Revisar en ciclo normal</span>
-</div>
-<div class="bg-surface-container p-md rounded-lg flex flex-col justify-between border border-outline-variant/30">
-<div class="flex items-center justify-between mb-sm">
-<i data-lucide="circle-check" class="text-secondary"></i>
-<span class="font-label-md text-label-md text-secondary bg-surface-variant px-sm py-xs rounded-full">Bajo</span>
-</div>
-<span class="font-headline-xl text-on-surface">5</span>
-<span class="font-body-sm text-secondary mt-xs">Bajo e informativos (3+2)</span>
-</div>
-</div>
-</section>
-
-<section class="glass-panel rounded-xl p-lg col-span-1 md:col-span-12">
-<h3 class="font-label-md text-label-md text-secondary uppercase tracking-widest mb-md">Resumen Ejecutivo</h3>
-<p class="font-body-lg text-on-surface-variant mb-md">La evaluación de Target_Alpha_Main indica una mejora del <strong class="text-on-surface">15%</strong> en la postura general respecto a la auditoría anterior. Los controles de nube (AWS/Azure) operan dentro de los márgenes de tolerancia aceptados.</p>
-<p class="font-body-lg text-on-surface-variant mb-lg">Persisten huecos en aplicaciones heredadas y en IAM. <strong class="text-on-surface">Perímetro:</strong> Internet Externo → SRV-WEB-01 → DB-PROD-Main. <strong class="text-on-surface">Lateral AD:</strong> WS01 → DC01 (capa distinta; ver Kill Chain).</p>
-<figure class="relative overflow-hidden dot-grid rounded-xl border border-outline-variant/40 min-h-[340px] mb-sm m-0" role="img" aria-label="Grafo de perímetro: Internet Externo y VPN-User-74 a SRV-WEB-01; ruta crítica a DB-PROD-Main.">
-<svg class="absolute inset-0 w-full h-full" aria-hidden="true">
-<line stroke="#c0c7d4" stroke-dasharray="5 5" stroke-width="2" x1="22%" x2="50%" y1="32%" y2="52%"></line>
-<line stroke="#c0c7d4" stroke-width="2" x1="22%" x2="50%" y1="72%" y2="52%"></line>
-<line stroke="#ba1a1a" stroke-width="3.5" x1="54%" x2="76%" y1="50%" y2="40%"></line>
-</svg>
-<div class="absolute left-[15%] top-[22%] flex flex-col items-center">
-<div class="h-12 w-12 rounded-full bg-surface-container-highest border-2 border-outline-variant flex items-center justify-center shadow-sm"><i data-lucide="globe" class="text-secondary"></i></div>
-<span class="mt-xs font-label-md bg-white/90 px-xs rounded">Internet Externo</span>
-</div>
-<div class="absolute left-[15%] top-[64%] flex flex-col items-center">
-<div class="h-10 w-10 rounded-lg bg-white border border-outline-variant flex items-center justify-center shadow-sm"><i data-lucide="laptop" class="text-secondary icon-md"></i></div>
-<span class="mt-xs font-label-md bg-white/90 px-xs rounded">VPN-User-74</span>
-</div>
-<div class="absolute left-[44%] top-[42%] flex flex-col items-center">
-<div class="h-14 w-14 rounded-lg bg-white border-2 border-primary flex items-center justify-center shadow-md ring-4 ring-primary-fixed/60"><i data-lucide="server" class="text-primary"></i></div>
-<span class="mt-xs font-label-md font-bold bg-white/90 px-xs rounded border border-outline-variant">SRV-WEB-01</span>
-<span class="text-[10px] text-error font-bold mt-xs bg-error-container px-xs rounded">CVE-2023-4567</span>
-</div>
-<div class="absolute left-[70%] top-[30%] flex flex-col items-center">
-<div class="h-12 w-12 rounded-lg bg-white border-2 border-error flex items-center justify-center shadow-sm"><i data-lucide="database" class="text-error"></i></div>
-<span class="mt-xs font-label-md bg-white/90 px-xs rounded">DB-PROD-Main</span>
-<span class="text-[10px] text-on-surface-variant mt-xs">Activo crítico</span>
-</div>
-<div class="absolute bottom-sm left-sm bg-white/90 backdrop-blur-md p-sm rounded-lg border border-outline-variant flex gap-md">
-<div class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-error"></span><span class="font-body-sm text-secondary">Ruta crítica</span></div>
-<div class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-outline-variant"></span><span class="font-body-sm text-secondary">Conexión segura</span></div>
-<div class="flex items-center gap-xs"><span class="w-4 h-4 rounded border-2 border-primary"></span><span class="font-body-sm text-secondary">Nodo seleccionado</span></div>
-</div>
-</figure>
-<p class="font-body-sm text-on-surface-variant">Perímetro: Internet Externo → SRV-WEB-01 → DB-PROD-Main. <a class="text-primary hover:underline" href="attack-graph.html">Abrir Attack Graph</a> · Lateral AD en <a class="text-primary hover:underline" href="kill-chain.html" data-i18n="chap.killchain">Kill Chain</a>.</p>
-</section>
 </div>
 </main>
 </div>

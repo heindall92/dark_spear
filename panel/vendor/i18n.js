@@ -66,7 +66,22 @@
       "notif.low": "Bajo",
       "notif.info": "Info",
       "notif.empty": "Todavía no hay hallazgos",
-      "notif.emptyLead": "Los hallazgos únicos del engagement aparecen aquí. El ruido del agente no se notifica."
+      "notif.emptyLead": "Los hallazgos únicos del engagement aparecen aquí. El ruido del agente no se notifica.",
+      "empty.title": "Sin datos todavía",
+      "empty.lead": "Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.",
+      "empty.trends": "Sin tendencias",
+      "empty.engagements": "Sin engagements",
+      "dash.title": "Dashboard",
+      "dash.lead": "Vista general de operaciones. Los KPIs se actualizan cuando hay un engagement activo.",
+      "dash.kpi.engagements": "Engagements activos",
+      "dash.kpi.critical": "Hallazgos críticos",
+      "dash.kpi.scans": "Escaneos activos",
+      "dash.kpi.mttr": "MTTR (días)",
+      "start.title": "Iniciar engagement",
+      "start.lead": "Configurá target, modelo y keys del motor Auditor.",
+      "engine.noKeys": "No hay keys en el motor. Agregá una de Ollama Cloud.",
+      "profile.title": "Perfil",
+      "profile.lead": "Datos del operador en la consola."
     },
     en: {
       brand: "Dark Spear",
@@ -134,7 +149,22 @@
       "notif.low": "Low",
       "notif.info": "Info",
       "notif.empty": "No findings yet",
-      "notif.emptyLead": "Unique engagement findings show up here. Agent noise is not notified."
+      "notif.emptyLead": "Unique engagement findings show up here. Agent noise is not notified.",
+      "empty.title": "No data yet",
+      "empty.lead": "Start an engagement from New Scan to populate this view with real engine findings.",
+      "empty.trends": "No trends",
+      "empty.engagements": "No engagements",
+      "dash.title": "Dashboard",
+      "dash.lead": "Operations overview. KPIs update when an engagement is active.",
+      "dash.kpi.engagements": "Active engagements",
+      "dash.kpi.critical": "Critical findings",
+      "dash.kpi.scans": "Active scans",
+      "dash.kpi.mttr": "MTTR (days)",
+      "start.title": "Start engagement",
+      "start.lead": "Configure target, model, and Auditor engine API keys.",
+      "engine.noKeys": "No keys in the engine. Add an Ollama Cloud key.",
+      "profile.title": "Profile",
+      "profile.lead": "Operator details in the console."
     }
   };
 
