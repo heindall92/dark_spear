@@ -14,7 +14,9 @@
 <link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
+<script src="vendor/findings-inbox.js" defer></script>
 <script src="vendor/export.js" defer></script>
+<script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
 <script id="tailwind-config">
         tailwind.config = {
@@ -86,32 +88,53 @@
 </div>
 <div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="reporting.html" aria-current="page"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Métricas de remediación</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Engagement activo</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Escaneos activos</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilidades</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Hallazgos críticos</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Informes</span></a>
+
+<div class="border-t border-outline-variant/30 mx-sm my-xs pt-sm flex flex-col gap-base">
+<p class="px-md pb-xs font-label-md text-label-md text-on-surface-variant uppercase tracking-wide" data-i18n="nav.govSection">Gobernanza</p>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="gdpr-alignment.html" data-nav-page="gdpr-alignment.html">
+<i data-lucide="scale"></i>
+<span data-i18n="nav.gdpr">Alineación RGPD</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10 transition-colors duration-200" href="maturity-index.html" aria-current="page" data-nav-page="maturity-index.html">
+<i data-lucide="grid-3x3"></i>
+<span data-i18n="nav.maturity">Matriz de riesgos</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-plan.html" data-nav-page="remediation-plan.html">
+<i data-lucide="list-checks"></i>
+<span data-i18n="nav.remPlan">Plan de remediación</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="kill-chain.html" data-nav-page="kill-chain.html">
+<i data-lucide="git-branch"></i>
+<span data-i18n="nav.killchain">Kill Chain</span>
+</a>
+</div>
+
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Grafo de ataque</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Activos</span></a>
 </div>
 <div class="mt-auto px-md flex flex-col gap-md">
-<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">Nuevo escaneo</span></a>
 <div class="sidebar-prefs">
 <div class="ios-row">
-<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm" data-pref-icon="theme"></i><span class="ios-row-text" data-pref-label="theme">Oscuro</span></span>
 <button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 <div class="ios-row">
-<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<span class="ios-row-label"><span class="ios-row-text font-mono-md text-[11px] tracking-wide" data-pref-code="lang">ES</span><span class="ios-row-text" data-pref-label="lang">Español</span></span>
 <button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 </div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
-<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
-<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
-<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Ajustes</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Centro de ayuda</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Cerrar sesión</span></a>
 </div>
 </div>
 </nav>
@@ -132,130 +155,53 @@
 </div>
 </header>
 
+<style>#maturity-list-view[hidden],#maturity-detail-view[hidden]{display:none!important}</style>
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
 <div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<section id="maturity-list-view" class="flex flex-col gap-md">
 <div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="maturity.title">Índice de madurez</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="maturity.lead">Evaluación de madurez de seguridad post-auditoría.</p>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="maturity.listLead">Elige un análisis para ver la evaluación de madurez de seguridad.</p>
 </div>
-<div class="glass-panel rounded-xl ds-empty">
+<div class="relative w-full max-w-md">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none icon-sm"></i>
+<input id="maturity-list-search" class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Buscar por target o scope..." data-i18n-placeholder="scan.listSearch" type="text"/>
+</div>
+<div id="maturity-empty" class="glass-panel rounded-xl ds-empty" hidden>
 <div class="ds-empty-icon"><i data-lucide="target" class="icon-lg"></i></div>
 <p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
-<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
-
-<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
-<i data-lucide="plus" class="icon-sm"></i>
-<span data-i18n="nav.newScan">Nuevo escaneo</span>
-</a>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="maturity.emptyLead">Inicia un engagement; aquí aparecerá una tarjeta por cada análisis.</p>
+<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors"><i data-lucide="plus" class="icon-sm"></i><span data-i18n="nav.newScan">Nuevo escaneo</span></a>
 </div>
+<div id="maturity-scans-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-lg"></div>
+</section>
+<section id="maturity-detail-view" class="flex flex-col gap-lg" hidden>
+<div>
+<a href="maturity-index.html" class="inline-flex items-center gap-xs font-body-sm text-primary hover:underline mb-xs"><i data-lucide="arrow-left" class="icon-sm"></i><span data-i18n="scan.back">Volver a análisis</span></a>
+<h2 id="maturity-detail-title" class="font-headline-xl text-headline-xl text-on-surface tracking-tight">Índice de Madurez de Seguridad</h2>
+<p id="maturity-detail-subtitle" class="font-body-md text-on-surface-variant mt-xs">—</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<section class="lg:col-span-8 glass-panel rounded-xl p-lg flex flex-col">
+<div class="flex justify-between items-start mb-md gap-md">
+<div>
+<h3 class="font-headline-md text-on-surface" data-i18n="maturity.radarTitle">Distribución por dominio</h3>
+<p class="font-body-sm text-on-surface-variant" data-i18n="maturity.radarLead">Brecha entre nivel actual y objetivo (escala 1–5)</p>
+</div>
+<div class="flex items-center gap-md font-body-sm shrink-0">
+<div class="flex items-center gap-xs"><div class="w-3 h-3 rounded-full bg-primary-container"></div><span data-i18n="maturity.actual">Actual</span></div>
+<div class="flex items-center gap-xs"><div class="w-3 h-3 rounded-full border-2 border-tertiary border-dashed"></div><span data-i18n="maturity.target">Objetivo</span></div>
+</div>
+</div>
+<div class="relative w-full min-h-[400px] h-[400px]"><canvas id="maturity-radar"></canvas></div>
+</section>
+<div id="maturity-summary" class="lg:col-span-4 flex flex-col gap-lg"></div>
+</div>
+<div id="maturity-domains"></div>
+</section>
 </div>
 </main>
 </div>
-<script>
-        lucide.createIcons();
-        var radarChart = null;
-        var RADAR = {
-            labels: ["IAM", "Red", "Datos", "Incidentes", "Concienciación", "Activos"],
-            actual: [2.8, 3.5, 3.8, 3.0, 2.4, 3.2],
-            target: [4.0, 4.0, 4.0, 4.5, 4.0, 4.5]
-        };
-        function token(name, fallback) {
-            var v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-            return v || fallback;
-        }
-        function radarColors() {
-            var grid = token("--ds-outline-variant", "#3d4650");
-            var label = token("--ds-on-surface", "#e4eaf0");
-            var tick = token("--ds-on-surface-variant", "#c5cdd6");
-            var actual = token("--ds-primary-container", "#0078d4");
-            var target = token("--ds-tertiary", "#2ee59b");
-            return { grid: grid, label: label, tick: tick, actual: actual, target: target };
-        }
-        function renderRadar() {
-            var canvas = document.getElementById("maturity-radar");
-            if (!canvas || typeof Chart === "undefined") return;
-            var c = radarColors();
-            if (radarChart) radarChart.destroy();
-            radarChart = new Chart(canvas, {
-                type: "radar",
-                data: {
-                    labels: RADAR.labels,
-                    datasets: [
-                        {
-                            label: "Actual",
-                            data: RADAR.actual,
-                            fill: true,
-                            backgroundColor: "rgba(0, 120, 212, 0.22)",
-                            borderColor: c.actual,
-                            borderWidth: 2,
-                            pointBackgroundColor: c.actual,
-                            pointBorderColor: c.actual,
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                        },
-                        {
-                            label: "Objetivo",
-                            data: RADAR.target,
-                            fill: false,
-                            backgroundColor: "transparent",
-                            borderColor: c.target,
-                            borderWidth: 2,
-                            borderDash: [6, 4],
-                            pointBackgroundColor: c.target,
-                            pointBorderColor: c.target,
-                            pointRadius: 4,
-                            pointHoverRadius: 6
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: { mode: "index", intersect: false },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: function (ctx) {
-                                    return ctx.dataset.label + ": " + ctx.parsed.r.toFixed(1) + " / 5";
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        r: {
-                            min: 0,
-                            max: 5,
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1,
-                                showLabelBackdrop: false,
-                                color: c.tick,
-                                font: { family: "Public Sans", size: 11 }
-                            },
-                            grid: { color: c.grid, circular: true },
-                            angleLines: { color: c.grid },
-                            pointLabels: {
-                                color: c.label,
-                                font: { family: "Public Sans", size: 12, weight: "600" },
-                                padding: 10
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        renderRadar();
-        new MutationObserver(function () { renderRadar(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-        var domainFilter = document.querySelector('input[placeholder="Buscar dominio..."]');
-        if (domainFilter) {
-            domainFilter.addEventListener("input", function () {
-                var q = domainFilter.value.toLowerCase();
-                document.querySelectorAll("tbody tr").forEach(function (row) {
-                    row.style.display = row.textContent.toLowerCase().indexOf(q) === -1 ? "none" : "";
-                });
-            });
-        }
-    </script>
+<script>lucide.createIcons();</script>
 </body>
 </html>

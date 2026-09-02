@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dark Spear — MITRE ATT&amp;CK</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
 <script src="vendor/lucide.min.js"></script>
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
@@ -13,7 +13,9 @@
 <link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
+<script src="vendor/findings-inbox.js" defer></script>
 <script src="vendor/export.js" defer></script>
+<script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
 <script id="tailwind-config">
         tailwind.config = {
@@ -40,7 +42,7 @@
               },
               borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
               spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
-              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontFamily: { "headline-xl": ["Inter", "system-ui", "sans-serif"], "mono-md": ["JetBrains Mono", "monospace"], "label-md": ["Inter", "system-ui", "sans-serif"], "body-md": ["Inter", "system-ui", "sans-serif"], "headline-md": ["Inter", "system-ui", "sans-serif"], "body-lg": ["Inter", "system-ui", "sans-serif"], "body-sm": ["Inter", "system-ui", "sans-serif"], "headline-lg": ["Inter", "system-ui", "sans-serif"] },
               fontSize: {
                 "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
                 "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
@@ -60,8 +62,39 @@
         .icon-sm { width: 16px !important; height: 16px !important; }
         .icon-md { width: 18px !important; height: 18px !important; }
         .icon-lg { width: 24px !important; height: 24px !important; }
-        .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
-        .tab-btn.active { background: #fff; color: #004883; box-shadow: 0 1px 2px rgba(27,42,65,0.08); border-color: #c0c7d4; }
+        .glass-panel {
+          background-color: rgba(255,255,255,0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid #D8E3F0;
+        }
+        .matrix-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .matrix-scroll::-webkit-scrollbar-track { background: transparent; }
+        .matrix-scroll::-webkit-scrollbar-thumb { background-color: #c0c7d4; border-radius: 4px; }
+        .matrix-scroll::-webkit-scrollbar-thumb:hover { background-color: #717783; }
+        /* Tailwind `flex` pisa el atributo HTML hidden — forzar ocultar */
+        #mitre-list-view[hidden],
+        #mitre-detail-view[hidden] {
+          display: none !important;
+        }
+        #mitre-matrix {
+          align-items: flex-start;
+          overflow-x: auto;
+          overflow-y: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        #mitre-matrix > * {
+          min-height: min-content;
+        }
+        .mitre-view-btn.active {
+          background: #fff;
+          color: #004883;
+          box-shadow: 0 1px 2px rgba(27,42,65,0.08);
+          border-color: #c0c7d4;
+        }
+        .tech-high { background: #005faa; color: #ffffff; border-color: rgba(0,95,170,0.2); }
+        .tech-partial { background: #d5e3ff; color: #181c1f; border-color: #b8c7e5; }
+        .tech-none { background: #e5e8ec; color: #404752; border-color: #c0c7d4; }
         .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
         .skip-link:focus { left: 8px; top: 8px; }
         @media (prefers-reduced-motion: reduce) {
@@ -82,32 +115,53 @@
 </div>
 <div class="flex-1 flex flex-col gap-base px-sm overflow-y-auto">
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="index.html"><i data-lucide="layout-dashboard"></i><span data-i18n="nav.dashboard">Dashboard</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Remediation Metrics</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Active Engagement</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Active Scans</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilities</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Critical Findings</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Reporting</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html"><i data-lucide="gauge"></i><span data-i18n="nav.metrics">Métricas de remediación</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html"><i data-lucide="activity"></i><span data-i18n="nav.engagement">Engagement activo</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html"><i data-lucide="radar"></i><span data-i18n="nav.scans">Escaneos activos</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html"><i data-lucide="bug"></i><span data-i18n="nav.vulns">Vulnerabilidades</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html"><i data-lucide="triangle-alert"></i><span data-i18n="nav.critical">Hallazgos críticos</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html"><i data-lucide="chart-column"></i><span data-i18n="nav.reporting">Informes</span></a>
+
+<div class="border-t border-outline-variant/30 mx-sm my-xs pt-sm flex flex-col gap-base">
+<p class="px-md pb-xs font-label-md text-label-md text-on-surface-variant uppercase tracking-wide" data-i18n="nav.govSection">Gobernanza</p>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="gdpr-alignment.html" data-nav-page="gdpr-alignment.html">
+<i data-lucide="scale"></i>
+<span data-i18n="nav.gdpr">Alineación RGPD</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="maturity-index.html" data-nav-page="maturity-index.html">
+<i data-lucide="grid-3x3"></i>
+<span data-i18n="nav.maturity">Matriz de riesgos</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-plan.html" data-nav-page="remediation-plan.html">
+<i data-lucide="list-checks"></i>
+<span data-i18n="nav.remPlan">Plan de remediación</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="kill-chain.html" data-nav-page="kill-chain.html">
+<i data-lucide="git-branch"></i>
+<span data-i18n="nav.killchain">Kill Chain</span>
+</a>
+</div>
+
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html"><i data-lucide="binoculars"></i><span data-i18n="nav.osint">OSINT</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Attack Graph</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="mitre.html" aria-current="page"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&amp;CK</span></a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Assets</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html"><i data-lucide="share-2"></i><span data-i18n="nav.graph">Grafo de ataque</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10 transition-colors duration-200" href="mitre.html" aria-current="page"><i data-lucide="swords"></i><span data-i18n="nav.mitre">MITRE ATT&CK</span></a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html"><i data-lucide="boxes"></i><span data-i18n="nav.assets">Activos</span></a>
 </div>
 <div class="mt-auto px-md flex flex-col gap-md">
-<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span></a>
+<a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm"><i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">Nuevo escaneo</span></a>
 <div class="sidebar-prefs">
 <div class="ios-row">
-<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm" data-pref-icon="theme"></i><span class="ios-row-text" data-pref-label="theme">Oscuro</span></span>
 <button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 <div class="ios-row">
-<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<span class="ios-row-label"><span class="ios-row-text font-mono-md text-[11px] tracking-wide" data-pref-code="lang">ES</span><span class="ios-row-text" data-pref-label="lang">Español</span></span>
 <button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 </div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
-<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span></a>
-<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span></a>
-<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html"><i data-lucide="settings"></i><span class="font-body-sm text-body-sm" data-i18n="nav.settings">Ajustes</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html"><i data-lucide="circle-question-mark"></i><span class="font-body-sm text-body-sm" data-i18n="nav.help">Centro de ayuda</span></a>
+<a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#"><i data-lucide="log-out"></i><span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Cerrar sesión</span></a>
 </div>
 </div>
 </nav>
@@ -116,7 +170,7 @@
 <header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
 <div class="relative w-96">
 <i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
-<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+<input id="mitre-list-search" class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Buscar escaneo o target..." data-i18n-placeholder="mitre.listSearch" type="text"/>
 </div>
 <div class="flex items-center gap-md">
 <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
@@ -128,36 +182,81 @@
 </div>
 </header>
 
-<main id="main-content" class="flex-1 mt-16 p-lg overflow-hidden flex flex-col max-w-container-max mx-auto w-full">
-<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<main id="main-content" class="flex-1 mt-16 p-md md:p-lg overflow-hidden flex flex-col max-w-container-max mx-auto w-full min-h-0 h-[calc(100vh-4rem)]">
+
+<!-- Lista: una tarjeta por escaneo -->
+<section id="mitre-list-view" class="flex-1 flex flex-col gap-md min-h-0 overflow-y-auto">
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-md shrink-0">
 <div>
-<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="mitre.title">MITRE ATT&CK</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="mitre.lead">Cobertura de técnicas observadas en el engagement.</p>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="mitre.title">Matriz MITRE ATT&amp;CK</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="mitre.listLead">Elige un escaneo para ver las técnicas encontradas. La cobertura del producto es aparte.</p>
 </div>
-<div class="glass-panel rounded-xl ds-empty">
+<a href="mitre.html?scan=program" class="inline-flex items-center gap-xs px-md py-sm rounded-lg border border-[#D8E3F0] text-secondary font-label-md hover:bg-surface-container-low transition-colors shrink-0">
+<i data-lucide="shield" class="icon-sm"></i>
+<span data-i18n="mitre.programCoverage">Cobertura del programa</span>
+</a>
+</div>
+
+<div id="mitre-scans-empty" class="glass-panel rounded-xl ds-empty" hidden>
 <div class="ds-empty-icon"><i data-lucide="swords" class="icon-lg"></i></div>
 <p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
-<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
-
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="mitre.emptyLead">Inicia un engagement; aquí aparecerá una tarjeta por cada escaneo con su matriz MITRE.</p>
 <a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
 <i data-lucide="plus" class="icon-sm"></i>
 <span data-i18n="nav.newScan">Nuevo escaneo</span>
 </a>
 </div>
+
+<div id="mitre-scans-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-lg"></div>
+</section>
+
+<!-- Detalle: matriz de un escaneo (o cobertura programa) -->
+<section id="mitre-detail-view" class="flex-1 flex flex-col gap-sm min-h-0 overflow-hidden" hidden>
+<div class="glass-panel rounded-xl p-md flex flex-col gap-sm shrink-0">
+<div class="flex justify-between items-start lg:items-center flex-col lg:flex-row gap-sm">
+<div class="min-w-0">
+<a href="mitre.html" class="inline-flex items-center gap-xs font-body-sm text-primary hover:underline mb-xs">
+<i data-lucide="arrow-left" class="icon-sm"></i>
+<span data-i18n="mitre.backToScans">Volver a escaneos</span>
+</a>
+<h2 id="mitre-detail-title" class="font-headline-lg text-headline-lg text-on-surface mb-xs truncate">Matriz MITRE ATT&amp;CK</h2>
+<p id="mitre-detail-subtitle" class="font-body-sm text-body-sm text-on-surface-variant">Enterprise Security • v14.1</p>
 </div>
+<div class="flex flex-wrap items-center gap-sm">
+<div id="mitre-view-toggles" class="flex bg-surface-container rounded-lg p-[2px] border border-outline-variant" role="tablist">
+<button type="button" class="mitre-view-btn active px-md py-xs rounded-md font-label-md text-label-md border border-outline-variant" data-view="observadas">Observadas</button>
+<button type="button" class="mitre-view-btn px-md py-xs rounded-md text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md border border-transparent" data-view="cobertura">Cobertura</button>
+<button type="button" class="mitre-view-btn px-md py-xs rounded-md text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md border border-transparent" data-view="inteligencia">Inteligencia</button>
+</div>
+<button type="button" id="mitre-export-btn" class="flex items-center gap-xs px-md py-sm rounded-lg border border-[#D8E3F0] bg-transparent text-secondary font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+<i data-lucide="download" class="icon-sm"></i>
+<span data-i18n="mitre.export">Exportar</span>
+</button>
+</div>
+</div>
+<div class="flex flex-wrap items-center gap-md border-t border-outline-variant pt-sm">
+<span class="font-label-md text-label-md text-on-surface-variant" data-i18n="mitre.legend">Leyenda:</span>
+<div class="flex items-center gap-xs"><div class="w-4 h-4 rounded-[2px] bg-primary"></div><span class="font-body-sm text-body-sm text-on-surface">Alta</span></div>
+<div class="flex items-center gap-xs"><div class="w-4 h-4 rounded-[2px] bg-secondary-fixed"></div><span class="font-body-sm text-body-sm text-on-surface">Parcial</span></div>
+<div class="flex items-center gap-xs"><div class="w-4 h-4 rounded-[2px] bg-surface-container-high border border-outline-variant"></div><span class="font-body-sm text-body-sm text-on-surface">Sin cobertura</span></div>
+<span id="mitre-legend-hint" class="font-body-sm text-on-surface-variant"></span>
+<span id="mitre-observed-count" class="ml-auto font-body-sm text-on-surface-variant"></span>
+</div>
+</div>
+
+<div class="relative shrink-0">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none icon-sm"></i>
+<input id="mitre-matrix-search" class="w-full max-w-md pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Buscar técnica o ID (ej. T1059)" data-i18n-placeholder="mitre.search" type="text"/>
+</div>
+
+<div class="glass-panel rounded-xl flex-1 overflow-hidden flex flex-col relative min-h-0">
+<div id="mitre-headers" class="flex shrink-0 border-b border-outline-variant bg-surface-container/50 overflow-x-auto"></div>
+<div id="mitre-matrix" class="flex-1 matrix-scroll flex p-sm gap-sm bg-surface-container-lowest/50 min-h-0" role="region" aria-label="Matriz MITRE"></div>
+</div>
+</section>
 </main>
 </div>
 <script>
-        document.querySelectorAll(".tab-btn").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                document.querySelectorAll(".tab-btn").forEach(function (b) { b.classList.remove("active"); });
-                btn.classList.add("active");
-                var id = btn.getAttribute("data-tab");
-                ["cobertura", "inteligencia", "observadas"].forEach(function (name) {
-                    document.getElementById("view-" + name).classList.toggle("hidden", name !== id);
-                });
-            });
-        });
         lucide.createIcons();
     </script>
 </body>

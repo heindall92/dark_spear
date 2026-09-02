@@ -22,7 +22,7 @@ def empty_block(icon: str, title_key: str, title: str, lead_key: str, lead: str,
 <div class="glass-panel rounded-xl ds-empty">
 <div class="ds-empty-icon"><i data-lucide="{icon}" class="icon-lg"></i></div>
 <p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
-<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Inicia un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 {extra}
 {CTA}
 </div>
@@ -61,7 +61,7 @@ def kpi_dashboard() -> str:
 <div class="glass-panel rounded-xl ds-empty min-h-[240px]">
 <div class="ds-empty-icon"><i data-lucide="list" class="icon-lg"></i></div>
 <p class="font-headline-md text-on-surface" data-i18n="empty.engagements">Sin engagements</p>
-<p class="font-body-sm text-on-surface-variant mb-md">Arrancá el motor y la consola desde New Scan.</p>
+<p class="font-body-sm text-on-surface-variant mb-md">Arranca el motor y la consola desde New Scan.</p>
 {CTA}
 </div>
 </div>
@@ -79,16 +79,16 @@ PAGES: dict[str, str] = {
     "graph-evidence.html": empty_block("route", "evidence.title", "Evidencia de grafo", "evidence.lead", "Detalle de evidencia para un nodo o path del grafo."),
     "mitre.html": empty_block("swords", "mitre.title", "MITRE ATT&CK", "mitre.lead", "Cobertura de técnicas observadas en el engagement."),
     "kill-chain.html": empty_block("git-branch", "kill.title", "Kill Chain", "kill.lead", "Cadena de ataque reconstruida a partir de hallazgos."),
-    "reporting.html": empty_block("chart-column", "report.title", "Informes", "report.lead", "Generá informes PDF/HTML cuando el engagement esté completo."),
+    "reporting.html": empty_block("chart-column", "report.title", "Informes", "report.lead", "Genera informes PDF/HTML cuando el engagement esté completo."),
     "comprehensive-report.html": empty_block("file-text", "report.full", "Informe integral", "report.fullLead", "Documento completo del engagement. Abrilo desde Reporting cuando haya datos."),
     "report-preview.html": empty_block("file-search", "report.preview", "Vista previa PDF", "report.previewLead", "Configuración y preview del informe exportable."),
     "executive-summary.html": empty_block("briefcase", "exec.title", "Resumen ejecutivo", "exec.lead", "Síntesis para stakeholders. Se genera desde Reporting."),
-    "finding-detail.html": empty_block("search", "finding.title", "Detalle de hallazgo", "finding.lead", "Abrí un hallazgo desde Notificaciones o Critical Findings."),
+    "finding-detail.html": empty_block("search", "finding.title", "Detalle de hallazgo", "finding.lead", "Abre un hallazgo desde Notificaciones o Critical Findings."),
     "findings-summary.html": empty_block("layout-list", "summary.title", "Resumen de hallazgos", "summary.lead", "Matriz y distribución de severidades del engagement."),
     "remediation-plan.html": empty_block("list-checks", "rem.plan", "Plan de remediación", "rem.planLead", "Plan por fases derivado de los hallazgos aceptados."),
     "gdpr-alignment.html": empty_block("scale", "gdpr.title", "Alineación RGPD", "gdpr.lead", "Mapeo de hallazgos contra obligaciones RGPD."),
     "maturity-index.html": empty_block("target", "maturity.title", "Índice de madurez", "maturity.lead", "Evaluación de madurez de seguridad post-auditoría."),
-    "remediation-detail.html": empty_block("wrench", "rem.detail", "Detalle de remediación", "rem.detailLead", "Flujo de remediación para un hallazgo. Accedé desde Critical Findings."),
+    "remediation-detail.html": empty_block("wrench", "rem.detail", "Detalle de remediación", "rem.detailLead", "Flujo de remediación para un hallazgo. Accede desde Critical Findings."),
     "verification-request.html": empty_block("shield-check", "verify.title", "Solicitud de verificación", "verify.lead", "Modal de verificación post-remediación."),
     "remediation-complete.html": empty_block("circle-check", "rem.done", "Remediación completada", "rem.doneLead", "Confirmación tras enviar evidencia de verificación."),
     "tool-approval.html": empty_block("shield-alert", "tool.approve", "Aprobación de herramienta", "tool.approveLead", "Gate humano para herramientas peligrosas. Se abre desde Active Engagement."),

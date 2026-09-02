@@ -16,7 +16,7 @@
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
 <script src="vendor/splash.js" defer></script>
-<script type="module" src="vendor/engine-panel.js"></script>
+<script type="module" src="vendor/boot-engine.js"></script>
 <script id="tailwind-config">
         tailwind.config = {
           darkMode: "class",
@@ -164,70 +164,91 @@
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html">
 <i data-lucide="gauge"></i>
-<span data-i18n="nav.metrics">Remediation Metrics</span>
+<span data-i18n="nav.metrics">Métricas de remediación</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html">
 <i data-lucide="activity"></i>
-<span data-i18n="nav.engagement">Active Engagement</span>
+<span data-i18n="nav.engagement">Engagement activo</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html">
 <i data-lucide="radar"></i>
-<span data-i18n="nav.scans">Active Scans</span>
+<span data-i18n="nav.scans">Escaneos activos</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html">
 <i data-lucide="bug"></i>
-<span data-i18n="nav.vulns">Vulnerabilities</span>
+<span data-i18n="nav.vulns">Vulnerabilidades</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html">
 <i data-lucide="triangle-alert"></i>
-<span data-i18n="nav.critical">Critical Findings</span>
+<span data-i18n="nav.critical">Hallazgos críticos</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html">
 <i data-lucide="chart-column"></i>
-<span data-i18n="nav.reporting">Reporting</span>
+<span data-i18n="nav.reporting">Informes</span>
 </a>
+
+<div class="border-t border-outline-variant/30 mx-sm my-xs pt-sm flex flex-col gap-base">
+<p class="px-md pb-xs font-label-md text-label-md text-on-surface-variant uppercase tracking-wide" data-i18n="nav.govSection">Gobernanza</p>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="gdpr-alignment.html" data-nav-page="gdpr-alignment.html">
+<i data-lucide="scale"></i>
+<span data-i18n="nav.gdpr">Alineación RGPD</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="maturity-index.html" data-nav-page="maturity-index.html">
+<i data-lucide="grid-3x3"></i>
+<span data-i18n="nav.maturity">Matriz de riesgos</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-plan.html" data-nav-page="remediation-plan.html">
+<i data-lucide="list-checks"></i>
+<span data-i18n="nav.remPlan">Plan de remediación</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="kill-chain.html" data-nav-page="kill-chain.html">
+<i data-lucide="git-branch"></i>
+<span data-i18n="nav.killchain">Kill Chain</span>
+</a>
+</div>
+
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html">
 <i data-lucide="binoculars"></i>
 <span data-i18n="nav.osint">OSINT</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html">
 <i data-lucide="share-2"></i>
-<span data-i18n="nav.graph">Attack Graph</span>
+<span data-i18n="nav.graph">Grafo de ataque</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html">
 <i data-lucide="swords"></i>
-<span data-i18n="nav.mitre">MITRE ATT&amp;CK</span>
+<span data-i18n="nav.mitre">MITRE ATT&CK</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html">
 <i data-lucide="boxes"></i>
-<span data-i18n="nav.assets">Assets</span>
+<span data-i18n="nav.assets">Activos</span>
 </a>
 </div>
 <div class="mt-auto px-md flex flex-col gap-md">
 <a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm ring-2 ring-primary-container/30" aria-current="page">
-<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span>
+<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">Nuevo escaneo</span>
             </a>
 <div class="sidebar-prefs">
 <div class="ios-row">
-<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm" data-pref-icon="theme"></i><span class="ios-row-text" data-pref-label="theme">Oscuro</span></span>
 <button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 <div class="ios-row">
-<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<span class="ios-row-label"><span class="ios-row-text font-mono-md text-[11px] tracking-wide" data-pref-code="lang">ES</span><span class="ios-row-text" data-pref-label="lang">Español</span></span>
 <button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 </div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html">
 <i data-lucide="settings"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Ajustes</span>
 </a>
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html">
 <i data-lucide="circle-question-mark"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.help">Centro de ayuda</span>
 </a>
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
 <i data-lucide="log-out"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Cerrar sesión</span>
 </a>
 </div>
 </div>
@@ -254,75 +275,186 @@
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg flex items-center justify-center">
-<form class="glass-panel w-full max-w-3xl rounded-xl p-xl ambient-shadow flex flex-col gap-xl" id="start-form">
+<form class="glass-panel w-full max-w-3xl rounded-xl p-xl ambient-shadow flex flex-col gap-xl" id="start-form" novalidate action="#" method="post" onsubmit="event.preventDefault(); return false;">
 <div class="flex flex-col gap-base">
 <h2 class="font-headline-xl text-headline-xl text-on-surface" data-i18n="start.title">Initiate Engagement</h2>
-<p class="font-body-md text-body-md text-on-surface-variant" data-i18n="start.lead">Configurá target, modelo y keys del motor Auditor para arrancar el engagement.</p>
+<p class="font-body-md text-body-md text-on-surface-variant" data-i18n="start.lead">Define nombre, target y si usas IA o solo playbook; luego inicia el análisis.</p>
 <div id="engine-banner" class="rounded-lg border border-outline-variant/40 bg-surface-container-low px-md py-sm font-body-sm text-on-surface" hidden></div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
-<div class="flex flex-col gap-base md:col-span-2">
-<label class="font-label-md text-label-md text-on-surface-variant" for="engine-token">Token del motor</label>
-<input id="engine-token" name="token" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Pegá el token de bridge.py o abrí la URL Panel" type="text" autocomplete="off"/>
-</div>
-<div class="flex flex-col gap-base">
-<label class="font-label-md text-label-md text-on-surface-variant" for="target">Target</label>
-<input id="target" name="target" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., 127.0.0.1:8888" type="text"/>
-</div>
-<div class="flex flex-col gap-base">
-<label class="font-label-md text-label-md text-on-surface-variant" for="scope">Scope</label>
-<input id="scope" name="scope" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., 127.0.0.1" type="text"/>
-</div>
-<div class="flex flex-col gap-base">
-<label class="font-label-md text-label-md text-on-surface-variant" for="model">Model</label>
-<input id="model" name="model" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="gpt-oss:20b" type="text" value="gpt-oss:20b"/>
-</div>
-<div class="flex flex-col gap-base">
-<label class="font-label-md text-label-md text-on-surface-variant" for="endpoint">Endpoint</label>
-<input id="endpoint" name="endpoint" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="https://ollama.com/v1/chat/completions" type="text" value="https://ollama.com/v1/chat/completions"/>
+<div id="file-protocol-banner" class="rounded-lg border border-error/40 bg-error-container px-md py-md font-body-sm text-on-error-container" hidden>
+<p class="font-headline-md text-headline-md mb-xs">Estás abriendo el panel como archivo (<code>file://</code>)</p>
+<p>Dark Spear no funciona así: el navegador bloquea el motor y no hay sesión con el bridge. Hay que servir el panel en local.</p>
+<ol class="list-decimal pl-lg mt-sm space-y-xs">
+<li>En una terminal: <code>cd /home/kali/dark_spear/panel &amp;&amp; python3 server.py</code></li>
+<li>Abre <a class="underline font-semibold" href="http://127.0.0.1:8080/start-engagement.html">http://127.0.0.1:8080/start-engagement.html</a> (deja el <code>file://</code>)</li>
+</ol>
 </div>
 </div>
 
 <hr class="border-t border-surface-variant/50 w-full"/>
 
-<div class="flex flex-col gap-md">
-<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
-<i data-lucide="key" class="text-secondary"></i>
-                    Gestionar keys
-                </h3>
-<div class="flex flex-col gap-sm" id="key-list"></div>
-<div class="mt-sm p-md bg-surface-container-low/50 rounded-lg border border-surface-variant border-dashed flex flex-col sm:flex-row gap-sm items-end">
-<div class="flex flex-col gap-base w-full sm:w-1/4">
-<label class="font-label-md text-label-md text-on-surface-variant" for="key-label">Label</label>
-<input id="key-label" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" placeholder="e.g., ollama-1" type="text"/>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="engagement-name"><span data-i18n="start.name">Nombre / objetivo</span> <span class="text-error" aria-hidden="true">*</span></label>
+<input id="engagement-name" name="engagement-name" required class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., DVWA lab Q3 — OSINT + web" type="text" autocomplete="off"/>
+<p class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="start.nameHint">Se muestra en todas las tarjetas (OSINT, MITRE, Findings, Reporting…).</p>
 </div>
-<div class="flex flex-col gap-base w-full sm:flex-1">
-<label class="font-label-md text-label-md text-on-surface-variant" for="key-value">API Key</label>
-<input id="key-value" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Ollama Cloud API key" type="password"/>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-lg">
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="target">Target <span class="text-error" aria-hidden="true">*</span></label>
+<input id="target" name="target" required class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., 127.0.0.1:8888" type="text" autocomplete="off"/>
 </div>
-<div class="flex flex-col gap-base w-full sm:w-24">
-<label class="font-label-md text-label-md text-on-surface-variant" for="key-window">Ventana (h)</label>
-<input id="key-window" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" type="number" min="1" step="1" value="24"/>
-</div>
-<button id="add-key-btn" class="w-full sm:w-auto px-md py-sm border border-outline-variant text-secondary bg-transparent hover:bg-surface-variant/30 rounded font-label-md text-label-md transition-colors flex items-center justify-center gap-xs" type="button">
-<i data-lucide="plus" class="icon-md"></i>
-                        Add
-                    </button>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="scope">Scope <span class="text-error" aria-hidden="true">*</span></label>
+<input id="scope" name="scope" required class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="e.g., 127.0.0.1" type="text" autocomplete="off"/>
 </div>
 </div>
 
+<hr class="border-t border-surface-variant/50 w-full"/>
+
+<div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
+<div class="flex items-start justify-between gap-md">
+<div class="min-w-0">
+<p class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<i data-lucide="bot" class="text-secondary"></i>
+<span data-i18n="start.aiTitle">Análisis con IA</span>
+</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.aiLead">Activa Ollama para el agente ReAct. Desactivado = solo playbook (sin tokens).</p>
+</div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0" for="use-ai">
+<input id="use-ai" type="checkbox" class="sr-only peer" role="switch" aria-checked="false"/>
+<span class="w-11 h-6 bg-surface-variant peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/40 rounded-full peer peer-checked:bg-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></span>
+</label>
+</div>
+<p id="ai-mode-hint" class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="start.aiOffHint">Modo playbook: no se consume cuota de Ollama.</p>
+</div>
+
+<div id="ai-required-block" class="hidden flex flex-col gap-xl" hidden style="display:none">
+
+<div class="flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<i data-lucide="key" class="text-secondary"></i>
+<span data-i18n="start.apiKey">API key de Ollama Cloud</span> <span class="text-error" aria-hidden="true">*</span>
+</h3>
+<p class="font-label-md text-label-md text-on-surface-variant mb-xs" data-i18n="start.savedKeys">Keys guardadas</p>
+<div class="flex flex-col gap-sm min-h-[3rem]" id="key-list"></div>
+<div class="mt-sm p-md bg-surface-container-low/50 rounded-lg border border-surface-variant border-dashed flex flex-col gap-sm">
+<div class="flex flex-col sm:flex-row gap-sm items-end">
+<div class="flex flex-col gap-base w-full sm:w-1/4">
+<label class="font-label-md text-label-md text-on-surface-variant" for="key-label" data-i18n="start.keyLabel">Nombre</label>
+<input id="key-label" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" placeholder="e.g., ollama-1" type="text" autocomplete="off"/>
+</div>
+<div class="flex flex-col gap-base w-full sm:flex-1">
+<label class="font-label-md text-label-md text-on-surface-variant" for="key-value">API Key <span class="text-error" aria-hidden="true">*</span></label>
+<input id="key-value" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" placeholder="Pega tu API key de ollama.com" type="password" autocomplete="off"/>
+</div>
+<div class="flex flex-col gap-base w-full sm:w-24">
+<label class="font-label-md text-label-md text-on-surface-variant" for="key-window" data-i18n="start.keyWindow">Ventana (h)</label>
+<input id="key-window" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-sm text-body-sm text-on-surface w-full" type="number" min="1" step="1" value="24"/>
+</div>
+<button id="add-key-btn" class="w-full sm:w-auto px-lg py-sm bg-secondary-container text-on-secondary-container hover:opacity-90 rounded font-label-md text-label-md transition-colors flex items-center justify-center gap-xs shrink-0" type="button">
+<i data-lucide="shield-check" class="icon-md"></i>
+<span data-i18n="start.verifyKey">Agregar y verificar</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="flex flex-col gap-base">
+<div class="flex items-center justify-between gap-sm">
+<label class="font-label-md text-label-md text-on-surface-variant" for="model"><span data-i18n="start.model">Modelo</span> <span class="text-error" aria-hidden="true">*</span></label>
+<button id="refresh-models-btn" class="text-secondary hover:text-primary font-label-md text-label-md flex items-center gap-xs shrink-0" type="button">
+<i data-lucide="refresh-cw" class="icon-sm"></i>
+<span data-i18n="start.refreshModels">Actualizar</span>
+</button>
+</div>
+<select id="model" name="model" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-mono-md text-mono-md text-on-surface w-full" disabled>
+<option value="" data-i18n="start.modelsPending">Verifica una API key para cargar modelos</option>
+</select>
+<p id="model-hint" class="font-body-sm text-body-sm text-on-surface-variant" hidden></p>
+</div>
+
+</div>
+
 <div class="mt-md">
-<button class="w-full bg-primary-container text-on-primary-container rounded py-md font-label-md text-label-md text-center flex items-center justify-center gap-sm transition-all duration-200 disabled:opacity-50 disabled:bg-surface-variant disabled:text-on-surface-variant disabled:cursor-not-allowed hover:bg-primary shadow-sm" disabled="" id="primary-cta" type="submit">
+<button class="w-full bg-primary-container text-on-primary-container rounded py-md font-label-md text-label-md text-center flex items-center justify-center gap-sm transition-all duration-200 hover:bg-primary shadow-sm" id="primary-cta" type="submit">
 <i data-lucide="rocket"></i>
-                    Iniciar compromiso
-                </button>
+<span data-i18n="start.analyze">Iniciar análisis</span>
+</button>
 </div>
 </form>
+
+<div id="start-validation-modal" class="fixed inset-0 z-[100] bg-on-surface/50 backdrop-blur-md items-center justify-center p-md" hidden role="alertdialog" aria-modal="true" aria-labelledby="start-validation-title">
+<div class="glass-panel w-full max-w-md rounded-xl p-xl flex flex-col gap-md ambient-shadow mx-auto mt-[20vh]">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-error-container text-error flex items-center justify-center shrink-0">
+<i data-lucide="triangle-alert"></i>
+</div>
+<div>
+<h3 id="start-validation-title" class="font-headline-md text-headline-md text-on-surface" data-i18n="start.validationTitle">Faltan datos obligatorios</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.validationLead">Completa lo siguiente antes de iniciar el análisis:</p>
+</div>
+</div>
+<ul id="start-validation-list" class="list-disc pl-lg font-body-md text-body-md text-on-surface space-y-xs"></ul>
+<button type="button" id="start-validation-close" class="w-full py-sm rounded bg-primary-container text-on-primary-container font-label-md text-label-md" data-i18n="start.validationOk">Entendido</button>
+</div>
+</div>
+
+<div id="start-ai-token-modal" class="fixed inset-0 z-[100] bg-on-surface/50 backdrop-blur-md items-center justify-center p-md" hidden role="alertdialog" aria-modal="true" aria-labelledby="start-ai-token-title">
+<div class="glass-panel w-full max-w-lg rounded-xl p-xl flex flex-col gap-md ambient-shadow mx-auto mt-[15vh]">
+<div class="flex items-start gap-md">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
+<i data-lucide="coins"></i>
+</div>
+<div>
+<h3 id="start-ai-token-title" class="font-headline-md text-headline-md text-on-surface" data-i18n="start.tokenTitle">Uso de tokens de IA</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.tokenLead">El agente ReAct llama a Ollama Cloud en cada paso. Eso consume tokens (y puede agotar la cuota o generar coste según tu plan).</p>
+</div>
+</div>
+<ul class="list-disc pl-lg font-body-md text-body-md text-on-surface space-y-xs">
+<li data-i18n="start.tokenBullet1">Cada decisión del agente (herramienta / hallazgo) es una petición al modelo.</li>
+<li data-i18n="start.tokenBullet2">El historial del engagement se reenvía; el gasto crece con la duración del análisis.</li>
+<li data-i18n="start.tokenBullet3">Sin IA puedes usar solo el playbook (OSINT + fases) sin consumir tokens.</li>
+</ul>
+<div class="flex flex-col sm:flex-row gap-sm mt-sm">
+<button type="button" id="start-ai-token-cancel" class="flex-1 py-sm rounded border border-outline-variant font-label-md text-label-md text-on-surface hover:bg-surface-container-low" data-i18n="start.tokenCancel">Seguir con playbook</button>
+<button type="button" id="start-ai-token-confirm" class="flex-1 py-sm rounded bg-primary-container text-on-primary-container font-label-md text-label-md" data-i18n="start.tokenConfirm">Entiendo, usar IA</button>
+</div>
+</div>
+</div>
 </main>
 </div>
 <script>
         lucide.createIcons();
+        (function () {
+          if (location.protocol === "file:") {
+            var warn = document.getElementById("file-protocol-banner");
+            if (warn) warn.hidden = false;
+            var form = document.getElementById("start-form");
+            var cta = document.getElementById("primary-cta");
+            if (cta) cta.disabled = true;
+            if (form) {
+              form.addEventListener("submit", function (e) {
+                e.preventDefault();
+                if (warn) warn.scrollIntoView({ behavior: "smooth", block: "center" });
+              });
+            }
+            return;
+          }
+          var form = document.getElementById("start-form");
+          if (!form) return;
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            if (window.__dsStartAnalysis) {
+              window.__dsStartAnalysis();
+              return;
+            }
+            var note = document.getElementById("engine-banner");
+            if (note) {
+              note.hidden = false;
+              note.textContent = "Cargando el motor… espera un segundo y pulsa de nuevo.";
+            }
+          });
+        })();
     </script>
 </body>
 </html>

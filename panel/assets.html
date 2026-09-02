@@ -13,7 +13,9 @@
 <link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
+<script src="vendor/findings-inbox.js" defer></script>
 <script src="vendor/export.js" defer></script>
+<script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
 <script id="tailwind-config">
         tailwind.config = {
@@ -122,9 +124,16 @@
         .icon-lg { width: 24px !important; height: 24px !important; }
         .icon-xs { width: 12px !important; height: 12px !important; }
         .glass-panel {
-            background-color: #ffffff; 
+            background-color: #ffffff;
             border: 1px solid #D8E3F0;
         }
+        .acrylic-panel, .glass-panel {
+          background-color: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid #D8E3F0;
+        }
+        .ambient-shadow { box-shadow: 0px 8px 32px rgba(27, 42, 65, 0.08); }
         .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
         .skip-link:focus { left: 8px; top: 8px; }
         @media (prefers-reduced-motion: reduce) {
@@ -150,70 +159,91 @@
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html">
 <i data-lucide="gauge"></i>
-<span data-i18n="nav.metrics">Remediation Metrics</span>
+<span data-i18n="nav.metrics">Métricas de remediación</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html">
 <i data-lucide="activity"></i>
-<span data-i18n="nav.engagement">Active Engagement</span>
+<span data-i18n="nav.engagement">Engagement activo</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html">
 <i data-lucide="radar"></i>
-<span data-i18n="nav.scans">Active Scans</span>
+<span data-i18n="nav.scans">Escaneos activos</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="vulnerabilities.html">
 <i data-lucide="bug"></i>
-<span data-i18n="nav.vulns">Vulnerabilities</span>
+<span data-i18n="nav.vulns">Vulnerabilidades</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html">
 <i data-lucide="triangle-alert"></i>
-<span data-i18n="nav.critical">Critical Findings</span>
+<span data-i18n="nav.critical">Hallazgos críticos</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html">
 <i data-lucide="chart-column"></i>
-<span data-i18n="nav.reporting">Reporting</span>
+<span data-i18n="nav.reporting">Informes</span>
 </a>
+
+<div class="border-t border-outline-variant/30 mx-sm my-xs pt-sm flex flex-col gap-base">
+<p class="px-md pb-xs font-label-md text-label-md text-on-surface-variant uppercase tracking-wide" data-i18n="nav.govSection">Gobernanza</p>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="gdpr-alignment.html" data-nav-page="gdpr-alignment.html">
+<i data-lucide="scale"></i>
+<span data-i18n="nav.gdpr">Alineación RGPD</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="maturity-index.html" data-nav-page="maturity-index.html">
+<i data-lucide="grid-3x3"></i>
+<span data-i18n="nav.maturity">Matriz de riesgos</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-plan.html" data-nav-page="remediation-plan.html">
+<i data-lucide="list-checks"></i>
+<span data-i18n="nav.remPlan">Plan de remediación</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="kill-chain.html" data-nav-page="kill-chain.html">
+<i data-lucide="git-branch"></i>
+<span data-i18n="nav.killchain">Kill Chain</span>
+</a>
+</div>
+
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html">
 <i data-lucide="binoculars"></i>
 <span data-i18n="nav.osint">OSINT</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html">
 <i data-lucide="share-2"></i>
-<span data-i18n="nav.graph">Attack Graph</span>
+<span data-i18n="nav.graph">Grafo de ataque</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html">
 <i data-lucide="swords"></i>
-<span data-i18n="nav.mitre">MITRE ATT&amp;CK</span>
+<span data-i18n="nav.mitre">MITRE ATT&CK</span>
 </a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="assets.html" aria-current="page">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10 transition-colors duration-200" href="assets.html" aria-current="page">
 <i data-lucide="boxes"></i>
-<span data-i18n="nav.assets">Assets</span>
+<span data-i18n="nav.assets">Activos</span>
 </a>
 </div>
 <div class="mt-auto px-md flex flex-col gap-md">
 <a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm">
-<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span>
+<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">Nuevo escaneo</span>
             </a>
 <div class="sidebar-prefs">
 <div class="ios-row">
-<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm" data-pref-icon="theme"></i><span class="ios-row-text" data-pref-label="theme">Oscuro</span></span>
 <button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 <div class="ios-row">
-<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<span class="ios-row-label"><span class="ios-row-text font-mono-md text-[11px] tracking-wide" data-pref-code="lang">ES</span><span class="ios-row-text" data-pref-label="lang">Español</span></span>
 <button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 </div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html">
 <i data-lucide="settings"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Ajustes</span>
 </a>
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html">
 <i data-lucide="circle-question-mark"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.help">Centro de ayuda</span>
 </a>
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
 <i data-lucide="log-out"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Cerrar sesión</span>
 </a>
 </div>
 </div>
@@ -239,23 +269,68 @@
 </div>
 </header>
 
-<main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
-<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+
+<style>
+#assets-list-view[hidden],
+#assets-detail-view[hidden] { display: none !important; }
+</style>
+<main id="main-content" class="flex-1 mt-16 overflow-hidden flex flex-col max-w-container-max mx-auto w-full min-h-0 h-[calc(100vh-4rem)] p-md md:p-lg">
+<section id="assets-list-view" class="flex-1 flex flex-col gap-md min-h-0 overflow-y-auto">
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-md shrink-0">
 <div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="assets.title">Activos</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="assets.lead">Inventario de activos descubiertos durante el engagement.</p>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="assets.listLead">Elige un análisis para ver los activos descubiertos.</p>
 </div>
-<div class="glass-panel rounded-xl ds-empty">
-<div class="ds-empty-icon"><i data-lucide="boxes" class="icon-lg"></i></div>
+</div>
+<div class="relative w-full max-w-md shrink-0">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none icon-sm"></i>
+<input id="assets-list-search" class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Buscar por target o scope..." data-i18n-placeholder="scan.listSearch" type="text"/>
+</div>
+<div id="assets-scans-empty" class="glass-panel rounded-xl ds-empty" hidden>
+<div class="ds-empty-icon"><i data-lucide="radar" class="icon-lg"></i></div>
 <p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
-<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
-
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="assets.emptyLead">Inicia un engagement; aquí aparecerá una tarjeta por cada análisis.</p>
 <a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
 <i data-lucide="plus" class="icon-sm"></i>
 <span data-i18n="nav.newScan">Nuevo escaneo</span>
 </a>
 </div>
+<div id="assets-scans-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-lg"></div>
+</section>
+
+<section id="assets-detail-view" class="flex-1 flex flex-col gap-lg min-h-0 overflow-y-auto pb-lg" hidden>
+<div class="shrink-0 flex flex-col gap-md">
+<nav class="font-body-sm text-on-surface-variant flex items-center gap-xs flex-wrap" aria-label="Breadcrumb">
+<a href="assets.html" class="text-primary hover:underline" data-i18n="nav.assets">Activos</a>
+<span aria-hidden="true">/</span>
+<span id="assets-detail-crumb" class="text-on-surface truncate max-w-[16rem]">—</span>
+</nav>
+<div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-md">
+<div class="min-w-0 flex-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="assets.detailTitle">Activos empresariales</h2>
+<p class="font-body-md text-on-surface-variant mt-xs max-w-3xl" data-i18n="assets.detailLead">Gestiona y monitoriza el inventario de infraestructura descubierto en el análisis.</p>
+<p id="assets-detail-subtitle" class="font-mono-md text-mono-md text-secondary mt-sm truncate">—</p>
 </div>
+<div class="flex flex-wrap items-center gap-sm shrink-0">
+<button type="button" id="assets-btn-refresh" class="px-md py-sm rounded-lg border border-outline-variant/50 bg-surface-container-lowest text-on-surface font-label-md flex items-center gap-xs hover:bg-surface-container-low transition-colors">
+<i data-lucide="refresh-cw" class="icon-sm"></i>
+<span data-i18n="assets.refresh">Actualizar</span>
+</button>
+<a id="assets-btn-scan-target" href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors shadow-sm">
+<i data-lucide="radar" class="icon-sm"></i>
+<span data-i18n="assets.scanTarget">Escanear este target</span>
+</a>
+</div>
+</div>
+</div>
+<div id="panel-assets-empty" class="acrylic-panel rounded-xl ambient-shadow ds-empty" hidden>
+<div class="ds-empty-icon"><i data-lucide="boxes" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="assets.noAssets">Este análisis aún no tiene activos asociados.</p>
+</div>
+<div id="panel-assets-body" class="flex flex-col gap-lg min-h-0"></div>
+<span id="assets-detail-title" hidden aria-hidden="true"></span>
+</section>
 </main>
 </div>
 <script>

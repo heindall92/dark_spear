@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dark Spear — Vulnerabilities</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
 <script src="vendor/lucide.min.js"></script>
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
@@ -13,7 +13,9 @@
 <link href="vendor/empty-state.css" rel="stylesheet"/>
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
+<script src="vendor/findings-inbox.js" defer></script>
 <script src="vendor/export.js" defer></script>
+<script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
 <script id="tailwind-config">
         tailwind.config = {
@@ -86,14 +88,14 @@
                 xl: "32px"
               },
               fontFamily: {
-                "headline-xl": ["Public Sans"],
-                "mono-md": ["JetBrains Mono"],
-                "label-md": ["Public Sans"],
-                "body-md": ["Public Sans"],
-                "headline-md": ["Public Sans"],
-                "body-lg": ["Public Sans"],
-                "body-sm": ["Public Sans"],
-                "headline-lg": ["Public Sans"]
+                "headline-xl": ["Inter", "system-ui", "sans-serif"],
+                "mono-md": ["JetBrains Mono", "monospace"],
+                "label-md": ["Inter", "system-ui", "sans-serif"],
+                "body-md": ["Inter", "system-ui", "sans-serif"],
+                "headline-md": ["Inter", "system-ui", "sans-serif"],
+                "body-lg": ["Inter", "system-ui", "sans-serif"],
+                "body-sm": ["Inter", "system-ui", "sans-serif"],
+                "headline-lg": ["Inter", "system-ui", "sans-serif"]
               },
               fontSize: {
                 "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
@@ -120,6 +122,13 @@
         .icon-sm { width: 16px !important; height: 16px !important; }
         .icon-md { width: 18px !important; height: 18px !important; }
         .icon-lg { width: 24px !important; height: 24px !important; }
+        .glass-panel {
+          background-color: rgba(255,255,255,0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid #D8E3F0;
+        }
+        .vuln-tab.active { background: var(--ds-surface-variant, #e0e3e7); color: var(--ds-on-surface, #181c1f); }
         .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
         .skip-link:focus { left: 8px; top: 8px; }
         @media (prefers-reduced-motion: reduce) {
@@ -145,70 +154,91 @@
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-metrics.html">
 <i data-lucide="gauge"></i>
-<span data-i18n="nav.metrics">Remediation Metrics</span>
+<span data-i18n="nav.metrics">Métricas de remediación</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="engagement.html">
 <i data-lucide="activity"></i>
-<span data-i18n="nav.engagement">Active Engagement</span>
+<span data-i18n="nav.engagement">Engagement activo</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="active-scans.html">
 <i data-lucide="radar"></i>
-<span data-i18n="nav.scans">Active Scans</span>
+<span data-i18n="nav.scans">Escaneos activos</span>
 </a>
-<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10" href="vulnerabilities.html" aria-current="page">
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-primary font-semibold border-l-4 border-primary bg-primary-container/10 transition-colors duration-200" href="vulnerabilities.html" aria-current="page">
 <i data-lucide="bug"></i>
-<span data-i18n="nav.vulns">Vulnerabilities</span>
+<span data-i18n="nav.vulns">Vulnerabilidades</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="critical-findings.html">
 <i data-lucide="triangle-alert"></i>
-<span data-i18n="nav.critical">Critical Findings</span>
+<span data-i18n="nav.critical">Hallazgos críticos</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="reporting.html">
 <i data-lucide="chart-column"></i>
-<span data-i18n="nav.reporting">Reporting</span>
+<span data-i18n="nav.reporting">Informes</span>
 </a>
+
+<div class="border-t border-outline-variant/30 mx-sm my-xs pt-sm flex flex-col gap-base">
+<p class="px-md pb-xs font-label-md text-label-md text-on-surface-variant uppercase tracking-wide" data-i18n="nav.govSection">Gobernanza</p>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="gdpr-alignment.html" data-nav-page="gdpr-alignment.html">
+<i data-lucide="scale"></i>
+<span data-i18n="nav.gdpr">Alineación RGPD</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="maturity-index.html" data-nav-page="maturity-index.html">
+<i data-lucide="grid-3x3"></i>
+<span data-i18n="nav.maturity">Matriz de riesgos</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="remediation-plan.html" data-nav-page="remediation-plan.html">
+<i data-lucide="list-checks"></i>
+<span data-i18n="nav.remPlan">Plan de remediación</span>
+</a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="kill-chain.html" data-nav-page="kill-chain.html">
+<i data-lucide="git-branch"></i>
+<span data-i18n="nav.killchain">Kill Chain</span>
+</a>
+</div>
+
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="osint.html">
 <i data-lucide="binoculars"></i>
 <span data-i18n="nav.osint">OSINT</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html">
 <i data-lucide="share-2"></i>
-<span data-i18n="nav.graph">Attack Graph</span>
+<span data-i18n="nav.graph">Grafo de ataque</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="mitre.html">
 <i data-lucide="swords"></i>
-<span data-i18n="nav.mitre">MITRE ATT&amp;CK</span>
+<span data-i18n="nav.mitre">MITRE ATT&CK</span>
 </a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="assets.html">
 <i data-lucide="boxes"></i>
-<span data-i18n="nav.assets">Assets</span>
+<span data-i18n="nav.assets">Activos</span>
 </a>
 </div>
 <div class="mt-auto px-md flex flex-col gap-md">
 <a href="start-engagement.html" class="w-full py-sm px-md bg-[#0078D4] hover:bg-surface-tint text-white font-label-md text-label-md rounded-lg flex items-center justify-center gap-sm transition-colors shadow-sm">
-<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">New Scan</span>
+<i data-lucide="plus" class="icon-md"></i> <span data-i18n="nav.newScan">Nuevo escaneo</span>
             </a>
 <div class="sidebar-prefs">
 <div class="ios-row">
-<span class="ios-row-label"><i data-lucide="moon" class="icon-sm"></i><span class="ios-row-text" data-i18n="settings.dark">Oscuro</span></span>
+<span class="ios-row-label"><i data-lucide="moon" class="icon-sm" data-pref-icon="theme"></i><span class="ios-row-text" data-pref-label="theme">Oscuro</span></span>
 <button type="button" class="ios-switch" data-switch="theme" role="switch" aria-checked="false" data-i18n-aria="aria.themeSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 <div class="ios-row">
-<span class="ios-row-label"><span class="ios-row-text" data-i18n="settings.english">Inglés</span></span>
+<span class="ios-row-label"><span class="ios-row-text font-mono-md text-[11px] tracking-wide" data-pref-code="lang">ES</span><span class="ios-row-text" data-pref-label="lang">Español</span></span>
 <button type="button" class="ios-switch" data-switch="lang" role="switch" aria-checked="false" data-i18n-aria="aria.langSwitch"><span class="ios-switch-knob"></span></button>
 </div>
 </div><div class="border-t border-outline-variant/30 pt-sm mt-sm">
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="settings.html">
 <i data-lucide="settings"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Settings</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.settings">Ajustes</span>
 </a>
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="help-center.html">
 <i data-lucide="circle-question-mark"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.help">Help Center</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.help">Centro de ayuda</span>
 </a>
 <a class="flex items-center gap-md px-sm py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
 <i data-lucide="log-out"></i>
-<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Sign Out</span>
+<span class="font-body-sm text-body-sm" data-i18n="nav.signOut">Cerrar sesión</span>
 </a>
 </div>
 </div>
@@ -218,7 +248,7 @@
 <header data-app-header class="bg-white fixed top-0 right-0 left-64 h-16 border-b border-outline-variant/30 shadow-sm flex items-center justify-between px-lg z-40">
 <div class="relative w-96">
 <i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
-<input class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Search findings, assets, or scans..." data-i18n-placeholder="search.placeholder" type="text"/>
+<input id="vulns-top-search" class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Buscar vulnerabilidades..." data-i18n-placeholder="vulns.search" type="text"/>
 </div>
 <div class="flex items-center gap-md">
 <button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors relative" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications" type="button" aria-label="Notifications" data-i18n-aria="aria.notifications">
@@ -234,23 +264,98 @@
 </div>
 </header>
 
-<main id="main-content" class="flex-1 mt-16 overflow-y-auto p-xl">
-<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<style>
+#vulns-list-view[hidden],
+#vulns-detail-view[hidden] { display: none !important; }
+</style>
+<main id="main-content" class="flex-1 mt-16 overflow-hidden flex flex-col max-w-container-max mx-auto w-full min-h-0 h-[calc(100vh-4rem)] p-md md:p-lg">
+<section id="vulns-list-view" class="flex-1 flex flex-col gap-md min-h-0 overflow-y-auto">
+<div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-md shrink-0">
 <div>
-<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="vulns.title">Vulnerabilidades</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="vulns.lead">Inventario consolidado de vulnerabilidades detectadas.</p>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="vulns.title">Vulnerabilities</h2>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="vulns.listLead">Elige un análisis para gestionar sus vulnerabilidades.</p>
 </div>
-<div class="glass-panel rounded-xl ds-empty">
+</div>
+<div class="relative w-full max-w-md shrink-0">
+<i data-lucide="search" class="absolute left-sm top-1/2 -translate-y-1/2 text-outline pointer-events-none icon-sm"></i>
+<input id="vulns-list-search" class="w-full pl-xl pr-sm py-sm bg-surface-container-lowest border border-outline-variant/50 rounded-lg font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4] focus:rounded-b-none transition-all text-on-surface placeholder:text-outline/70" placeholder="Buscar por target o scope..." data-i18n-placeholder="scan.listSearch" type="text"/>
+</div>
+<div id="vulns-scans-empty" class="glass-panel rounded-xl ds-empty" hidden>
 <div class="ds-empty-icon"><i data-lucide="bug" class="icon-lg"></i></div>
 <p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
-<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Iniciá un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
-
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="vulns.emptyLead">Inicia un engagement; aquí aparecerá una tarjeta por cada análisis.</p>
 <a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
 <i data-lucide="plus" class="icon-sm"></i>
 <span data-i18n="nav.newScan">Nuevo escaneo</span>
 </a>
 </div>
+<div id="vulns-scans-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-lg"></div>
+</section>
+<section id="vulns-detail-view" class="flex-1 flex flex-col gap-md min-h-0 overflow-y-auto" hidden>
+<div class="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-md shrink-0">
+<div class="min-w-0">
+<a href="vulnerabilities.html" class="inline-flex items-center gap-xs font-body-sm text-primary hover:underline mb-xs">
+<i data-lucide="arrow-left" class="icon-sm"></i>
+<span data-i18n="scan.back">Volver a análisis</span>
+</a>
+<h1 id="vulns-detail-title" class="font-headline-xl text-headline-xl text-on-surface mb-1 truncate">Vulnerabilities</h1>
+<p id="vulns-detail-subtitle" class="font-body-md text-body-md text-on-surface-variant">—</p>
 </div>
+<div class="flex gap-sm shrink-0">
+<button type="button" id="vulns-filter-toggle" class="flex items-center gap-2 px-4 py-2 border border-outline-variant bg-surface-container-lowest text-on-surface-variant rounded hover:bg-surface-container-low transition-colors font-label-md text-label-md">
+<i data-lucide="list-filter" class="icon-sm"></i>
+<span data-i18n="vulns.filter">Filtrar</span>
+</button>
+<button type="button" id="vulns-export-btn" class="flex items-center gap-2 px-4 py-2 bg-primary-container text-on-primary-container rounded hover:bg-surface-tint transition-colors font-label-md text-label-md">
+<i data-lucide="download" class="icon-sm"></i>
+<span data-i18n="vulns.export">Exportar informe</span>
+</button>
+</div>
+</div>
+<div id="panel-findings-list-empty" class="glass-panel rounded-lg ds-empty" hidden>
+<div class="ds-empty-icon"><i data-lucide="bug" class="icon-lg"></i></div>
+<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
+<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="vulns.noFindings">Este análisis no tiene vulnerabilidades registradas.</p>
+</div>
+<div id="panel-findings-list" class="bg-white/70 backdrop-blur-xl border border-outline-variant/30 rounded-lg shadow-sm overflow-hidden">
+<div class="p-md border-b border-outline-variant/30 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-sm bg-surface-container-lowest/50">
+<div class="flex flex-wrap gap-2" id="vulns-tabs" role="tablist">
+<button type="button" class="vuln-tab active font-label-md text-label-md text-on-surface px-2 py-1 rounded" data-sev="all">All (0)</button>
+<button type="button" class="vuln-tab font-label-md text-label-md text-on-surface-variant px-2 py-1 hover:bg-surface-container-low rounded cursor-pointer transition-colors" data-sev="critical">Critical (0)</button>
+<button type="button" class="vuln-tab font-label-md text-label-md text-on-surface-variant px-2 py-1 hover:bg-surface-container-low rounded cursor-pointer transition-colors" data-sev="high">High (0)</button>
+<button type="button" class="vuln-tab font-label-md text-label-md text-on-surface-variant px-2 py-1 hover:bg-surface-container-low rounded cursor-pointer transition-colors" data-sev="medium">Medium (0)</button>
+<button type="button" class="vuln-tab font-label-md text-label-md text-on-surface-variant px-2 py-1 hover:bg-surface-container-low rounded cursor-pointer transition-colors" data-sev="low">Low (0)</button>
+</div>
+<div class="relative">
+<i data-lucide="search" class="absolute left-2 top-1.5 text-outline icon-sm pointer-events-none"></i>
+<input id="vulns-table-search" class="pl-8 pr-3 py-1.5 bg-white border border-outline-variant/50 rounded text-body-sm focus:outline-none focus:border-primary focus:border-b-2 transition-all w-48" placeholder="Filtrar hallazgos..." data-i18n-placeholder="vulns.filterFindings" type="text"/>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30 bg-surface-container-lowest/30">
+<th class="py-3 px-4 font-label-md text-label-md text-secondary" data-i18n="vulns.col.severity">Severity</th>
+<th class="py-3 px-4 font-label-md text-label-md text-secondary" data-i18n="vulns.col.name">Vulnerability Name</th>
+<th class="py-3 px-4 font-label-md text-label-md text-secondary" data-i18n="vulns.col.asset">Target Asset</th>
+<th class="py-3 px-4 font-label-md text-label-md text-secondary" data-i18n="vulns.col.date">Date Discovered</th>
+<th class="py-3 px-4 font-label-md text-label-md text-secondary" data-i18n="vulns.col.status">Status</th>
+<th class="py-3 px-4 font-label-md text-label-md text-secondary text-right" data-i18n="vulns.col.actions">Actions</th>
+</tr>
+</thead>
+<tbody id="vulns-tbody" class="font-body-md text-body-md text-on-surface"></tbody>
+</table>
+</div>
+<div class="p-4 border-t border-outline-variant/30 bg-surface-container-lowest/30 flex flex-col sm:flex-row justify-between items-center gap-sm">
+<span id="vulns-page-label" class="font-body-sm text-body-sm text-on-surface-variant">Showing 0 entries</span>
+<div class="flex gap-1 items-center">
+<button type="button" id="vulns-prev" class="px-2 py-1 border border-outline-variant/50 rounded text-secondary hover:bg-surface-container-low disabled:opacity-50" aria-label="Anterior"><i data-lucide="chevron-left" class="icon-sm"></i></button>
+<span id="vulns-page-nums" class="flex gap-1"></span>
+<button type="button" id="vulns-next" class="px-2 py-1 border border-outline-variant/50 rounded text-secondary hover:bg-surface-container-low disabled:opacity-50" aria-label="Siguiente"><i data-lucide="chevron-right" class="icon-sm"></i></button>
+</div>
+</div>
+</div>
+</section>
 </main>
 </div>
 <script>
