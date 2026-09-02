@@ -2,6 +2,18 @@ Thumbs.db
 .DS_Store
 *.log
 .vscode/
+__pycache__/
+*.pyc
 
 # Serena
 .serena/
+
+# Informe académico confidencial (no versionar)
+panel/aurora_report_2026-08-18_ES.pdf
+
+# Cookies/sesiones de pruebas locales del playbook (nunca subir)
+backend/cookies.txt
+cookies.txt
+
+# Capturas de diagnóstico manual (no son parte del producto)
+panel/.diag-screenshots/

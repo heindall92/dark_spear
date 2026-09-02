@@ -2,6 +2,7 @@
 :root {
   color-scheme: light;
   --ds-background: #f7fafe;
+  --ds-border-acrylic: #d8e3f0;
   --ds-surface: #ffffff;
   --ds-surface-bright: #f7fafe;
   --ds-surface-dim: #d7dade;
@@ -91,16 +92,28 @@ html.dark {
 }
 
 .glass-panel {
-  background-color: var(--ds-surface) !important;
-  border-color: var(--ds-outline-variant) !important;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid #d8e3f0;
 }
 
 html.dark .glass-panel,
 html.dark .acrylic,
 html.dark .acrylic-modal {
-  background-color: var(--ds-surface) !important;
-  border-color: var(--ds-outline-variant) !important;
+  background-color: rgba(23, 28, 34, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-color: var(--ds-outline-variant);
   color: var(--ds-on-surface);
+}
+
+.bg-background {
+  background: linear-gradient(180deg, #f5f8fc 0%, #ffffff 48%, #f7fafe 100%) !important;
+}
+html.dark.bg-background,
+html.dark .bg-background {
+  background: var(--ds-background) !important;
 }
 
 html.dark .bg-white,

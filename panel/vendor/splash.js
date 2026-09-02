@@ -1,12 +1,28 @@
 (function () {
-  if (sessionStorage.getItem("ds-splash") === "1") return;
+  var KEY = "ds-splash";
+
+  function seen() {
+    try {
+      return localStorage.getItem(KEY) === "1";
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function markSeen() {
+    try {
+      localStorage.setItem(KEY, "1");
+    } catch (e) {}
+  }
+
+  if (seen()) return;
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    sessionStorage.setItem("ds-splash", "1");
+    markSeen();
     return;
   }
 
   function boot() {
-    if (sessionStorage.getItem("ds-splash") === "1") return;
+    if (seen()) return;
     var wrap = document.createElement("div");
     wrap.id = "ds-splash";
     wrap.className = "ds-splash";
@@ -36,7 +52,7 @@
     function done() {
       if (finished) return;
       finished = true;
-      sessionStorage.setItem("ds-splash", "1");
+      markSeen();
       video.pause();
       wrap.classList.add("ds-splash-out");
       setTimeout(function () {

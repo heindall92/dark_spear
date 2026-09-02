@@ -217,7 +217,7 @@
     var html = buildReportHTML(payload, { printable: true });
     var w = window.open("", "_blank");
     if (!w) {
-      toast(t("export.popupBlocked", "Permití ventanas emergentes para exportar PDF"));
+      toast(t("export.popupBlocked", "Permite ventanas emergentes para exportar PDF"));
       return;
     }
     w.document.open();
@@ -231,7 +231,7 @@
   }
 
   function exportSVG() {
-    toast(t("export.svgSoon", "Exportá el grafo cuando haya rutas documentadas en el engagement"));
+    toast(t("export.svgSoon", "Exporta el grafo cuando haya rutas documentadas en el engagement"));
   }
 
   function exportEvidence(extra) {
@@ -288,7 +288,10 @@
       a.setAttribute("href", "index.html");
       a.addEventListener("click", function (e) {
         e.preventDefault();
-        sessionStorage.removeItem("ds-splash");
+        try {
+          localStorage.removeItem("ds-splash");
+          sessionStorage.removeItem("ds-splash");
+        } catch (err) {}
         toast(t("export.signedOut", "Sesión cerrada"));
         setTimeout(function () { location.href = "index.html"; }, 400);
       });

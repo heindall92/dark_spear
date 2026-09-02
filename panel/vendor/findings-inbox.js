@@ -85,29 +85,67 @@
   }
 
   function engineBase() {
+    if (typeof window !== "undefined") {
+      var port = window.location.port;
+      if (port === "8080" || port === "8081") {
+        return window.location.origin + "/bridge";
+      }
+    }
     return sessionStorage.getItem(URL_KEY) || ENGINE_DEFAULT;
   }
 
   function fetchEngine() {
     captureTokenFromUrl();
     var token = sessionStorage.getItem(TOKEN_KEY);
-    if (!token) return Promise.resolve(loadLocal());
-    return fetch(engineBase() + "/findings/list", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-Auditor-Token": token },
-      body: "{}"
-    }).then(function (res) {
-      if (!res.ok) return loadLocal();
-      return res.json();
-    }).then(function (data) {
-      var list = Array.isArray(data) ? data : (data && data.findings) || [];
-      var merged = merge(loadLocal(), list);
-      saveLocal(merged);
-      updateBell();
-      return merged;
-    }).catch(function () {
-      return loadLocal();
-    });
+    function doFetch(t) {
+      if (!t) return Promise.resolve(loadLocal());
+      return fetch(engineBase() + "/findings/list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auditor-Token": t },
+        body: "{}"
+      }).then(function (res) {
+        if (res.status === 401 || res.status === 403) {
+          sessionStorage.removeItem(TOKEN_KEY);
+          return fetch(engineBase() + "/session", { cache: "no-store" })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+              if (data && data.token) {
+                sessionStorage.setItem(TOKEN_KEY, data.token);
+                return doFetch(data.token);
+              }
+              return loadLocal();
+            });
+        }
+        if (!res.ok) return loadLocal();
+        return res.json();
+      }).then(function (data) {
+        var list = Array.isArray(data) ? data : (data && data.findings) || [];
+        if (!Array.isArray(list)) list = [];
+        // Respuesta OK del motor: si no hay hallazgos activos, vaciar inbox local
+        // (tras borrar engagements las tarjetas/gráficas no deben resucitar datos viejos).
+        if (!list.length) {
+          updateBell();
+          return loadLocal();
+        }
+        var merged = merge(loadLocal(), list);
+        saveLocal(merged);
+        updateBell();
+        return merged;
+      }).catch(function () {
+        return loadLocal();
+      });
+    }
+    if (token) return doFetch(token);
+    return fetch(engineBase() + "/session", { cache: "no-store" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data && data.token) {
+          sessionStorage.setItem(TOKEN_KEY, data.token);
+          return doFetch(data.token);
+        }
+        return loadLocal();
+      })
+      .catch(function () { return loadLocal(); });
   }
 
   function sevKey(severity) {
@@ -192,7 +230,36 @@
     return en ? d + " d ago" : "hace " + d + " d";
   }
 
-  function hrefFor(sev) {
+  function normalizeTs(ts) {
+    if (ts == null || ts === "") return null;
+    var n = Number(ts);
+    if (!isFinite(n) || n <= 0) return null;
+    return n < 1e12 ? n * 1000 : n;
+  }
+
+  function currentScanId() {
+    try {
+      return new URLSearchParams(location.search).get("scan") || "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function hrefForFinding(f, scanId) {
+    if (!f) return "finding-detail.html";
+    var sid = scanId || (f && (f.scan_id || f.engagement_dir || f.engagementId)) || currentScanId();
+    var q = [];
+    if (f.id) q.push("id=" + encodeURIComponent(f.id));
+    else {
+      var fp = f.fingerprint || fingerprint(f.title, f.asset);
+      if (fp) q.push("fp=" + encodeURIComponent(fp));
+    }
+    if (sid) q.push("scan=" + encodeURIComponent(sid));
+    return q.length ? "finding-detail.html?" + q.join("&") : "finding-detail.html";
+  }
+
+  function hrefFor(sev, finding) {
+    if (finding) return hrefForFinding(finding);
     return sev === "critical" ? "critical-findings.html" : "finding-detail.html";
   }
 
@@ -248,7 +315,7 @@
       var a = document.createElement("a");
       a.className = "glass-panel rounded-lg p-md flex gap-md items-start border-l-4 " +
         meta.border + " hover:border-primary notif-item" + (unread ? " unread" : "");
-      a.href = hrefFor(sev);
+      a.href = hrefFor(sev, f);
       a.setAttribute("data-sev", sev);
       a.setAttribute("data-finding-id", f.id || "");
       var body = (f.description || f.asset || "").slice(0, 220);
@@ -287,6 +354,8 @@
     markAllRead: markAllRead,
     fingerprint: fingerprint,
     unreadCount: unreadCount,
+    normalizeTs: normalizeTs,
+    hrefForFinding: hrefForFinding,
     boot: boot
   };
 
