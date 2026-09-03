@@ -1107,11 +1107,27 @@ export function jsBundleCurlSteps(step, prefix, baseUrl, maxTime = "12") {
 
 const JS_SECRET_SIGNATURES = [
   { label: "AWS Access Key ID", re: /AKIA[0-9A-Z]{16}/, cwe: "CWE-798" },
+  { label: "AWS Secret Access Key", re: /aws(.{0,20})?(secret|access)?[_-]?key['"]?\s*[:=]\s*['"][0-9a-zA-Z/+]{40}['"]/i, cwe: "CWE-798" },
   { label: "Google API Key", re: /AIza[0-9A-Za-z\-_]{35}/, cwe: "CWE-798" },
+  { label: "Google/GCP Service Account JSON", re: /"type":\s*"service_account"/i, cwe: "CWE-798" },
   { label: "Stripe Secret Key (live)", re: /sk_live_[0-9a-zA-Z]{20,}/, cwe: "CWE-798" },
+  { label: "Stripe Restricted Key (live)", re: /rk_live_[0-9a-zA-Z]{20,}/, cwe: "CWE-798" },
   { label: "Slack Token", re: /xox[baprs]-[0-9a-zA-Z-]{10,}/, cwe: "CWE-798" },
+  { label: "Slack Webhook URL", re: /hooks\.slack\.com\/services\/T[0-9A-Z]{8,}\/B[0-9A-Z]{8,}\/[0-9a-zA-Z]{24}/, cwe: "CWE-798" },
   { label: "GitHub Personal Access Token", re: /gh[pousr]_[A-Za-z0-9]{36}/, cwe: "CWE-798" },
-  { label: "Clave privada embebida", re: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, cwe: "CWE-321" },
+  { label: "GitHub Fine-Grained Token", re: /github_pat_[0-9A-Za-z_]{22,}/, cwe: "CWE-798" },
+  { label: "Clave privada embebida", re: /-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/, cwe: "CWE-321" },
+  { label: "Twilio Account SID/Auth Token", re: /AC[0-9a-f]{32}/, cwe: "CWE-798" },
+  { label: "SendGrid API Key", re: /SG\.[0-9A-Za-z_-]{22}\.[0-9A-Za-z_-]{43}/, cwe: "CWE-798" },
+  { label: "Mailgun API Key", re: /key-[0-9a-f]{32}/, cwe: "CWE-798" },
+  { label: "Heroku API Key", re: /heroku['"]?\s*[:=]\s*['"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"]/i, cwe: "CWE-798" },
+  { label: "npm Access Token", re: /npm_[0-9A-Za-z]{36}/, cwe: "CWE-798" },
+  { label: "PyPI API Token", re: /pypi-AgEIcHlwaS5vcmc[0-9A-Za-z_-]{50,}/, cwe: "CWE-798" },
+  { label: "Discord Webhook URL", re: /discord(app)?\.com\/api\/webhooks\/\d{17,20}\/[0-9A-Za-z_-]{60,}/, cwe: "CWE-798" },
+  { label: "Firebase Cloud Messaging/Server Key", re: /AAAA[0-9A-Za-z_-]{7}:[0-9A-Za-z_-]{140,}/, cwe: "CWE-798" },
+  { label: "DigitalOcean Personal Access Token", re: /dop_v1_[0-9a-f]{64}/, cwe: "CWE-798" },
+  { label: "Shopify Access Token", re: /shp(at|ca|pa|ss)_[0-9a-f]{32}/, cwe: "CWE-798" },
+  { label: "JSON Web Token con secreto en URL", re: /[?&](token|jwt|access_token)=eyJ[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}/, cwe: "CWE-598" },
 ];
 
 const JS_SECRET_PLACEHOLDER_RE = /^(x+|0+|1+|dummy|example|test|changeme|xxxx+|yyyy+|your[-_]?\w*|placeholder|undefined|null|redacted|\*+)$/i;
@@ -1158,12 +1174,18 @@ export function jsSecretFindings(jsText, path) {
  * https://hacktricks.wiki/en/generic-methodologies-and-resources/external-recon-methodology/index.html
  * ------------------------------------------------------------------------ */
 const WAF_SIGNATURES = [
-  { name: "Cloudflare", re: /cf-ray\s*:|server:\s*cloudflare/i },
-  { name: "AWS CloudFront/WAF", re: /x-amz-cf-id\s*:|via:.*cloudfront/i },
-  { name: "Akamai", re: /server:\s*akamaighost|x-akamai/i },
-  { name: "Imperva/Incapsula", re: /x-iinfo\s*:|incap_ses_/i },
+  { name: "Cloudflare", re: /cf-ray\s*:|server:\s*cloudflare|__cf_bm=|cf-mitigated\s*:/i },
+  { name: "AWS CloudFront/WAF", re: /x-amz-cf-id\s*:|via:.*cloudfront|x-amzn-waf-|x-amzn-errortype:\s*waf/i },
+  { name: "Akamai", re: /server:\s*akamaighost|x-akamai|akamai-ghost/i },
+  { name: "Imperva/Incapsula", re: /x-iinfo\s*:|incap_ses_|visid_incap_/i },
   { name: "Sucuri", re: /x-sucuri-id\s*:|server:\s*sucuri/i },
-  { name: "F5 BIG-IP ASM", re: /x-wa-info\s*:|bigipserver/i },
+  { name: "F5 BIG-IP ASM", re: /x-wa-info\s*:|bigipserver|ts[0-9a-f]{8}=/i },
+  { name: "Azure Front Door", re: /x-azure-ref\s*:|x-fd-healthprobe/i },
+  { name: "Fastly", re: /via:.*fastly|x-served-by:\s*cache-/i },
+  { name: "ModSecurity", re: /mod_security|modsecurity|server:\s*modsec/i },
+  { name: "FortiWeb/FortiGate", re: /fortiweb|fortigate|fgd_icon/i },
+  { name: "Barracuda", re: /barra_counter_session|barracuda/i },
+  { name: "Wordfence", re: /wordfence|wfwaf/i },
 ];
 
 export function wafFindings(headText) {
@@ -1228,6 +1250,52 @@ export function s3BucketCheckStep(step, bucketHost, maxTime = "12") {
 export const S3_LISTING_RE = /<ListBucketResult/i;
 
 /* ------------------------------------------------------------------------ *
+ * Bucket Azure Blob / GCS público — mismo patrón pasivo que S3: si algún
+ * recurso ya descargado referencia un contenedor de otro proveedor cloud,
+ * se comprueba con un GET de solo lectura si el listado es público.
+ * ------------------------------------------------------------------------ */
+export const AZURE_BLOB_HOST_RE = /([a-z0-9]{3,24})\.blob\.core\.windows\.net(?:\/([a-z0-9][a-z0-9-]{1,61}[a-z0-9]))?/i;
+export const GCS_BUCKET_HOST_RE = /storage\.googleapis\.com\/([a-z0-9][a-z0-9_.\-]{1,220}[a-z0-9])/i;
+
+export function extractAzureBlobContainer(rawBlob) {
+  const m = String(rawBlob || "").match(AZURE_BLOB_HOST_RE);
+  if (!m) return null;
+  return { account: m[1], container: m[2] || null, matched: m[0] };
+}
+
+export function extractGcsBucket(rawBlob) {
+  const m = String(rawBlob || "").match(GCS_BUCKET_HOST_RE);
+  return m ? m[1] : null;
+}
+
+export function azureBlobCheckStep(step, blobRef, maxTime = "12") {
+  if (!blobRef || !blobRef.container) return [];
+  return [
+    step("p1-azureblob-check", "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      `https://${blobRef.account}.blob.core.windows.net/${blobRef.container}?restype=container&comp=list`,
+    ], null, {
+      desc: `Contenedor Azure Blob referenciado por la app: ¿listado público? (${blobRef.account}/${blobRef.container})`,
+    }),
+  ];
+}
+
+export function gcsBucketCheckStep(step, bucketName, maxTime = "12") {
+  if (!bucketName) return [];
+  return [
+    step("p1-gcs-bucket-check", "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      `https://storage.googleapis.com/storage/v1/b/${bucketName}/o`,
+    ], null, {
+      desc: `Bucket GCS referenciado por la app: ¿listado público? (${bucketName})`,
+    }),
+  ];
+}
+
+export const AZURE_BLOB_LISTING_RE = /<EnumerationResults/i;
+export const GCS_LISTING_RE = /"kind":\s*"storage#objects"/i;
+
+/* ------------------------------------------------------------------------ *
  * SSRF genérico → AWS Instance Metadata Service (IMDS, 169.254.169.254):
  * si algún parámetro típico de "fetch de URL" acepta la IMDS y la respuesta
  * refleja contenido de metadata/credenciales, es SSRF confirmado hacia la
@@ -1253,3 +1321,378 @@ export function ssrfImdsCurlSteps(step, prefix, baseUrl, maxTime = "10") {
 /** Señal fuerte (credencial real filtrada) vs. señal débil (solo categorías IMDS listadas). */
 export const SSRF_IMDS_STRONG_RE = /"AccessKeyId"\s*:|"SecretAccessKey"\s*:/i;
 export const SSRF_IMDS_WEAK_RE = /\bami-id\b|\binstance-id\b|\bsecurity-credentials\b|\blocal-ipv4\b/i;
+
+/* ------------------------------------------------------------------------ *
+ * Cortafuegos — dos capas:
+ *
+ * 1) Caja negra (lo que el informe muestra siempre): nmap de perímetro
+ *    (open vs filtered) + WAF que BLOQUEA una sonda inofensiva. No toca
+ *    iptables del cliente; infiere el filtro desde fuera, igual que un
+ *    atacante real.
+ * 2) Caja gris (solo si el target ES el host donde corre el motor:
+ *    127.0.0.1/localhost): lectura de ufw/iptables/nft. Ahí sí son las
+ *    reglas activas del sistema auditado. Nunca se corre contra un host
+ *    remoto: ese ruleset sería el de Kali, no el del cliente.
+ * ------------------------------------------------------------------------ */
+
+export const PERIMETER_PORTS = [
+  "21", "22", "23", "25", "53", "80", "110", "139", "143", "443", "445",
+  "1433", "1521", "2049", "3306", "3389", "5432", "5900", "6379",
+  "8080", "8443", "9200", "11211", "27017",
+];
+
+/** Servicios que no deberían estar en 0.0.0.0/0. SSH es habitual; el resto es superficie grave. */
+export const EXPOSED_SERVICE_RISK = {
+  21: { name: "FTP", severity: "Medium" },
+  22: { name: "SSH", severity: "Low" },
+  23: { name: "Telnet", severity: "High" },
+  139: { name: "NetBIOS", severity: "High" },
+  445: { name: "SMB", severity: "High" },
+  1433: { name: "MSSQL", severity: "High" },
+  1521: { name: "Oracle", severity: "High" },
+  2049: { name: "NFS", severity: "High" },
+  3306: { name: "MySQL/MariaDB", severity: "High" },
+  3389: { name: "RDP", severity: "High" },
+  5432: { name: "PostgreSQL", severity: "High" },
+  5900: { name: "VNC", severity: "High" },
+  6379: { name: "Redis", severity: "High" },
+  9200: { name: "Elasticsearch", severity: "High" },
+  11211: { name: "Memcached", severity: "High" },
+  27017: { name: "MongoDB", severity: "High" },
+};
+
+export function perimeterNmapArgs(host, extraPort) {
+  const ports = new Set(PERIMETER_PORTS);
+  const extra = String(extraPort || "").trim();
+  if (/^\d+$/.test(extra)) ports.add(extra);
+  return ["-Pn", "-sT", "-p", [...ports].sort((a, b) => Number(a) - Number(b)).join(","), host];
+}
+
+/**
+ * Parsea la tabla clásica de nmap: "PORT STATE SERVICE".
+ * Ignora líneas de cabecera y host-down.
+ */
+export function parseNmapPortTable(nmapText) {
+  const open = [];
+  const filtered = [];
+  const closed = [];
+  const re = /^(\d+)\/tcp\s+(open|filtered|closed)\b(?:\s+(\S+))?/gim;
+  let m;
+  while ((m = re.exec(String(nmapText || "")))) {
+    const row = { port: Number(m[1]), state: m[2].toLowerCase(), service: m[3] || "" };
+    if (row.state === "open") open.push(row);
+    else if (row.state === "filtered") filtered.push(row);
+    else closed.push(row);
+  }
+  return { open, filtered, closed };
+}
+
+export function perimeterFirewallFindings(nmapText) {
+  const { open, filtered } = parseNmapPortTable(nmapText);
+  const out = [];
+  const seenRisk = new Set();
+  for (const row of open) {
+    const risk = EXPOSED_SERVICE_RISK[row.port];
+    if (!risk || seenRisk.has(row.port)) continue;
+    seenRisk.add(row.port);
+    const svc = risk.name;
+    out.push({
+      title: `${svc} (TCP/${row.port}) expuesto a Internet sin filtrar`,
+      severity: risk.severity,
+      description: `nmap desde fuera ve ${row.port}/tcp open (${row.service || svc}). Ese servicio no debería ser alcanzable desde 0.0.0.0/0: es superficie de fuerza bruta, RCE conocidos o dump de datos (CWE-284). Un Security Group, NACL, ufw o iptables debería dejarlo solo en la red de administración.`,
+      remediation: `Cerrar ${row.port}/tcp al mundo. UFW: \`ufw deny ${row.port}/tcp\` y permitir solo la IP de administración (\`ufw allow from 10.0.0.0/8 to any port ${row.port}\`). iptables: \`-A INPUT -p tcp --dport ${row.port} -s <red-admin> -j ACCEPT\` y \`-A INPUT -p tcp --dport ${row.port} -j DROP\`. En AWS: Security Group sin 0.0.0.0/0 en ese puerto.`,
+    });
+  }
+  if (filtered.length) {
+    const sample = filtered.slice(0, 8).map((r) => `${r.port}/tcp`).join(", ");
+    out.push({
+      title: `Perímetro con filtrado de paquetes (${filtered.length} puerto(s) filtered)`,
+      severity: "Info",
+      description: `nmap marca ${filtered.length} puerto(s) como filtered (drop/NACL/SG/WAF de red, no RST): ${sample}${filtered.length > 8 ? "…" : ""}. Es contexto de gobierno: hay un filtro delante del host, no una vulnerabilidad. Explica timeouts de otras sondas.`,
+      remediation: "Ninguna por el filtrado en sí. Revisar que los puertos de aplicación previstos (80/443) sigan open y que los de gestión (22, 3389, BD) sigan filtered o closed desde Internet.",
+    });
+  }
+  return out;
+}
+
+/** Sonda inofensiva que un WAF con CRS/OWASP suele cortar (403/406 + página de bloqueo). */
+export const WAF_TRIGGER_QUERY = "ds_waf_probe=1'+UNION+SELECT+NULL--";
+export const WAF_BLOCK_STATUS_RE = /HTTP\/1\.[01]\s+(403|406|419|429|501|503)\b|^DS_HTTP:(403|406|419|429|501|503)\b/im;
+export const WAF_BLOCK_BODY_RE = /attention required|cloudflare|just a moment|request rejected|mod_security|modsecurity|the requested url was rejected|blocked by|web application firewall|not acceptable|access denied|incident id|support id|sqli detected|anomaly score/i;
+
+export function wafTriggerFindings(probeText) {
+  const t = String(probeText || "");
+  if (!t.trim()) return [];
+  const blocked = WAF_BLOCK_STATUS_RE.test(t) && WAF_BLOCK_BODY_RE.test(t);
+  const blockedStatusOnly = WAF_BLOCK_STATUS_RE.test(t) && /forbidden|not acceptable|rejected/i.test(t);
+  if (!blocked && !blockedStatusOnly) return [];
+  return [{
+    title: "WAF activo: bloqueó una sonda de inyección (caja negra)",
+    severity: "Info",
+    description: "Una petición GET con un payload clásico de UNION SELECT en query string fue cortada por el perímetro (HTTP 403/406/429/5xx + página/firma de WAF). No es vulnerabilidad: documenta que hay control activo delante de la app, no solo un CDN que reenvía.",
+    remediation: "Ninguna. Verificar que las reglas cubren OWASP CRS (SQLi, XSS, LFI) y que no hay bypass por otro vhost/API sin el mismo WAF.",
+  }];
+}
+
+export function missingWafFinding(headText, triggerText, isPublicDomain) {
+  if (!isPublicDomain) return [];
+  const alreadyWaf = wafFindings(headText).length > 0;
+  const blocked = wafTriggerFindings(triggerText).length > 0;
+  if (alreadyWaf || blocked) return [];
+  return [{
+    title: "Sin WAF/CDN identificable desde caja negra",
+    severity: "Low",
+    description: "Ni las cabeceras de la raíz ni una sonda de inyección inofensiva identifican un WAF/CDN delante del dominio público. La aplicación queda expuesta a Internet sin esa capa. No prueba que no exista un filtro opaco, pero sí que no hay huella ni bloqueo observable.",
+    remediation: "Desplegar WAF (Cloudflare, AWS WAF, ModSecurity/OWASP CRS, o el del proveedor) delante de 80/443; bloquear SQLi/XSS/LFI por defecto; no publicar orígenes de API sin el mismo control.",
+  }];
+}
+
+function looksLikePermissionDenied(text) {
+  return /permission denied|operation not permitted|you must be root|must be root|not found|command not found/i.test(String(text || ""));
+}
+
+/**
+ * Interpreta ufw/iptables/nft YA leídos en el host local. Si no hay
+ * privilegios o el binario no existe, no inventa hallazgos (el paso queda
+ * en el feed para el operador).
+ */
+export function hostFirewallFindings(ufwText, iptablesText, nftText) {
+  const ufw = String(ufwText || "");
+  const ipt = String(iptablesText || "");
+  const nft = String(nftText || "");
+  const out = [];
+
+  if (ufw.trim() && !looksLikePermissionDenied(ufw)) {
+    if (/Status:\s*inactive/i.test(ufw)) {
+      out.push({
+        title: "UFW inactivo en el host auditado",
+        severity: "Medium",
+        description: "ufw status verbose reporta Status: inactive. En un servidor Linux que sirve la aplicación, el host firewall está apagado: cualquier puerto en LISTEN queda expuesto al segmento de red (CWE-284). Complementa, no sustituye, al Security Group de la nube.",
+        remediation: "`ufw default deny incoming`, `ufw allow 22/tcp` (solo red de admin), `ufw allow 80,443/tcp`, `ufw enable`. Revisar que Docker no publique puertos con 0.0.0.0 si no deben ser públicos.",
+      });
+    } else if (/Status:\s*active/i.test(ufw)) {
+      if (/Default:\s*allow\s+\(incoming\)/i.test(ufw) || /Default:\s*allow$/im.test(ufw)) {
+        out.push({
+          title: "UFW activo pero política por defecto ALLOW",
+          severity: "High",
+          description: "UFW está encendido con default allow incoming: las reglas explícitas de deny no cubren puertos nuevos que un servicio abra mañana. La postura correcta es default deny + allow de lo estrictamente necesario.",
+          remediation: "`ufw default deny incoming` y allow solo 22 (admin), 80 y 443 (o el puerto de la app).",
+        });
+      } else {
+        out.push({
+          title: "UFW activo (default deny) en el host auditado",
+          severity: "Info",
+          description: "El host tiene UFW activo. Contexto de gobierno de caja gris: hay control local de paquetes además del perímetro de red/nube.",
+          remediation: "Ninguna. Revisar que los allow coincidan con el alcance publicado (no dejar 3306/6379/22 abiertos a Anywhere).",
+        });
+      }
+    }
+  }
+
+  const iptReadable = ipt.trim() && !looksLikePermissionDenied(ipt);
+  if (iptReadable) {
+    const ufwActive = /Status:\s*active/i.test(ufw) || /Chain ufw-/i.test(ipt);
+    if (/Chain INPUT \(policy ACCEPT\)/i.test(ipt) && !ufwActive) {
+      out.push({
+        title: "iptables INPUT con política ACCEPT (sin UFW activo)",
+        severity: "Medium",
+        description: "La cadena INPUT tiene policy ACCEPT y no hay UFW activo encima. El kernel acepta tráfico a cualquier puerto en LISTEN salvo reglas DROP puntuales — equivalente a no tener host firewall.",
+        remediation: "Instalar y activar UFW (default deny) o pasar INPUT a DROP/REJECT y allow explícito de 22/80/443. Evitar Docker publicando en 0.0.0.0.",
+      });
+    } else if (/Chain INPUT \(policy DROP\)|Chain INPUT \(policy REJECT\)/i.test(ipt)) {
+      out.push({
+        title: "iptables INPUT con política default deny",
+        severity: "Info",
+        description: "iptables INPUT está en DROP/REJECT. El host filtra por defecto; solo entra lo allow-listeado.",
+        remediation: "Ninguna. Auditar que no haya -j ACCEPT a 0.0.0.0/0 en puertos de gestión o de base de datos.",
+      });
+    }
+  }
+
+  const nftReadable = nft.trim() && !looksLikePermissionDenied(nft);
+  if (nftReadable && /hook input/i.test(nft) && /policy accept/i.test(nft) && !/Status:\s*active/i.test(ufw)) {
+    if (!out.some((f) => /iptables INPUT con política ACCEPT/i.test(f.title))) {
+      out.push({
+        title: "nftables input hook con policy accept",
+        severity: "Medium",
+        description: "nft list ruleset muestra un hook input en policy accept. Igual que iptables ACCEPT: el host no niega por defecto.",
+        remediation: "Cambiar el hook input a drop/reject y allow solo los puertos publicados, o activar UFW encima.",
+      });
+    }
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Email/domain security — SPF y DMARC, sobre TXT ya obtenido por dig. Pasivo:
+ * no envía correo, solo interpreta registros públicos. Ausencia o política
+ * débil de SPF/DMARC habilita spoofing/phishing usando el dominio auditado.
+ * ------------------------------------------------------------------------ */
+export const SPF_RECORD_RE = /v=spf1[^"'\n]*/i;
+export const DMARC_RECORD_RE = /v=DMARC1[^"'\n]*/i;
+
+export function domainSecurityFindings(txtText, dmarcText, root) {
+  const out = [];
+  const txt = String(txtText || "");
+  const dmarc = String(dmarcText || "");
+  const domain = root || "el dominio";
+
+  const spfMatch = txt.match(SPF_RECORD_RE);
+  if (!spfMatch) {
+    out.push({
+      title: `Dominio ${domain} sin registro SPF`,
+      severity: "Medium",
+      description: `No hay TXT con v=spf1 para ${domain} (CWE-290). Sin SPF, cualquiera puede enviar correo falsificando el remitente @${domain}: es la base técnica de campañas de phishing/BEC contra clientes y empleados que confían en el dominio.`,
+      remediation: `Publicar un registro SPF (TXT) que enumere los emisores autorizados y termine en -all (hard fail), p.ej.: "v=spf1 include:_spf.google.com -all".`,
+    });
+  } else {
+    const spf = spfMatch[0];
+    if (/\+all\b/i.test(spf)) {
+      out.push({
+        title: `SPF de ${domain} permite cualquier origen (+all)`,
+        severity: "High",
+        description: `El registro SPF de ${domain} termina en +all: autoriza explícitamente a CUALQUIER servidor a enviar correo como @${domain} (CWE-290). Es equivalente a no tener SPF, pero además parece configurado a propósito.`,
+        remediation: `Cambiar +all por -all (hard fail) y enumerar solo los emisores reales autorizados (include:, ip4:, ip6:).`,
+      });
+    } else if (!/-all\b/i.test(spf)) {
+      out.push({
+        title: `SPF de ${domain} sin hard fail (-all)`,
+        severity: "Low",
+        description: `El registro SPF de ${domain} no termina en -all (usa ~all/softfail, ?all/neutral, o ningún mecanismo all). Los correos falsificados suelen entregarse igual, marcados como sospechosos como mucho, según la política del receptor.`,
+        remediation: `Terminar el registro SPF en -all una vez validados todos los emisores legítimos, para que el receptor rechace explícitamente el resto.`,
+      });
+    }
+  }
+
+  const dmarcMatch = dmarc.match(DMARC_RECORD_RE);
+  if (!dmarcMatch) {
+    out.push({
+      title: `Dominio ${domain} sin política DMARC`,
+      severity: "Medium",
+      description: `No hay TXT v=DMARC1 en _dmarc.${domain} (CWE-290). Sin DMARC no hay política de qué hacer con correo que falla SPF/DKIM, ni reporte agregado (rua=) para detectar abuso del dominio en curso.`,
+      remediation: `Publicar TXT en _dmarc.${domain}: "v=DMARC1; p=quarantine; rua=mailto:dmarc-reports@${domain}"; escalar a p=reject tras validar que no rompe correo legítimo.`,
+    });
+  } else {
+    const pMatch = dmarcMatch[0].match(/;\s*p=(\w+)/i);
+    const policy = pMatch ? pMatch[1].toLowerCase() : null;
+    if (policy === "none") {
+      out.push({
+        title: `DMARC de ${domain} en modo monitorización (p=none)`,
+        severity: "Low",
+        description: `DMARC está publicado pero con p=none: el dominio recibe reportes de spoofing (si rua está configurado) pero no bloquea ni pone en cuarentena nada. Correo falsificado que falla SPF/DKIM llega igual a la bandeja del destinatario.`,
+        remediation: `Tras validar los reportes rua/ruf, subir la política a p=quarantine y finalmente p=reject.`,
+      });
+    }
+  }
+
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Org attack surface — ASN/organización del target vía RDAP de IP (pasivo,
+ * mismo mecanismo HTTPS que el WHOIS/RDAP de dominio ya existente). Solo
+ * contexto: qué red/organización anuncia la IP, útil para verificar que el
+ * host en scope realmente pertenece al cliente y no a un tercero (CDN,
+ * hosting compartido) antes de reportarlo como activo propio.
+ * ------------------------------------------------------------------------ */
+export function ipRdapCheckStep(step, ip, maxTime = "15") {
+  if (!ip) return [];
+  return [
+    step("p1-osint-rdap-ip", "curl", [
+      "-s", "--max-time", maxTime, `https://rdap.org/ip/${ip}`,
+    ], null, {
+      desc: `RDAP de la IP ${ip}: ASN/organización que la anuncia`,
+    }),
+  ];
+}
+
+export function orgAttackSurfaceFindings(rdapIpText, host, ip) {
+  const out = [];
+  const text = String(rdapIpText || "");
+  if (!text.trim()) return out;
+  let json = null;
+  try { json = JSON.parse(text); } catch { /* respuesta no-JSON (rate limit, error) */ }
+  if (!json) return out;
+
+  const name = json.name || null;
+  const handle = json.handle || null;
+  const entities = Array.isArray(json.entities) ? json.entities : [];
+  const orgNames = entities
+    .map((e) => (Array.isArray(e.vcardArray) && e.vcardArray[1]
+      ? (e.vcardArray[1].find((v) => v[0] === "fn") || [])[3]
+      : null))
+    .filter(Boolean);
+
+  if (name || handle || orgNames.length) {
+    out.push({
+      title: `IP de ${host || ip} anunciada por ${orgNames[0] || name || handle}`,
+      severity: "Info",
+      description: `RDAP de ${ip} identifica la red como "${name || handle}"${orgNames.length ? ` (organización: ${orgNames.join(", ")})` : ""}. Contexto de superficie: confirma si el host pertenece a infraestructura propia del cliente o a un tercero (CDN, cloud compartido, hosting) — relevante para no reportar como "activo propio" algo que no lo es, o para ampliar el scope si aparece infraestructura hermana bajo la misma organización.`,
+      remediation: "Ninguna: es contexto de inventario de activos, no una vulnerabilidad. Confirmar con el cliente si la organización identificada coincide con el alcance autorizado.",
+    });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Identity Provider recon — SOLO descubrimiento pasivo de tenant (una
+ * petición GET a un endpoint público de metadata/realm, sin probar
+ * credenciales ni enumerar usuarios). Confirma qué IdP gestiona el dominio
+ * (M365/Entra ID, Google Workspace, Okta) para dimensionar el ataque de
+ * phishing/password-spray en el informe — nunca ejecuta el ataque.
+ *
+ * Enumeración de usuarios pre-auth (validar qué correos existen contra el
+ * IdP) es deliberadamente MÁS invasiva que un discovery pasivo — se deja
+ * fuera del playbook determinista y solo debe ofrecerse en modo agente
+ * ReAct con gate de aprobación explícita (DANGEROUS_TOOLS en agent.js),
+ * nunca automática.
+ * ------------------------------------------------------------------------ */
+export function idpDiscoveryCurlSteps(step, root, maxTime = "12") {
+  if (!root) return [];
+  return [
+    step("p1-idp-m365-realm", "curl", [
+      "-s", "--max-time", maxTime,
+      `https://login.microsoftonline.com/getuserrealm.srf?login=user@${root}&xml=1`,
+    ], null, {
+      desc: `Descubrimiento pasivo de tenant M365/Entra ID para ${root}`,
+    }),
+    step("p1-idp-okta-wellknown", "curl", [
+      "-s", "--max-time", maxTime, "-o", "/dev/null", "-w", "%{http_code}",
+      `https://${root}/.well-known/openid-configuration`,
+    ], null, {
+      desc: `¿${root} expone metadata OIDC propia (Okta/Auth0/IdP self-hosted)?`,
+    }),
+  ];
+}
+
+export const M365_NAMESPACE_RE = /NameSpaceType>\s*(Managed|Federated)\s*</i;
+export const M365_FEDERATION_BRAND_RE = /FederationBrandName>([^<]+)</i;
+
+export function idpDiscoveryFindings(m365Text, oidcHttpCode, root) {
+  const out = [];
+  const m365 = String(m365Text || "");
+  const domain = root || "el dominio";
+
+  const nsMatch = m365.match(M365_NAMESPACE_RE);
+  if (nsMatch) {
+    const type = nsMatch[1];
+    const brandMatch = m365.match(M365_FEDERATION_BRAND_RE);
+    out.push({
+      title: `${domain} confirmado como tenant Microsoft 365/Entra ID (${type})`,
+      severity: "Info",
+      description: `El endpoint público getuserrealm.srf confirma que ${domain} es un tenant ${type === "Federated" ? "federado (ADFS/IdP externo)" : "gestionado (cloud-only o password hash sync)"} de Microsoft 365/Entra ID${brandMatch ? ` — marca de federación: ${brandMatch[1]}` : ""}. Contexto de superficie de ataque: dimensiona el riesgo de password-spray contra login.microsoftonline.com y de phishing dirigido a Office 365. NO se ha intentado ninguna credencial ni enumerado usuarios — solo descubrimiento de tenant.`,
+      remediation: "Ninguna acción técnica por este hallazgo en sí. Recomendar MFA obligatorio, Conditional Access y bloqueo de protocolos legacy (IMAP/POP/SMTP básico) que son el vector típico de password-spray contra M365.",
+    });
+  }
+
+  if (String(oidcHttpCode || "").trim() === "200") {
+    out.push({
+      title: `${domain} expone metadata OIDC propia (/.well-known/openid-configuration)`,
+      severity: "Info",
+      description: `${domain} responde 200 en /.well-known/openid-configuration: aloja su propio Identity Provider (Okta, Auth0, Keycloak u otro OIDC self-hosted) en vez de, o además de, un IdP SaaS externo. Contexto de superficie: revisar issuer, authorization_endpoint y jwks_uri expuestos para banca de ataque de fase 2 (nunca ejecutada aquí).`,
+      remediation: "Ninguna: es descubrimiento pasivo. Verificar que el endpoint no filtre configuración interna más allá de lo estándar OIDC.",
+    });
+  }
+
+  return out;
+}

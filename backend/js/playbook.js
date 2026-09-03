@@ -26,7 +26,14 @@ import {
   waybackOsintSteps,
   jsBundleCurlSteps,
   extractS3BucketHost,
+  extractAzureBlobContainer,
+  extractGcsBucket,
+  azureBlobCheckStep,
+  gcsBucketCheckStep,
   ssrfImdsCurlSteps,
+  perimeterNmapArgs,
+  ipRdapCheckStep,
+  idpDiscoveryCurlSteps,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -79,6 +86,12 @@ function isIpHost(host) {
   if (/^\d{1,3}(\.\d{1,3}){3}$/.test(h)) return true;
   if (h.includes(":") && !/^[a-zA-Z]/.test(h)) return true;
   return false;
+}
+
+/** El target es el propio motor (caja gris: ufw/iptables/nft SÍ aplican). */
+function isLoopbackHost(host) {
+  const h = String(host || "").trim().toLowerCase();
+  return h === "localhost" || h === "127.0.0.1" || h === "::1" || h === "0.0.0.0";
 }
 
 /** Salida útil para el feed: descarta vacío, 000, 404 genéricos y ruido OSINT. */
@@ -196,6 +209,8 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
       : extractBruteDiscoveredPaths(rawBlob),
     capturedJwt: ctx.capturedJwt || extractCapturedJwt(rawBlob),
     s3BucketHost: ctx.s3BucketHost || extractS3BucketHost(rawBlob),
+    azureBlobContainer: ctx.azureBlobContainer || extractAzureBlobContainer(rawBlob),
+    gcsBucketName: ctx.gcsBucketName || extractGcsBucket(rawBlob),
   };
 }
 
@@ -219,6 +234,9 @@ function domainOsintSteps(root, host) {
     step("p1-osint-dig-txt", "dig", ["+short", "TXT", root], null, {
       desc: "Registros TXT (SPF, DKIM, verificación)",
     }),
+    step("p1-osint-dig-dmarc", "dig", ["+short", "TXT", `_dmarc.${root}`], null, {
+      desc: "Registro DMARC (política anti-spoofing del dominio)",
+    }),
     step("p1-osint-nslookup-a", "nslookup", [root], null, {
       desc: "Resolución A alternativa (nslookup)",
     }),
@@ -231,6 +249,7 @@ function domainOsintSteps(root, host) {
     ], null, {
       desc: "Certificate Transparency pasivo (crt.sh JSON)",
     }),
+    ...idpDiscoveryCurlSteps(step, root),
   ];
 
   for (const prefix of OSINT_SUB_PREFIXES) {
@@ -259,8 +278,23 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
     step("p1-nmap-sV", "nmap", ["-sV", "-p", portSpec(target), host], null, {
       desc: "Detección de servicios en puertos del target",
     }),
+    // Caja negra: open vs filtered en un set curado de puertos de gestión/BD.
+    // Se omite en loopback: nmap 127.0.0.1 listaría ssh/cups de Kali, no del
+    // cliente. En local la capa equivalente es ufw/iptables/nft (abajo).
+    step("p1-nmap-perimeter", "nmap", perimeterNmapArgs(host, portSpec(target).split(",")[0]), null, {
+      desc: "Perímetro: puertos de gestión/BD open vs filtered (caja negra)",
+      skipIf: (c) => isLoopbackHost(c.host) || isLoopbackHost(host),
+    }),
+    ...(ipTarget && !isLoopbackHost(host) ? ipRdapCheckStep(step, root) : []),
     step("p1-osint-curl-head-root", "curl", ["-s", "-I", "--max-time", "15", baseUrl], null, {
       desc: "Cabeceras HTTP de la raíz",
+    }),
+    step("p1-waf-trigger", "curl", [
+      "-s", "-i", "--max-time", "12", "-w", "\nDS_HTTP:%{http_code}\n",
+      "-G", "--data-urlencode", "ds_waf_probe=1' UNION SELECT NULL--",
+      baseUrl,
+    ], null, {
+      desc: "Sonda WAF (caja negra): ¿el perímetro bloquea una UNION SELECT inofensiva?",
     }),
     step("p1-osint-curl-root", "curl", ["-s", "-L", "--max-time", "25", baseUrl], null, {
       desc: "HTTP GET / — contenido público inicial",
@@ -366,6 +400,18 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       desc: "Bucket S3 referenciado por la app: ¿listado público?",
       skipIf: (c) => !c.s3BucketHost,
     }),
+    step("p1-azureblob-check", "curl", (c) => (c.azureBlobContainer?.container
+      ? ["-s", "-L", "--max-time", "12", `https://${c.azureBlobContainer.account}.blob.core.windows.net/${c.azureBlobContainer.container}?restype=container&comp=list`]
+      : null), null, {
+      desc: "Contenedor Azure Blob referenciado por la app: ¿listado público?",
+      skipIf: (c) => !c.azureBlobContainer?.container,
+    }),
+    step("p1-gcs-bucket-check", "curl", (c) => (c.gcsBucketName
+      ? ["-s", "-L", "--max-time", "12", `https://storage.googleapis.com/storage/v1/b/${c.gcsBucketName}/o`]
+      : null), null, {
+      desc: "Bucket GCS referenciado por la app: ¿listado público?",
+      skipIf: (c) => !c.gcsBucketName,
+    }),
     step("p1-curl-cors-probe", "curl", [
       "-s", "-I", "--max-time", "12", "-H", `Origin: ${CORS_PROBE_ORIGIN}`, baseUrl,
     ], null, {
@@ -418,6 +464,20 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
     }),
     step("p1-curl-security-cookie", "curl", ["-s", "-I", "-b", cookie, baseUrl + "/index.php"], null, {
       skipIf: (c) => !needsAuthProbe(c),
+    }),
+    // Caja gris: reglas reales del host donde corre el motor. Solo loopback
+    // — contra un target remoto esto leería iptables de Kali, no del cliente.
+    step("p1-host-ufw", "ufw", ["status", "verbose"], null, {
+      desc: "Host firewall: ufw status (solo si el target es este equipo)",
+      skipIf: () => !isLoopbackHost(host),
+    }),
+    step("p1-host-iptables", "iptables", ["-L", "-n", "-v"], null, {
+      desc: "Host firewall: iptables -L (requiere privilegios)",
+      skipIf: () => !isLoopbackHost(host),
+    }),
+    step("p1-host-nft", "nft", ["list", "ruleset"], null, {
+      desc: "Host firewall: nft list ruleset (requiere privilegios)",
+      skipIf: () => !isLoopbackHost(host),
     }),
   ];
 
@@ -594,4 +654,4 @@ export function allPlaybookStepIds(phase, target, ctx = {}) {
   return stepsForPhase(phase, target, ctx).map((s) => s.id);
 }
 
-export { WL, parseTarget, scopeRoot, isIpHost, OSINT_SUB_PREFIXES };
+export { WL, parseTarget, scopeRoot, isIpHost, isLoopbackHost, OSINT_SUB_PREFIXES };
