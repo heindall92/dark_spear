@@ -3,7 +3,7 @@
  * Evidencia = texto acumulado de herramientas (curl, whatweb, nmap, etc.).
  */
 
-import { parseTarget } from "./playbook.js";
+import { parseTarget, isIpHost, isLoopbackHost, scopeRoot } from "./playbook.js";
 import {
   DVWA_MODULES,
   GENERIC_EXPOSURE_PROBES,
@@ -32,6 +32,15 @@ import {
   SSRF_IMDS_PARAMS,
   SSRF_IMDS_STRONG_RE,
   SSRF_IMDS_WEAK_RE,
+  perimeterFirewallFindings,
+  wafTriggerFindings,
+  missingWafFinding,
+  hostFirewallFindings,
+  domainSecurityFindings,
+  orgAttackSurfaceFindings,
+  idpDiscoveryFindings,
+  AZURE_BLOB_LISTING_RE,
+  GCS_LISTING_RE,
 } from "./vuln-kb.js";
 
 /**
@@ -79,8 +88,20 @@ function buildProbeIndex(stepRecords) {
     m = /^p1-ssrf-imds-(.+)$/.exec(r.id);
     if (m) push(`ssrf-imds:${m[1]}`, text);
     if (r.id === "p1-s3-bucket-check") push("s3-bucket", text);
+    if (r.id === "p1-azureblob-check") push("azureblob", text);
+    if (r.id === "p1-gcs-bucket-check") push("gcs-bucket", text);
     if (r.id === "p1-osint-wayback-cdx") push("wayback", text);
     if (r.id === "p1-osint-curl-head-root") push("head-root", text);
+    if (r.id === "p1-osint-dig-txt") push("osint-txt", text);
+    if (r.id === "p1-osint-dig-dmarc") push("osint-dmarc", text);
+    if (r.id === "p1-osint-rdap-ip") push("osint-rdap-ip", text);
+    if (r.id === "p1-idp-m365-realm") push("idp-m365", text);
+    if (r.id === "p1-idp-okta-wellknown") push("idp-oidc", text);
+    if (r.id === "p1-nmap-perimeter") push("nmap-perimeter", text);
+    if (r.id === "p1-waf-trigger") push("waf-trigger", text);
+    if (r.id === "p1-host-ufw") push("host-ufw", text);
+    if (r.id === "p1-host-iptables") push("host-iptables", text);
+    if (r.id === "p1-host-nft") push("host-nft", text);
     m = /^p[1-4]-curl-(phpini|config-bak|config-dist)(?:-body)?$/.exec(r.id);
     if (m) push(`extra:${m[1]}`, text);
     if (r.id === "p1-curl-cors-probe") push("cors", text);
@@ -294,6 +315,21 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     // no vulnerabilidad, pero es señal real (firma en cabecera), no adivinada.
     wafFindings(headText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
     cloudProviderFindings(headText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+    const triggerText = probeIdx["waf-trigger"] || "";
+    wafTriggerFindings(triggerText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+    const hostName = ctx.host || "";
+    const publicDomain = Boolean(hostName) && !isIpHost(hostName) && !isLoopbackHost(hostName) && hostName.includes(".");
+    missingWafFinding(headText, triggerText, publicDomain).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  const periText = probeIdx["nmap-perimeter"];
+  if (periText) {
+    perimeterFirewallFindings(periText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  if (probeIdx["host-ufw"] != null || probeIdx["host-iptables"] != null || probeIdx["host-nft"] != null) {
+    hostFirewallFindings(probeIdx["host-ufw"], probeIdx["host-iptables"], probeIdx["host-nft"])
+      .forEach((f) => add(f.title, f.severity, f.description, f.remediation));
   }
 
   // Sondas genéricas de exposición (cualquier stack): git, .env, swagger, actuator…
@@ -534,6 +570,59 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       "Un bucket S3 referenciado en el código de la app responde con un listado XML (<ListBucketResult>) sin autenticación (CWE-284, CWE-200): cualquiera puede enumerar y potencialmente descargar todos los objetos del bucket.",
       "Configurar la ACL/política del bucket para bloquear listado y lectura públicos (S3 Block Public Access); servir contenido público solo vía CloudFront con OAC, nunca el bucket directo.",
     );
+  }
+
+  // Contenedor Azure Blob / bucket GCS referenciado por la app: ¿listado público?
+  const azureText = probeIdx["azureblob"];
+  if (azureText && AZURE_BLOB_LISTING_RE.test(azureText)) {
+    add(
+      "Contenedor Azure Blob referenciado por la app es listable públicamente",
+      "High",
+      "Un contenedor Azure Blob Storage referenciado en el código de la app responde con un listado XML (<EnumerationResults>) sin autenticación (CWE-284, CWE-200): cualquiera puede enumerar y potencialmente descargar todos los blobs del contenedor.",
+      "Cambiar el nivel de acceso público del contenedor a Private en Azure Storage; servir contenido público solo vía Azure CDN/Front Door con SAS token, nunca el contenedor directo.",
+    );
+  }
+  const gcsText = probeIdx["gcs-bucket"];
+  if (gcsText && GCS_LISTING_RE.test(gcsText)) {
+    add(
+      "Bucket GCS referenciado por la app es listable públicamente",
+      "High",
+      "Un bucket de Google Cloud Storage referenciado en el código de la app responde con un listado JSON (storage#objects) sin autenticación (CWE-284, CWE-200): cualquiera puede enumerar y potencialmente descargar todos los objetos del bucket.",
+      "Quitar allUsers/allAuthenticatedUsers de la IAM policy del bucket; servir contenido público solo vía Cloud CDN con firma, nunca el bucket directo.",
+    );
+  }
+
+  // Email/domain security — SPF y DMARC del dominio en scope.
+  {
+    const root = scopeRoot(ctx.host || "", ctx.scope);
+    if (root && root.includes(".") && !isIpHost(root)) {
+      const txtText = probeIdx["osint-txt"];
+      const dmarcText = probeIdx["osint-dmarc"];
+      if (txtText !== undefined || dmarcText !== undefined) {
+        domainSecurityFindings(txtText, dmarcText, root).forEach((f) =>
+          add(f.title, f.severity, f.description, f.remediation));
+      }
+    }
+  }
+
+  // Org attack surface — ASN/organización de la IP en scope (RDAP pasivo).
+  {
+    const rdapIpText = probeIdx["osint-rdap-ip"];
+    if (rdapIpText) {
+      orgAttackSurfaceFindings(rdapIpText, ctx.host, ctx.host).forEach((f) =>
+        add(f.title, f.severity, f.description, f.remediation));
+    }
+  }
+
+  // Identity Provider recon — discovery pasivo de tenant (M365/OIDC propio).
+  {
+    const root = scopeRoot(ctx.host || "", ctx.scope);
+    const m365Text = probeIdx["idp-m365"];
+    const oidcCode = probeIdx["idp-oidc"];
+    if ((m365Text !== undefined || oidcCode !== undefined) && root && root.includes(".") && !isIpHost(root)) {
+      idpDiscoveryFindings(m365Text, oidcCode, root).forEach((f) =>
+        add(f.title, f.severity, f.description, f.remediation));
+    }
   }
 
   // Wayback Machine: rutas históricas con extensión/patrón sensible que ya
