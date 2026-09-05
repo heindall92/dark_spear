@@ -449,12 +449,57 @@
   function loadScanFindings(id) {
     if (!id || id === "inbox") return loadFindings();
     return bridgePost("/engagements/findings", { engagement_dir: id }).then(function (payload) {
-      if (payload && Array.isArray(payload.findings)) return payload.findings;
-      if (payload && (payload.error === "engagement_not_found" || payload.error === "invalid_engagement_dir")) {
-        return [];
+      var list = [];
+      if (payload && Array.isArray(payload.findings)) list = payload.findings;
+      else if (payload && (payload.error === "engagement_not_found" || payload.error === "invalid_engagement_dir")) {
+        list = [];
       }
-      return [];
+      var hasWaf = list.some(function (f) {
+        return /WAF activo:|WAF\/CDN identificado:/i.test((f && f.title) || "");
+      });
+      if (hasWaf) {
+        list = list.filter(function (f) {
+          return !/Sin WAF\/CDN identificable/i.test((f && f.title) || "");
+        });
+      }
+      return list;
     }).catch(function () { return []; });
+  }
+
+  function mergeFindingLists(a, b) {
+    var by = {};
+    function add(f) {
+      if (!f || !f.title) return;
+      var key = [f.engagement_dir || f.scan_id || "", f.id || "", f.title, f.asset || ""].join("|");
+      if (!by[key]) by[key] = f;
+    }
+    (a || []).forEach(add);
+    (b || []).forEach(add);
+    var list = Object.keys(by).map(function (k) { return by[k]; });
+    var hasWaf = list.some(function (f) {
+      return /WAF activo:|WAF\/CDN identificado:/i.test((f && f.title) || "");
+    });
+    if (!hasWaf) return list;
+    return list.filter(function (f) {
+      return !/Sin WAF\/CDN identificable/i.test((f && f.title) || "");
+    });
+  }
+
+  function loadFindingsFromScans(scans) {
+    var ids = (scans || []).map(function (s) { return s.id || s.engagement_dir; }).filter(Boolean);
+    if (!ids.length) return Promise.resolve([]);
+    return Promise.all(ids.map(function (id) {
+      return loadScanFindings(id).then(function (list) {
+        return (list || []).map(function (f) {
+          var out = Object.assign({}, f);
+          if (!out.scan_id) out.scan_id = id;
+          if (!out.engagement_dir) out.engagement_dir = id;
+          return out;
+        });
+      });
+    })).then(function (chunks) {
+      return chunks.reduce(function (acc, arr) { return acc.concat(arr || []); }, []);
+    });
   }
 
   /** Lista de tarjetas por análisis → detalle con ?scan= */
@@ -487,6 +532,10 @@
           foot.style.display = isList ? "none" : "";
         }
       }
+      (cfg.hideOnListIds || []).forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) el.hidden = isList;
+      });
     }
 
     function renderCards() {
@@ -667,6 +716,8 @@
       ctaLabel: tKey(cfg.ctaKey, cfg.ctaFallback || tKey("scan.open", "Abrir")),
       ctaIcon: cfg.ctaIcon || "arrow-right",
       pageTitle: tKey(cfg.titleKey || (cfg.prefix ? cfg.prefix + ".title" : ""), cfg.titleFallback || cfg.ctaFallback || ""),
+      hideOnListIds: cfg.hideOnListIds,
+      footerId: cfg.footerId,
       onDetail: cfg.onDetail,
     });
   }
@@ -694,7 +745,7 @@
   }
 
   function gdprIsArt33(f) {
-    return /secretos de aplicaci[oó]n|db_password|config\.inc\.php\.bak|credenciales por defecto|admin\/password|data.?breach|breach notification|datos personales|\bpii\b|filtraci[oó]n de (datos|secretos)|application secrets/i.test(
+    return /secretos de aplicaci[oó]n|db_password|config\.inc\.php\.bak|credenciales por defecto|admin\/password|data.?breach|breach notification|datos personales|\bpii\b|filtraci[oó]n de (datos|secretos)|application secrets|hardcodead[oa] en bundle|viva confirmada|access key id|arn aws/i.test(
       gdprFindingBlob(f).toLowerCase()
     );
   }
@@ -890,10 +941,10 @@
   }
 
   var KILL_CHAIN_STAGES = [
-    { stage: "Reconnaissance", key: "killchain.recon", re: /nmap|whois|robots|phpinfo|header|directory|enumer|osint|fingerprint|whatweb|listado de directorio|cabecera server/i },
-    { stage: "Weaponization", key: "killchain.weapon", re: /payload|weaponiz|malware|cve-\d{4}/i },
+    { stage: "Reconnaissance", key: "killchain.recon", re: /nmap|whois|robots|phpinfo|header|directory|enumer|osint|fingerprint|whatweb|listado de directorio|cabecera server|spf|dmarc|tenant|workspace|rdap|asn|wayback|openid|saml|índice de exposición|nueva desde última|nuevo desde última|arn aws|decodifica a account|prefijo|hyperscaler|anunciada por/i },
+    { stage: "Weaponization", key: "killchain.weapon", re: /payload|weaponiz|malware|cve-\d{4}|spoofing|p=none|sin hard fail|\+all/i },
     { stage: "Delivery", key: "killchain.delivery", re: /upload|dvwa expuesta|damn vulnerable|security.?low|m[oó]dulos vulnerables|panel de m[oó]dulos|hackable\/uploads/i },
-    { stage: "Exploitation", key: "killchain.exploit", re: /injection|xss|csrf|sql|rce|secret|bak|credential|allow_url|cookie|session|command injection|inclusi[oó]n|brute/i },
+    { stage: "Exploitation", key: "killchain.exploit", re: /injection|xss|csrf|sql|rce|secret|credencial|hardcodead|bak|credential|allow_url|cookie|session|command injection|inclusi[oó]n|brute|listable|ssrf|viva confirmada/i },
     { stage: "Installation", key: "killchain.install", re: /web.?shell|backdoor|persist|implant/i },
     { stage: "C2", key: "killchain.c2", re: /c2|command.?control|beacon|callback/i },
     { stage: "Actions", key: "killchain.actions", re: /privilege|lateral|exfil|data.?loss|escalat/i },
@@ -945,8 +996,8 @@
         {
           id: "T1589",
           name: "Gather Victim Identity Information",
-          coverage: "partial",
-          re: /credential|leak|breach|email|password|identity|empleado|filtrada|pastebin|hibp/i,
+          coverage: "high",
+          re: /credential|leak|breach|email|password|identity|empleado|filtrada|pastebin|hibp|tenant|workspace|entra id|saml/i,
         },
         {
           id: "T1590",
@@ -957,8 +1008,8 @@
         {
           id: "T1591",
           name: "Gather Victim Org Information",
-          coverage: "partial",
-          re: /registrant|organization|org.?info|empresa|rdap|whois.?org|business/i,
+          coverage: "high",
+          re: /registrant|organization|org.?info|empresa|rdap|whois.?org|business|anunciada por|prefijo/i,
         },
         {
           id: "T1592",
@@ -998,7 +1049,7 @@
       techniques: [
         { id: "T1189", name: "Drive-by Compromise", coverage: "high", re: /xss|cross.site|drive.?by/i },
         { id: "T1190", name: "Exploit Public-Facing Application", coverage: "high", re: /sql|injection|sqli|rce|public.?facing/i },
-        { id: "T1133", name: "External Remote Services", coverage: "partial", re: /vpn|rdp|ssh|remote.?service/i },
+        { id: "T1133", name: "External Remote Services", coverage: "high", re: /vpn|rdp|ssh|remote.?service|expuesto a internet/i },
         { id: "T1566", name: "Phishing", coverage: "none", re: /phish|spear/i },
       ],
     },
@@ -1039,6 +1090,7 @@
         { id: "T1070", name: "Indicator Removal", coverage: "none", re: /log.?clear|indicator.?remov/i },
         { id: "T1202", name: "Indirect Command Execution", coverage: "partial", re: /indirect.?command/i },
         { id: "T1539", name: "Steal Web Session Cookie", coverage: "high", re: /cookie|session|httponly|security=low/i },
+        { id: "T1562.004", name: "Disable or Modify System Firewall", coverage: "high", re: /ufw inactivo|pol[ií]tica accept|policy accept|pol[ií]tica por defecto allow/i },
       ],
     },
     {
@@ -1047,7 +1099,7 @@
       techniques: [
         { id: "T1110", name: "Brute Force", coverage: "partial", re: /brute|password|credential|hydra/i },
         { id: "T1606", name: "Forge Web Credentials", coverage: "high", re: /jwt alg=none|secreto jwt|jwt d[ée]bil|forjado/i },
-        { id: "T1552.001", name: "Unsecured Credentials: Credentials In Files", coverage: "high", re: /\.env expuesto|config\.inc\.php\.bak|db_password|secretos de aplicaci|hardcodead[oa] en bundle js|secreto hardcodeado en bundle/i },
+        { id: "T1552.001", name: "Unsecured Credentials: Credentials In Files", coverage: "high", re: /\.env expuesto|config\.inc\.php\.bak|db_password|secretos de aplicaci|hardcodead[oa] en bundle js|secreto hardcodeado en bundle|viva confirmada/i },
         { id: "T1552.005", name: "Unsecured Credentials: Cloud Instance Metadata API", coverage: "high", re: /metadata aws|169\.254\.169\.254|ssrf.*metadata/i },
       ],
     },
@@ -1055,11 +1107,11 @@
       tactic: "Discovery",
       count: 12,
       techniques: [
-        { id: "T1046", name: "Network Service Discovery", coverage: "high", re: /port.?scan|service.?discover|nmap.?-s[vc]|open.?port/i },
+        { id: "T1046", name: "Network Service Discovery", coverage: "high", re: /port.?scan|service.?discover|nmap.?-s[vc]|open.?port|filtered|expuesto a internet|perímetro con filtrado/i },
         { id: "T1082", name: "System Information Discovery", coverage: "partial", re: /system.?info|phpinfo|server.?info|banner/i },
-        { id: "T1083", name: "File and Directory Discovery", coverage: "high", re: /gobuster|ffuf|feroxbuster|directory.?discover|forbidden|not.?found.?probe|dirbust/i },
+        { id: "T1083", name: "File and Directory Discovery", coverage: "high", re: /gobuster|ffuf|feroxbuster|directory.?discover|forbidden|not.?found.?probe|dirbust|listable|listado de directorio|index of/i },
         { id: "T1518", name: "Software Discovery", coverage: "high", re: /versi[oó]n en cabecera|revela versi[oó]n|cabecera server|whatweb/i },
-        { id: "T1518.001", name: "Security Software Discovery", coverage: "high", re: /waf\/cdn identificado/i },
+        { id: "T1518.001", name: "Security Software Discovery", coverage: "high", re: /waf\/cdn identificado|waf activo|sin waf\/cdn|ufw activo/i },
         { id: "T1526", name: "Cloud Service Discovery", coverage: "high", re: /infraestructura identificada como aws/i },
       ],
     },
@@ -1078,7 +1130,7 @@
         { id: "T1539", name: "Steal Web Session Cookie", coverage: "high", re: /cookie|session|httponly|security=low/i },
         { id: "T1213", name: "Data from Information Repositories", coverage: "partial", re: /\.git|repositor|swagger|actuator|phpmyadmin|\.env\b/i },
         { id: "T1005", name: "Data from Local System", coverage: "none", re: /local.?file.?collect|filesystem.?dump/i },
-        { id: "T1530", name: "Data from Cloud Storage", coverage: "high", re: /bucket s3.*listable|listbucketresult/i },
+        { id: "T1530", name: "Data from Cloud Storage", coverage: "high", re: /bucket s3.*listable|listbucketresult|azure blob.*listable|gcs.*listable/i },
       ],
     },
     {
@@ -1139,12 +1191,12 @@
 
   function maturityDomainsFromFindings(findings) {
     var defs = [
-      { key: "iam", es: "Gestión de identidad (IAM)", en: "Identity (IAM)", re: /credential|login|session|cookie|mfa|brute|password|admin\/password|php.?sess/i },
-      { key: "net", es: "Seguridad de red", en: "Network security", re: /tls|ssl|header|server:|port|nmap|httponly|samesite/i },
-      { key: "data", es: "Protección de datos", en: "Data protection", re: /secret|bak|sql|encrypt|config\.inc|db_password|phpinfo/i },
+      { key: "iam", es: "Gestión de identidad (IAM)", en: "Identity (IAM)", re: /credential|login|session|cookie|mfa|brute|password|admin\/password|php.?sess|tenant|workspace|entra|oidc|saml/i },
+      { key: "net", es: "Seguridad de red", en: "Network security", re: /tls|ssl|header|server:|port|nmap|httponly|samesite|spf|dmarc|asn|rdap/i },
+      { key: "data", es: "Protección de datos", en: "Data protection", re: /secret|bak|sql|encrypt|config\.inc|db_password|phpinfo|hardcodeada|bucket|listable|arn aws|access key/i },
       { key: "ir", es: "Respuesta a incidentes", en: "Incident response", re: /command injection|rce|allow_url|file inclusion|upload/i },
       { key: "aware", es: "Concienciación", en: "Awareness", re: /dvwa|damn vulnerable|security.?low|debug|display_errors/i },
-      { key: "assets", es: "Gestión de activos", en: "Asset management", re: /robots|sitemap|directory|listado|document root/i },
+      { key: "assets", es: "Gestión de activos", en: "Asset management", re: /robots|sitemap|directory|directorio|listable|listado|document root/i },
     ];
     var langEn = (window.DarkSpear && DarkSpear.lang && DarkSpear.lang() === "en");
     return defs.map(function (d) {
@@ -1170,15 +1222,19 @@
     });
   }
 
-  var maturityRadarChart = null;
-  function renderMaturityRadar(domains) {
-    var canvas = document.getElementById("maturity-radar");
+  var maturityRadarCharts = {};
+  function renderMaturityRadar(domains, canvasId) {
+    var id = canvasId || "maturity-radar";
+    var canvas = document.getElementById(id);
     if (!canvas || typeof Chart === "undefined") return;
+    if (maturityRadarCharts[id]) {
+      maturityRadarCharts[id].destroy();
+      maturityRadarCharts[id] = null;
+    }
     var labels = domains.map(function (d) { return d.label; });
     var actual = domains.map(function (d) { return d.actual; });
     var target = domains.map(function (d) { return d.target; });
-    if (maturityRadarChart) maturityRadarChart.destroy();
-    maturityRadarChart = new Chart(canvas, {
+    maturityRadarCharts[id] = new Chart(canvas, {
       type: "radar",
       data: {
         labels: labels,
@@ -1898,9 +1954,13 @@
 
     function refresh() {
       Promise.all([loadFindings(), fetchStatus(), loadEngagementScans()]).then(function (res) {
+        var inbox = res[0] || [];
         var engagements = res[2] || [];
         var status = enrichEngineStatus(res[1] || {}, engagements);
-        render(res[0] || [], status, engagements);
+        return loadFindingsFromScans(engagements).then(function (disk) {
+          var live = status && status.active ? inbox : [];
+          render(mergeFindingLists(disk, live), status, engagements);
+        });
       });
     }
     refresh();
@@ -2125,17 +2185,59 @@
     }
   }
 
+  var TECH_MEASURE_TITLE_RE = /WAF activo:|WAF\/CDN identificado:|Per[ií]metro con filtrado|HSTS (presente|activo|habilitado)|CSP (enforced|activa|presente)|firewall del host en (DROP|DENY)|INPUT (DROP|DENY)/i;
+  var TECH_MEASURE_DESC_RE = /no es vulnerabilidad:\s*documenta que hay|hay un filtro delante del host|control activo delante de la app/i;
+  var TECH_MEASURE_SKIP_RE = /[ií]ndice de exposici[oó]n|sin registro SPF|sin pol[ií]tica DMARC|Sin WAF\/CDN identificable|sin HSTS|CSP d[eé]bil|sin flag/i;
+
+  function isObservedTechnicalMeasure(f) {
+    if (!f || !f.title) return false;
+    if (TECH_MEASURE_SKIP_RE.test(f.title)) return false;
+    if (TECH_MEASURE_TITLE_RE.test(f.title)) return true;
+    return TECH_MEASURE_DESC_RE.test(f.description || "");
+  }
+
   function bootCriticalFindings() {
     var root = document.getElementById("panel-findings-list");
     var empty = document.getElementById("panel-findings-list-empty");
+    var noneEl = document.getElementById("panel-findings-none");
+    var measuresWrap = document.getElementById("panel-measures");
+    var measuresList = document.getElementById("panel-measures-list");
     if (!root) return;
 
-    function apply(findings) {
-      var list = findings || [];
-      if (empty) empty.hidden = list.length > 0;
-      root.hidden = list.length === 0;
-      if (!list.length) { root.innerHTML = ""; return; }
-      if (window.DarkSpearFindings) DarkSpearFindings.renderList(root, list, "critical");
+    function apply(allFindings, meta) {
+      var all = allFindings || [];
+      var crit = all.filter(function (f) {
+        var s = String(f.severity || "").toLowerCase();
+        return s === "critical" || s === "high";
+      });
+      var measures = all.filter(isObservedTechnicalMeasure);
+
+      if (empty) empty.hidden = crit.length > 0 || measures.length > 0;
+      if (noneEl) noneEl.hidden = !(crit.length === 0 && measures.length > 0);
+
+      root.hidden = crit.length === 0;
+      if (crit.length && window.DarkSpearFindings) DarkSpearFindings.renderList(root, crit, "all");
+      else root.innerHTML = "";
+
+      if (measuresWrap) {
+        measuresWrap.hidden = measures.length === 0;
+        if (measures.length && measuresList && window.DarkSpearFindings) {
+          DarkSpearFindings.renderList(measuresList, measures, "all");
+        } else if (measuresList) {
+          measuresList.innerHTML = "";
+        }
+      }
+
+      var sub = document.getElementById("critical-detail-subtitle");
+      if (sub && meta) {
+        sub.textContent =
+          (scanDisplayName(meta) || meta.id || "") +
+          " · Target: " + (meta.target || "—") +
+          (meta.scope ? " · Scope: " + meta.scope : "") +
+          " · " + crit.length + " " + tKey("critical.critCount", "críticos/altos") +
+          " · " + measures.length + " " + tKey("critical.measuresCount", "medidas técnicas");
+      }
+      if (window.lucide) lucide.createIcons();
     }
 
     if (document.getElementById("critical-list-view")) {
@@ -2148,23 +2250,13 @@
         searchId: "critical-list-search",
         titleId: "critical-detail-title",
         subtitleId: "critical-detail-subtitle",
+        pageTitle: tKey("critical.title", "Hallazgos críticos"),
         ctaLabel: tKey("critical.open", "Ver hallazgos críticos"),
         ctaIcon: "triangle-alert",
-        filterFindings: function (findings) {
-          return (findings || []).filter(function (f) {
-            var s = String(f.severity || "").toLowerCase();
-            return s === "critical" || s === "high";
-          });
-        },
-        onDetail: function (findings) { apply(findings); },
+        onDetail: function (findings, meta) { apply(findings, meta); },
       });
     } else {
-      loadFindings().then(function (items) {
-        apply((items || []).filter(function (f) {
-          var s = String(f.severity || "").toLowerCase();
-          return s === "critical" || s === "high";
-        }));
-      });
+      loadFindings().then(function (items) { apply(items || [], null); });
     }
   }
 
@@ -2651,8 +2743,10 @@
       var q = hub && hub.state.scanId ? ("?scan=" + encodeURIComponent(hub.state.scanId)) : "";
       var a1 = document.getElementById("report-link-comprehensive");
       var a2 = document.getElementById("report-link-executive");
+      var a3 = document.getElementById("report-link-preview");
       if (a1) a1.href = "comprehensive-report.html" + q;
       if (a2) a2.href = "executive-summary.html" + q;
+      if (a3) a3.href = "report-preview.html" + q;
     }
 
     document.querySelectorAll("[data-report-export]").forEach(function (btn) {
@@ -2688,6 +2782,59 @@
     }
   }
 
+  function computeExposureRisk(findings) {
+    var skip = /índice de exposición|nuevo desde última auditoría|no reaparecen/i;
+    var w = { critical: 1, high: 0.4, medium: 0.1, low: 0.02, info: 0 };
+    var list = (findings || []).filter(function (f) {
+      return f && f.status !== "rejected" && !skip.test(f.title || "");
+    });
+    var S = 0;
+    var hasCritical = false;
+    list.forEach(function (f) {
+      var s = String(f.severity || "").toLowerCase();
+      S += w[s] || 0;
+      var blob = ((f.title || "") + " " + (f.description || "")).toLowerCase();
+      if (s === "critical" && /secret|credencial|hardcodeada|bucket|listable|ssrf|viva confirmada/.test(blob)) {
+        hasCritical = true;
+      }
+    });
+    var E = Math.min(1 - Math.exp(-S / 25), 1 - 1e-15);
+    if (hasCritical) E = Math.max(E, 0.5);
+    var threatW = [];
+    if (list.some(function (f) { return /viva confirmada|hardcodeada en bundle|access key/i.test(f.title || ""); })) threatW.push(0.8);
+    if (list.some(function (f) { return /ssrf confirmado|listable públicamente/i.test(f.title || ""); })) threatW.push(0.9);
+    var T = 0.05;
+    if (threatW.length) {
+      T = 1 - threatW.reduce(function (p, x) { return p * (1 - x); }, 1);
+    }
+    var I = hasCritical ? 0.9
+      : list.some(function (f) { return /spf|dmarc|tenant|workspace/i.test((f.title || "").toLowerCase()); }) ? 0.4
+        : 0.2;
+    var likelihood = 1 - (1 - E) * (1 - T);
+    var risk = Math.round(likelihood * I * 1000) / 10;
+    var grade = risk >= 80 ? "F" : risk >= 60 ? "D" : risk >= 40 ? "C" : risk >= 20 ? "B" : "A";
+    return { risk: risk, grade: grade, exposure: Math.round(E * 1000) / 10, threat: Math.round(T * 1000) / 10, impact: Math.round(I * 1000) / 10 };
+  }
+
+  function exposureRiskCardHtml(score) {
+    var tone = score.grade === "A" || score.grade === "B" ? "text-tertiary"
+      : score.grade === "C" ? "text-on-surface" : "text-error";
+    return (
+      '<div class="acrylic-panel rounded-xl p-lg ambient-shadow flex flex-col gap-sm">' +
+      '<div class="flex items-start justify-between gap-md flex-wrap">' +
+      '<div><p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wide">' +
+      escapeHtml(tKey("osint.exposureTitle", "Índice de exposición")) + "</p>" +
+      '<p class="font-headline-xl text-headline-xl ' + tone + ' mt-xs">' + escapeHtml(String(score.grade)) +
+      ' <span class="font-body-md text-on-surface-variant">' + escapeHtml(String(score.risk)) + "/100</span></p></div>" +
+      '<span class="text-primary"><i data-lucide="gauge" class="icon-md"></i></span></div>' +
+      '<p class="font-body-sm text-on-surface-variant">' +
+      escapeHtml(tKey("osint.exposureLead", "FAIR-lite sobre hallazgos de esta auditoría (exposición × amenaza × impacto). No comparable entre clientes.")) +
+      "</p>" +
+      '<div class="grid grid-cols-3 gap-sm font-body-sm text-on-surface-variant">' +
+      "<span>E " + score.exposure + "</span><span>T " + score.threat + "</span><span>I " + score.impact + "</span></div></div>"
+    );
+  }
+
   function osintClassifyFindings(findings) {
     var creds = [];
     var appSecrets = [];
@@ -2699,13 +2846,13 @@
       var blob = (title + " " + (f.description || "") + " " + (f.asset || "")).toLowerCase();
       if (/pastebin|haveibeenpwned|\bhibp\b|pwned.?password|credential.?dump|leak.?dump|github.?gist|gitlab.?snippet|stealer.?log/.test(blob)) {
         creds.push(f);
-      } else if (/secretos de aplicaci[oó]n|db_password|credenciales por defecto|admin\/password|config\.inc\.php\.bak|\.env\b|aws_secret|application secrets|default cred/.test(blob)) {
+      } else if (/secretos de aplicaci[oó]n|db_password|credenciales por defecto|admin\/password|config\.inc\.php\.bak|\.env\b|aws_secret|application secrets|default cred|hardcodeada en bundle|viva confirmada/.test(blob)) {
         appSecrets.push(f);
       } else if (/github\.com|gitlab\.com|bitbucket\.org|repositorio p[uú]blico/.test(blob)) {
         repos.push(f);
       } else if (/\b(osint)\b/.test(blob) && /mencion|mention|exposure/.test(blob)) {
         mentions.push(f);
-      } else if (/subdomain|subdominio|\bwhois\b|\brdap\b|crt\.sh|certificate transparency|registro dns|\bdig\b|nslookup|registro mx|robots\.txt|security\.txt|ssl-cert|cabeceras http/.test(blob)) {
+      } else if (/subdomain|subdominio|\bwhois\b|\brdap\b|crt\.sh|certificate transparency|registro dns|\bdig\b|nslookup|registro mx|robots\.txt|security\.txt|ssl-cert|cabeceras http|\bspf\b|\bdmarc\b|tenant|workspace|openid|saml|asn|prefijo/.test(blob)) {
         infra.push(f);
       }
     });
@@ -2747,6 +2894,7 @@
       var target = (meta && meta.target) || "—";
       var scope = (meta && meta.scope) || "—";
       var groups = osintClassifyFindings(findings);
+      var score = computeExposureRisk(findings);
       var kpiCreds = groups.creds.length;
       var kpiSubs = groups.infra.filter(function (f) {
         return /subdomain|subdominio|dns|crt\.sh|certificate transparency/.test(
@@ -2800,6 +2948,7 @@
 
       body.innerHTML =
         banner +
+        exposureRiskCardHtml(score) +
         '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">' +
         osintKpiCard("key-round", tKey("osint.kpiCreds", "Credenciales filtradas (OSINT)"), kpiCreds, kpiCreds ? "warn" : "neutral") +
         osintKpiCard("dns", tKey("osint.kpiSubdomains", "Subdominios expuestos"), kpiSubs, kpiSubs ? "warn" : "neutral") +
@@ -3170,7 +3319,7 @@
       if (ip) ip.textContent = node.kind === "internet" ? "Entrada externa" : (graphModel.target || node.label);
       if (scoreEl) {
         var sc = riskScoreFromFindings(list.length ? list : (graphModel.findingsByNode.target || []));
-        scoreEl.textContent = sc ? String(sc) : "—";
+        scoreEl.textContent = typeof sc === "number" ? String(sc) : "—";
         scoreEl.className = "font-headline-xl text-headline-xl font-bold " + (sc >= 7 ? "text-error" : sc >= 4 ? "text-[#854d0e]" : "text-primary");
       }
       if (vulns) {
@@ -3381,6 +3530,12 @@
       var slaBar = document.getElementById("metrics-sla-bar");
       if (slaEl) slaEl.textContent = slaPct != null ? slaPct + "%" : "—";
       if (slaBar) slaBar.style.width = (slaPct != null ? slaPct : 0) + "%";
+
+      var expEl = document.getElementById("metrics-exposure-host");
+      if (expEl) {
+        var score = computeExposureRisk(findings);
+        expEl.innerHTML = exposureRiskCardHtml(score);
+      }
 
       var now = new Date();
       var monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
@@ -3652,73 +3807,655 @@
     return [f.title, f.description, f.remediation, f.tags].filter(Boolean).join(" ");
   }
 
+  function reportSevRank(f) {
+    var order = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
+    var n = order[String((f && f.severity) || "").toLowerCase()];
+    return n == null ? 9 : n;
+  }
+
+  function reportSortedFindings(findings) {
+    return (findings || []).slice().sort(function (a, b) { return reportSevRank(a) - reportSevRank(b); });
+  }
+
+  function conclusionsText(findings, meta) {
+    var c = sevCounts(findings || []);
+    return tKey("comp.sec09Body", "Este análisis contra {target} identificó {n} hallazgos: {c} críticos, {h} altos, {m} medios, {l} bajos y {i} informativos. Se recomienda priorizar la remediación de los hallazgos críticos y altos según el plan de la sección 06, y repetir el análisis tras aplicar las correcciones para verificar el cierre de cada hallazgo.")
+      .replace("{target}", (meta && meta.target) || "—")
+      .replace("{n}", String((findings || []).length))
+      .replace("{c}", String(c.critical))
+      .replace("{h}", String(c.high))
+      .replace("{m}", String(c.medium))
+      .replace("{l}", String(c.low))
+      .replace("{i}", String(c.info));
+  }
+
+  function htmlDocControlRows(findings, meta) {
+    var rows = [
+      [tKey("comp.dtTarget", "Target"), (meta && meta.target) || "—"],
+      [tKey("comp.dtScope", "Scope"), (meta && meta.scope) || "—"],
+      [tKey("comp.dtStarted", "Inicio del engagement"), formatEngagementStarted(meta && meta.started_at)],
+      [tKey("comp.dtGenerated", "Documento generado"), new Date().toLocaleString()],
+      [tKey("comp.dtPhase", "Fase alcanzada"), meta && meta.phase != null ? String(meta.phase) : "—"],
+      [tKey("comp.dtTotal", "Hallazgos totales"), String((findings || []).length)],
+    ];
+    return rows.map(function (r) {
+      return '<div class="flex justify-between gap-md border-b border-outline-variant/20 pb-xs"><dt class="text-on-surface-variant">' +
+        escapeHtml(r[0]) + '</dt><dd class="font-semibold text-on-surface text-right">' + escapeHtml(r[1]) + "</dd></div>";
+    }).join("");
+  }
+
+  function htmlRootCauseItems(findings) {
+    var langEn = window.DarkSpear && DarkSpear.lang && DarkSpear.lang() === "en";
+    var hits = ROOT_CAUSE_BUCKETS.map(function (b) {
+      var n = (findings || []).filter(function (f) { return b.re.test(findingBlob(f)); }).length;
+      return { label: langEn && b.en ? b.en : b.es, n: n };
+    }).filter(function (h) { return h.n > 0; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 6);
+    if (!hits.length) {
+      return "<li>" + escapeHtml(tKey("comp.sec03Empty", "Sin hallazgos suficientes todavía para agrupar causas raíz.")) + "</li>";
+    }
+    return hits.map(function (h) {
+      return "<li>" + escapeHtml(h.label) + ' <span class="text-on-surface-variant">(' + h.n + ")</span></li>";
+    }).join("");
+  }
+
+  function htmlControlItems(findings) {
+    var measures = (findings || []).filter(isObservedTechnicalMeasure);
+    if (!measures.length) {
+      return "<li>" + escapeHtml(tKey("comp.sec05Empty", "No se observaron controles compensatorios (WAF, filtrado de perímetro, HSTS) en este análisis.")) + "</li>";
+    }
+    return measures.map(function (f) {
+      return "<li><span class=\"font-semibold\">" + escapeHtml(f.title || "—") + "</span> — " +
+        escapeHtml((f.remediation || f.description || "").slice(0, 140)) + "</li>";
+    }).join("");
+  }
+
+  function htmlExecChapter(findings, meta) {
+    var c = sevCounts(findings || []);
+    var m = maturityFromFindings(findings);
+    var grade = m.score >= 85 ? "A" : m.score >= 70 ? "B" : m.score >= 55 ? "C" : m.score >= 40 ? "D" : "F";
+    var top = reportSortedFindings(findings).filter(function (f) {
+      var s = String(f.severity || "").toLowerCase();
+      return s === "critical" || s === "high";
+    }).slice(0, 4);
+    var narrative = tKey("exec.narrativeP1", "Este análisis sobre {target} registró {n} hallazgos: {c} críticos, {h} altos, {m} medios.")
+      .replace("{target}", (meta && meta.target) || "—")
+      .replace("{n}", String((findings || []).length))
+      .replace("{c}", String(c.critical))
+      .replace("{h}", String(c.high))
+      .replace("{m}", String(c.medium));
+    var topLine = top.length
+      ? escapeHtml(tKey("exec.narrativeP2", "Priorizar el cierre de: ")) + "<strong>" +
+        escapeHtml(top.map(function (f) { return f.title; }).join("; ")) + "</strong>."
+      : escapeHtml(tKey("exec.noCritical", "Sin hallazgos críticos o altos"));
+    return '<div class="grid grid-cols-2 md:grid-cols-4 gap-sm mb-md">' +
+      [["critical", tKey("exec.sevCritical", "Crítico"), c.critical],
+       ["high", tKey("exec.sevHigh", "Alto"), c.high],
+       ["medium", tKey("exec.sevMedium", "Medio"), c.medium],
+       ["low", tKey("exec.sevLow", "Bajo"), c.low + c.info]].map(function (row) {
+        var tone = row[0] === "critical" ? "bg-error-container/30 text-error"
+          : row[0] === "high" ? "bg-[#FFEFE5]/50 text-[#C25400]"
+          : row[0] === "medium" ? "bg-[#FFF4CE]/50 text-[#795F00]"
+          : "bg-surface-container text-secondary";
+        return '<div class="border border-outline-variant/30 p-md rounded-lg ' + tone + '"><p class="font-label-md mb-xs">' +
+          escapeHtml(row[1]) + '</p><p class="font-headline-xl text-on-surface">' + row[2] + "</p></div>";
+      }).join("") +
+      "</div>" +
+      '<p class="font-body-md text-on-surface-variant leading-relaxed mb-sm">' + escapeHtml(narrative) +
+      " · " + escapeHtml(tKey("exec.posture", "Puntuación global")) + ": <strong>" + grade + " · " + m.score + "/100</strong> (" +
+      escapeHtml(m.level) + ").</p>" +
+      '<p class="font-body-md text-on-surface-variant leading-relaxed">' + topLine + "</p>";
+  }
+
+  function htmlSevSummaryTable(findings) {
+    var c = sevCounts(findings || []);
+    var rows = [
+      ["critical", tKey("exec.sevCritical", "Crítico"), tKey("comp.sevCritHint", "Riesgo inmediato de compromiso o pérdida de datos."), c.critical, "bg-error"],
+      ["high", tKey("exec.sevHigh", "Alto"), tKey("comp.sevHighHint", "Riesgo significativo para las operaciones."), c.high, "bg-[#f97316]"],
+      ["medium", tKey("exec.sevMedium", "Medio"), tKey("comp.sevMedHint", "Explotable bajo condiciones específicas."), c.medium, "bg-[#eab308]"],
+      ["low", tKey("exec.sevLow", "Bajo"), tKey("comp.sevLowHint", "Desviaciones de higiene o buenas prácticas."), c.low + c.info, "bg-tertiary-container"],
+    ];
+    return '<div class="border border-outline-variant rounded-lg overflow-hidden"><table class="w-full text-left border-collapse">' +
+      '<thead class="bg-surface-container-low font-label-md text-secondary"><tr>' +
+      "<th class=\"py-sm px-md border-b border-outline-variant\">" + escapeHtml(tKey("comp.colSev", "Severidad")) + "</th>" +
+      "<th class=\"py-sm px-md border-b border-outline-variant\">" + escapeHtml(tKey("comp.colDesc", "Descripción")) + "</th>" +
+      "<th class=\"py-sm px-md border-b border-outline-variant text-right\">" + escapeHtml(tKey("comp.colCount", "N.º")) + "</th>" +
+      "</tr></thead><tbody class=\"font-body-md\">" +
+      rows.map(function (r) {
+        return "<tr><td class=\"py-sm px-md border-b border-outline-variant\"><span class=\"inline-flex items-center gap-sm\">" +
+          '<span class="w-3 h-3 rounded-full ' + r[4] + '"></span>' + escapeHtml(r[1]) +
+          "</span></td><td class=\"py-sm px-md border-b border-outline-variant text-on-surface-variant\">" +
+          escapeHtml(r[2]) + "</td><td class=\"py-sm px-md border-b border-outline-variant text-right font-semibold\">" +
+          r[3] + "</td></tr>";
+      }).join("") +
+      "</tbody></table></div>";
+  }
+
+  function htmlFindingArticles(findings, scanId, limit) {
+    var list = reportSortedFindings(findings);
+    if (limit) list = list.slice(0, limit);
+    if (!list.length) {
+      return '<p class="font-body-sm text-on-surface-variant italic">' +
+        escapeHtml(tKey("comp.sec04Empty", "Este análisis aún no tiene hallazgos confirmados.")) + "</p>";
+    }
+    var extra = (findings || []).length - list.length;
+    return list.map(function (f, i) {
+      var sp = sevPill(f.severity);
+      var techs = mitreForFinding(f);
+      var ev = String(f.description || "").trim();
+      var href = findingHref(f, scanId);
+      return '<article class="border border-outline-variant/40 rounded-lg p-md">' +
+        '<div class="flex items-start gap-sm mb-sm flex-wrap">' +
+        '<span class="' + sp.badge + ' px-2 py-1 rounded font-label-md shrink-0">' + escapeHtml(sp.label) + "</span>" +
+        '<h4 class="font-body-lg font-semibold text-on-surface">' + (i + 1) + ". " + escapeHtml(f.title || "—") + "</h4></div>" +
+        '<p class="font-mono-md text-secondary mb-sm">' + escapeHtml(f.asset || "—") + "</p>" +
+        (ev ? '<p class="font-body-md text-on-surface-variant mb-sm leading-relaxed">' +
+          escapeHtml(ev.length > 420 ? ev.slice(0, 420) + "…" : ev) + "</p>" : "") +
+        (techs.length ? '<p class="font-mono-md text-[11px] text-on-surface-variant mb-sm">' +
+          techs.map(function (t) { return escapeHtml(t.id) + " " + escapeHtml(t.name); }).join(" · ") + "</p>" : "") +
+        '<a class="font-label-md text-primary hover:underline" href="' + escapeHtml(href) + '">' +
+        escapeHtml(tKey("remplan.openFinding", "Ficha y plan completo")) + "</a></article>";
+    }).join("") + (extra > 0
+      ? '<p class="font-body-sm text-on-surface-variant">' + extra + " " +
+        escapeHtml(tKey("comp.moreFindings", "hallazgos más en el documento completo.")) + "</p>"
+      : "");
+  }
+
+  function findingCardDomId(f) {
+    return "finding-card-" + String((f && f.id) || "finding").replace(/[^a-zA-Z0-9_-]/g, "-");
+  }
+
+  function renderReportFindingDossiers(containerId, findings, scanId) {
+    var root = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
+    if (!root) return;
+    var list = reportSortedFindings(findings);
+    var toc = document.getElementById("comp-toc-findings");
+    if (!list.length) {
+      root.innerHTML = '<p class="font-body-sm text-on-surface-variant italic">' +
+        escapeHtml(tKey("comp.sec04Empty", "Este análisis aún no tiene hallazgos confirmados.")) + "</p>";
+      if (toc) toc.innerHTML = "";
+      return;
+    }
+    var indexHtml = '<nav class="border border-outline-variant/40 rounded-lg p-md bg-surface-container-lowest">' +
+      '<p class="font-label-md text-on-surface-variant uppercase mb-sm">' +
+      escapeHtml(tKey("comp.findingsIndex", "Índice de fichas")) + " · " + list.length + "</p>" +
+      '<ol class="columns-1 md:columns-2 gap-md font-body-sm space-y-xs list-decimal pl-lg">' +
+      list.map(function (f) {
+        return '<li class="break-inside-avoid"><a class="text-primary hover:underline" href="#' +
+          escapeHtml(findingCardDomId(f)) + '">' +
+          escapeHtml(f.id || "") + " · " + escapeHtml(f.title || "—") +
+          "</a></li>";
+      }).join("") + "</ol></nav>";
+    root.innerHTML = indexHtml + list.map(function (f) {
+      return '<article id="' + escapeHtml(findingCardDomId(f)) + '" class="report-finding-card scroll-mt-4"></article>';
+    }).join("");
+    if (window.DarkSpearDossier && DarkSpearDossier.render) {
+      list.forEach(function (f) {
+        var card = document.getElementById(findingCardDomId(f));
+        if (!card) return;
+        var prefix = "rpt-" + String(f.id || "x").replace(/[^a-zA-Z0-9_-]/g, "-") + "-";
+        DarkSpearDossier.render(card, f, {
+          embedded: true,
+          idPrefix: prefix,
+          scanId: scanId,
+          escapeHtml: escapeHtml,
+          relativeTime: relativeTime,
+          sevBadgeClass: sevBadgeClass,
+        });
+      });
+    } else {
+      list.forEach(function (f) {
+        var card = document.getElementById(findingCardDomId(f));
+        if (card) card.innerHTML = htmlFindingArticles([f], scanId);
+      });
+    }
+    if (toc) {
+      toc.innerHTML = list.map(function (f) {
+        var title = String(f.title || "—");
+        if (title.length > 42) title = title.slice(0, 40) + "…";
+        return '<li><button class="toc-sub" data-go="' + escapeHtml(findingCardDomId(f)) + '" type="button">' +
+          escapeHtml(f.id || "") + " · " + escapeHtml(title) + "</button></li>";
+      }).join("");
+      toc.querySelectorAll("[data-go]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.getAttribute("data-go");
+          if (typeof goToSection === "function") {
+            goToSection(id);
+            return;
+          }
+          var view = document.getElementById(id);
+          if (!view) return;
+          document.querySelectorAll(".toc-btn, .toc-sub").forEach(function (b) { b.classList.remove("active"); });
+          btn.classList.add("active");
+          view.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+  }
+
+  function htmlRemediationPlan(findings, scanId) {
+    var open = (findings || []).filter(isFindingOpen);
+    var ranked = reportSortedFindings(open);
+    if (!ranked.length) {
+      return '<p class="font-body-md text-on-surface-variant">' +
+        escapeHtml(tKey("remplan.noneOpen", "No hay hallazgos abiertos en este análisis.")) + "</p>";
+    }
+    var qScan = scanId ? ("?scan=" + encodeURIComponent(scanId) + "&") : "?";
+    return ranked.slice(0, 12).map(function (f) {
+      var d = window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(f) : null;
+      var steps = d && d.steps ? d.steps.slice(0, 3) : [];
+      var sp = sevPill(f.severity);
+      var href = "finding-detail.html" + qScan + "id=" + encodeURIComponent(f.id || "");
+      return '<article class="border border-outline-variant/40 rounded-lg p-md border-l-4 border-l-tertiary">' +
+        '<div class="flex justify-between items-start gap-sm flex-wrap mb-xs">' +
+        '<h4 class="font-headline-md text-on-surface">' + escapeHtml(f.title || "—") + "</h4>" +
+        '<span class="' + sp.badge + ' px-sm py-xs rounded font-label-md">' + escapeHtml(sp.label) + "</span></div>" +
+        '<p class="font-mono-md text-secondary mb-xs">' + escapeHtml(f.asset || "—") + "</p>" +
+        (steps.length ? "<ol class=\"list-decimal pl-lg font-body-sm text-on-surface-variant space-y-xs\">" +
+          steps.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ol>" : "") +
+        '<a class="font-label-md text-primary hover:underline mt-sm inline-block" href="' + escapeHtml(href) + '">' +
+        escapeHtml(tKey("remplan.openFinding", "Ficha y plan completo")) + "</a></article>";
+    }).join("");
+  }
+
+  function htmlRiskMatrix3x3(findings) {
+    var grid = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    (findings || []).forEach(function (f) {
+      if (!f || f.status === "rejected") return;
+      var s = String(f.severity || "").toLowerCase();
+      var impact = s === "critical" || s === "high" ? 2 : s === "medium" ? 1 : 0;
+      var open = isFindingOpen(f);
+      var like = !open ? 0 : s === "critical" ? 2 : (s === "high" || s === "medium") ? 1 : 0;
+      grid[2 - like][impact] += 1;
+    });
+    var cells = "";
+    for (var r = 0; r < 3; r++) {
+      for (var col = 0; col < 3; col++) {
+        var n = grid[r][col];
+        var heat = r + col;
+        var cls = n && heat >= 4 ? "bg-error-container/80 text-on-error-container font-black"
+          : n && heat >= 3 ? "bg-error-container/30 text-error font-bold"
+          : "bg-surface-container text-on-surface-variant";
+        cells += '<div class="' + cls + ' flex items-center justify-center relative">' +
+          (n && heat >= 3 ? '<div class="absolute top-1 right-1 w-2 h-2 rounded-full bg-error"></div>' : "") +
+          '<span class="font-headline-md relative z-10">' + n + "</span></div>";
+      }
+    }
+    return '<h3 class="font-headline-md text-on-surface mb-sm flex items-center gap-sm">' +
+      '<i data-lucide="grid-3x3" class="text-primary"></i>' +
+      escapeHtml(tKey("comp.matrixTitle", "Matriz de riesgo empresarial")) + "</h3>" +
+      '<p class="font-body-sm text-on-surface-variant mb-md">' +
+      escapeHtml(tKey("comp.matrixLead", "Distribución de hallazgos por probabilidad frente a impacto de negocio.")) + "</p>" +
+      '<div class="relative w-full aspect-square max-w-[300px] mx-auto border-l-2 border-b-2 border-outline-variant pb-lg pl-lg">' +
+      '<div class="absolute -left-2 top-1/2 -translate-y-1/2 -rotate-90 font-label-md text-label-md text-outline">' +
+      escapeHtml(tKey("comp.likelihood", "Probabilidad")) + "</div>" +
+      '<div class="absolute -bottom-6 left-1/2 -translate-x-1/2 font-label-md text-label-md text-outline">' +
+      escapeHtml(tKey("comp.impactAxis", "Impacto")) + "</div>" +
+      '<div class="grid grid-cols-3 grid-rows-3 w-full h-full gap-[2px] bg-outline-variant/20 p-[2px]">' + cells + "</div></div>";
+  }
+
+  function htmlRgpdChapter(findings) {
+    var scores = gdprArticleScores(findings);
+    var art32View = gdprArt32View(scores.art32Hits);
+    var art33Hits = scores.art33Hits;
+    var overall = art32View.tone === "error"
+      ? tKey("comp.rgpdGap", "No demostrable")
+      : tKey("comp.rgpdOk", "En revisión");
+    var overallTone = art32View.tone === "error" ? "text-error" : "text-tertiary";
+    var top32 = scores.art32Hits.filter(isFindingOpen)[0];
+    var art32Block = top32
+      ? '<div class="p-sm rounded bg-error-container/20 border border-error-container/50 flex items-start gap-sm">' +
+        '<i data-lucide="triangle-alert" class="icon-sm text-error mt-xs"></i><div>' +
+        "<h4 class=\"font-label-md text-on-surface\">" + escapeHtml(tKey("gdpr.art32", "Seguridad del tratamiento (Art. 32)")) + "</h4>" +
+        '<p class="font-body-sm text-on-surface-variant mt-xs">' + escapeHtml(top32.title || "") + "</p></div></div>"
+      : '<div class="p-sm rounded bg-surface-container border border-outline-variant/30 flex items-start gap-sm">' +
+        '<i data-lucide="circle-check" class="icon-sm text-tertiary-container mt-xs"></i><div>' +
+        "<h4 class=\"font-label-md text-on-surface\">" + escapeHtml(tKey("gdpr.art32", "Seguridad del tratamiento (Art. 32)")) + "</h4>" +
+        '<p class="font-body-sm text-on-surface-variant mt-xs">' + escapeHtml(art32View.display) + "</p></div></div>";
+    var art33Block = '<div class="p-sm rounded ' +
+      (art33Hits.length ? "bg-error-container/20 border border-error-container/50" : "bg-surface-container border border-outline-variant/30") +
+      ' flex items-start gap-sm">' +
+      '<i data-lucide="' + (art33Hits.length ? "triangle-alert" : "circle-check") + '" class="icon-sm ' +
+      (art33Hits.length ? "text-error" : "text-tertiary-container") + ' mt-xs"></i><div>' +
+      "<h4 class=\"font-label-md text-on-surface\">" + escapeHtml(tKey("gdpr.art33", "Notificación de brechas (Art. 33)")) + "</h4>" +
+      '<p class="font-body-sm text-on-surface-variant mt-xs">' +
+      escapeHtml(art33Hits.length
+        ? tKey("gdpr.art33LeadHits", "Hallazgos de secretos o compromiso de cuenta: evaluar si hay datos personales y el reloj de 72 h.")
+        : tKey("gdpr.art33LeadNone", "Sin fuga de secretos ni compromiso de cuenta en este análisis.")) +
+      "</p></div></div>";
+    return '<h3 class="font-headline-md text-on-surface mb-sm flex items-center gap-sm">' +
+      '<i data-lucide="scale" class="text-primary"></i>' +
+      escapeHtml(tKey("comp.rgpdTitle", "Alineación RGPD")) + "</h3>" +
+      '<p class="font-body-sm text-on-surface-variant mb-md">' +
+      escapeHtml(tKey("comp.rgpdLead", "Controles de protección de datos derivados de los hallazgos de este escaneo.")) + "</p>" +
+      '<div class="flex items-center justify-between mb-sm"><span class="font-label-md text-on-surface-variant">' +
+      escapeHtml(tKey("gdpr.complianceOverview", "Estado general de cumplimiento")) +
+      '</span><span class="font-label-md font-bold ' + overallTone + '">' + escapeHtml(overall) + "</span></div>" +
+      '<div class="space-y-sm">' + art32Block + art33Block + "</div>";
+  }
+
+  function htmlMaturityChapter(findings, meta, canvasId, scanId) {
+    var m = maturityFromFindings(findings);
+    var domains = maturityDomainsFromFindings(findings);
+    var avg = domains.reduce(function (a, d) { return a + d.actual; }, 0) / (domains.length || 1);
+    var toward = Math.round((avg / 4) * 100);
+    var exp = computeExposureRisk(findings);
+    var cid = canvasId || "comp-maturity-radar";
+    var q = scanId ? ("?scan=" + encodeURIComponent(scanId)) : "";
+    var bands = [
+      { lo: 0, hi: 39, key: "maturity.levelInit", fb: "Inicial" },
+      { lo: 40, hi: 59, key: "maturity.levelMan", fb: "Gestionado" },
+      { lo: 60, hi: 79, key: "maturity.levelDef", fb: "Definido" },
+      { lo: 80, hi: 100, key: "maturity.levelOpt", fb: "Optimización" },
+    ];
+    var scale = bands.map(function (b) {
+      var on = m.score >= b.lo && m.score <= b.hi;
+      return '<div class="rounded-lg p-sm border ' +
+        (on ? "border-primary bg-primary-container/15" : "border-outline-variant/40 bg-surface-container-low") +
+        '"><p class="font-label-md ' + (on ? "text-primary" : "text-on-surface") + '">' +
+        escapeHtml(tKey(b.key, b.fb)) + '</p><p class="font-mono-md text-on-surface-variant">' +
+        b.lo + "–" + b.hi + "</p></div>";
+    }).join("");
+    var table = '<table class="w-full text-left"><thead><tr class="border-b border-outline-variant/40 font-label-md text-on-surface-variant uppercase">' +
+      "<th class=\"py-sm\">" + escapeHtml(tKey("maturity.domain", "Dominio")) + "</th>" +
+      "<th class=\"py-sm text-right\">" + escapeHtml(tKey("maturity.actual", "Actual")) + "</th>" +
+      "<th class=\"py-sm text-right\">" + escapeHtml(tKey("maturity.target", "Objetivo")) + "</th>" +
+      "<th class=\"py-sm text-right\">" + escapeHtml(tKey("scan.findings", "Hallazgos")) + "</th></tr></thead><tbody>" +
+      domains.map(function (d) {
+        var pct = Math.round((d.actual / 5) * 100);
+        return "<tr class=\"border-b border-outline-variant/20 font-body-sm\"><td class=\"py-sm text-on-surface\">" +
+          escapeHtml(d.label) +
+          '<div class="mt-xs h-1.5 rounded-full bg-surface-container-high overflow-hidden"><div class="h-full bg-primary-container rounded-full" style="width:' +
+          pct + '%"></div></div></td><td class="py-sm text-right font-mono-md">' + d.actual.toFixed(1) +
+          "</td><td class=\"py-sm text-right font-mono-md\">" + d.target.toFixed(1) +
+          "</td><td class=\"py-sm text-right\">" + d.hits + "</td></tr>";
+      }).join("") + "</tbody></table>";
+    return '<h3 class="font-headline-md text-on-surface mb-sm flex items-center gap-sm">' +
+      '<i data-lucide="gauge" class="text-primary"></i>' +
+      escapeHtml(tKey("maturity.detailTitle", "Índice de Madurez de Seguridad")) + "</h3>" +
+      '<p class="font-body-sm text-on-surface-variant mb-md leading-relaxed">' +
+      escapeHtml(tKey("comp.maturityExplain", "No es un CMMI de consultora: es una lectura 1–5 por dominio frente al objetivo 4.0, más un índice 0–100 derivado de los hallazgos abiertos.")) +
+      "</p>" +
+      '<p class="font-body-sm text-on-surface-variant mb-md leading-relaxed">' +
+      escapeHtml(tKey("comp.maturityMethod", "Los hallazgos abiertos restan por severidad. Niveles: 0–39 Inicial, 40–59 Gestionado, 60–79 Definido, 80–100 Optimización.")) +
+      "</p>" +
+      '<p class="font-label-md text-on-surface-variant uppercase mb-sm">' +
+      escapeHtml(tKey("comp.maturityScale", "Escala de madurez")) + "</p>" +
+      '<div class="grid grid-cols-2 md:grid-cols-4 gap-sm mb-md">' + scale + "</div>" +
+      '<div class="grid grid-cols-1 lg:grid-cols-12 gap-md mb-md">' +
+      '<div class="lg:col-span-8 border border-outline-variant/40 rounded-lg p-md bg-surface-container-lowest">' +
+      '<div class="flex justify-between items-start mb-sm gap-sm flex-wrap">' +
+      "<div><h4 class=\"font-headline-md text-on-surface\">" + escapeHtml(tKey("maturity.radarTitle", "Distribución por dominio")) +
+      '</h4><p class="font-body-sm text-on-surface-variant">' +
+      escapeHtml(tKey("maturity.radarLead", "Brecha entre nivel actual y objetivo (escala 1–5)")) +
+      "</p></div>" +
+      '<div class="flex items-center gap-md font-body-sm shrink-0">' +
+      '<span class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full bg-primary-container"></span>' +
+      escapeHtml(tKey("maturity.actual", "Actual")) + "</span>" +
+      '<span class="flex items-center gap-xs"><span class="w-3 h-3 rounded-full border-2 border-tertiary border-dashed"></span>' +
+      escapeHtml(tKey("maturity.target", "Objetivo")) + "</span></div></div>" +
+      '<div class="relative w-full min-h-[280px] h-[280px]"><canvas id="' + escapeHtml(cid) + '"></canvas></div></div>' +
+      '<div class="lg:col-span-4 flex flex-col gap-sm">' +
+      '<div class="border border-outline-variant/40 rounded-lg p-md bg-surface-container-lowest">' +
+      "<h4 class=\"font-headline-md text-on-surface mb-xs\">" + escapeHtml(tKey("maturity.global", "Índice global")) + "</h4>" +
+      '<p class="font-headline-xl text-primary">' + avg.toFixed(1) +
+      ' <span class="font-body-md text-on-surface-variant">/ 5.0</span></p>' +
+      '<p class="font-body-sm text-on-surface-variant mt-xs">' + escapeHtml(m.level) +
+      " · " + m.score + "/100 " + escapeHtml(tKey("maturity.fromFindings", "desde hallazgos abiertos")) + "</p>" +
+      '<p class="font-label-md text-on-surface mt-sm">' + escapeHtml(tKey("osint.exposureTitle", "Índice de exposición")) +
+      ": " + exp.grade + " · " + exp.risk + "/100</p>" +
+      '<div class="flex justify-between font-label-md mt-sm"><span class="text-on-surface-variant">' +
+      escapeHtml(tKey("maturity.toward", "Progreso hacia objetivo 4.0")) +
+      '</span><span class="text-primary">' + toward + "%</span></div>" +
+      '<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden mt-xs"><div class="h-full bg-primary-container rounded-full" style="width:' +
+      Math.min(100, toward) + '%"></div></div>' +
+      '<p class="font-mono-md text-secondary mt-sm">' +
+      escapeHtml((meta && (meta.target || scanDisplayName(meta))) || "—") + "</p></div></div></div>" +
+      '<div class="overflow-x-auto mb-sm">' + table + "</div>" +
+      '<a class="inline-flex items-center gap-xs font-label-md text-primary hover:underline" href="maturity-index.html' +
+      q + '"><i data-lucide="external-link" class="icon-sm"></i>' +
+      escapeHtml(tKey("comp.openMaturityPage", "Abrir la matriz de riesgos completa")) + "</a>";
+  }
+
+  function htmlMaturitySnap(findings, meta) {
+    return htmlMaturityChapter(findings, meta, "comp-maturity-radar");
+  }
+
+  function htmlMitreKillChain(findings) {
+    var obs = collectMitreObserved(findings);
+    var byTactic = {};
+    Object.keys(obs).forEach(function (id) {
+      var t = obs[id];
+      if (!byTactic[t.tactic]) byTactic[t.tactic] = [];
+      byTactic[t.tactic].push({ id: id, name: t.name, count: t.count, findings: t.findings });
+    });
+    var order = ["Reconnaissance", "Initial Access", "Execution", "Persistence", "Privilege Escalation",
+      "Defense Evasion", "Credential Access", "Discovery", "Lateral Movement", "Collection", "Exfiltration", "Impact"];
+    var tactics = order.filter(function (t) { return byTactic[t]; });
+    Object.keys(byTactic).forEach(function (t) {
+      if (tactics.indexOf(t) < 0) tactics.push(t);
+    });
+    var body;
+    if (!tactics.length) {
+      body = '<p class="font-body-sm text-on-surface-variant italic">' +
+        escapeHtml(tKey("killchain.noMitre", "Sin técnicas MITRE derivadas de este análisis.")) + "</p>";
+    } else {
+      var shown = tactics.slice(0, 5);
+      body = '<div class="overflow-x-auto pb-sm"><div class="flex min-w-[640px] gap-sm items-stretch">' +
+        shown.map(function (tac, idx) {
+          var cells = byTactic[tac].slice(0, 3).map(function (tech) {
+            var hot = tech.findings.some(function (f) {
+              var s = String(f.severity || "").toLowerCase();
+              return s === "critical" || s === "high";
+            });
+            return '<div class="' + (hot ? "bg-error-container/20 border-error/20" : "bg-surface-container") +
+              ' border p-xs rounded-sm mb-xs font-mono-md text-[11px] text-on-surface">' +
+              escapeHtml(tech.id) + ": " + escapeHtml(tech.name) + "</div>";
+          }).join("");
+          return '<div class="flex-1 min-w-[140px] bg-surface-container-low rounded p-sm border border-outline-variant/30">' +
+            '<h4 class="font-label-md text-on-surface-variant mb-sm uppercase border-b border-outline-variant/30 pb-xs">' +
+            escapeHtml(tac) + "</h4>" + cells + "</div>" +
+            (idx < shown.length - 1 ? '<i data-lucide="arrow-right" class="icon-sm text-outline self-center shrink-0"></i>' : "");
+        }).join("") + "</div></div>";
+    }
+    var buckets = killChainBuckets(findings);
+    var chain = '<ul class="font-body-sm text-on-surface-variant mt-md space-y-xs">' +
+      buckets.filter(function (b) { return b.items.length; }).map(function (b) {
+        return "<li><span class=\"font-semibold text-on-surface\">" + escapeHtml(b.label) + "</span> · " +
+          b.items.length + " " + tKey("scan.findings", "hallazgos") + "</li>";
+      }).join("") + "</ul>";
+    return '<h3 class="font-headline-md text-on-surface mb-sm flex items-center gap-sm">' +
+      '<i data-lucide="share-2" class="text-primary"></i>' +
+      escapeHtml(tKey("comp.sec08fTitle", "08f. Kill Chain y MITRE")) + "</h3>" +
+      '<p class="font-body-sm text-on-surface-variant mb-md">' +
+      escapeHtml(tKey("comp.sec08fLead", "Técnicas observadas durante el análisis, encadenadas por táctica.")) + "</p>" +
+      body + chain;
+  }
+
+  function htmlBusinessImpact(findings, meta) {
+    var c = sevCounts(findings || []);
+    var scores = gdprArticleScores(findings);
+    var art32View = gdprArt32View(scores.art32Hits);
+    var obs = collectMitreObserved(findings);
+    var hasT1190 = Object.keys(obs).some(function (id) { return id === "T1190" || /Exploit Public-Facing/i.test(obs[id].name || ""); });
+    var strategic = [];
+    if (art32View.tone === "error" || scores.art33Hits.length) {
+      strategic.push(tKey("comp.impactGdpr", "Techo sancionador RGPD Art. 83 (hasta el 4 % de facturación global) si el tratamiento incluye datos personales — no es una multa calculada."));
+    }
+    if (hasT1190 || c.critical) {
+      strategic.push(tKey("comp.impactPublic", "Riesgo reputacional por exposición de aplicación pública o hallazgos críticos abiertos en {target}.")
+        .replace("{target}", (meta && meta.target) || "—"));
+    }
+    if (!strategic.length) {
+      strategic.push(tKey("comp.impactNone", "Sin umbral de impacto regulatorio evidente a partir de este análisis."));
+    }
+    var actions = reportSortedFindings((findings || []).filter(isFindingOpen)).slice(0, 3).map(function (f) {
+      var d = window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(f) : null;
+      var step = d && d.steps && d.steps[0] ? d.steps[0] : (f.remediation || f.title);
+      return "<li><span class=\"font-semibold text-on-surface\">" + escapeHtml(f.title || "—") + ":</span> " +
+        escapeHtml(String(step).slice(0, 180)) + "</li>";
+    });
+    if (!actions.length) {
+      actions = ["<li>" + escapeHtml(tKey("remplan.noneOpen", "No hay hallazgos abiertos en este análisis.")) + "</li>"];
+    }
+    return '<h3 class="font-headline-md text-on-surface mb-sm flex items-center gap-sm">' +
+      '<i data-lucide="rocket" class="text-tertiary-container"></i>' +
+      escapeHtml(tKey("comp.impactTitle", "Impacto de negocio y quick wins")) + "</h3>" +
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-md mt-md">' +
+      '<div class="pl-md border-l-2 border-primary/50"><h4 class="font-label-md text-on-surface mb-xs">' +
+      escapeHtml(tKey("comp.impactStrategic", "Impacto estratégico")) + "</h4>" +
+      '<ul class="list-disc list-outside ml-sm font-body-sm text-on-surface-variant space-y-xs">' +
+      strategic.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ul></div>" +
+      '<div class="pl-md border-l-2 border-tertiary-container/50"><h4 class="font-label-md text-on-surface mb-xs">' +
+      escapeHtml(tKey("comp.impactActions", "Acciones inmediatas")) + "</h4>" +
+      '<ul class="list-disc list-outside ml-sm font-body-sm text-on-surface-variant space-y-xs">' +
+      actions.join("") + "</ul></div></div>";
+  }
+
+  function htmlConnectedSurfaces(findings, meta, scanId) {
+    var osint = osintClassifyFindings(findings);
+    var osintN = osint.creds.length + osint.appSecrets.length + osint.infra.length + osint.repos.length + osint.mentions.length;
+    var assets = {};
+    (findings || []).forEach(function (f) {
+      assets[String(f.asset || (meta && meta.target) || "—")] = true;
+    });
+    var mitreN = Object.keys(collectMitreObserved(findings)).length;
+    var q = scanId ? ("?scan=" + encodeURIComponent(scanId)) : "";
+    var cards = [
+      ["osint.html" + q, "binoculars", tKey("nav.osint", "OSINT"), osintN + " " + tKey("comp.osintHits", "hallazgos OSINT")],
+      ["attack-graph.html" + q, "share-2", tKey("nav.graph", "Grafo de ataque"), Object.keys(assets).length + " " + tKey("comp.graphAssets", "activos en el grafo")],
+      ["mitre.html" + q, "swords", tKey("nav.mitre", "MITRE ATT&CK"), mitreN + " " + tKey("comp.mitreTechs", "técnicas MITRE")],
+      ["kill-chain.html" + q, "git-branch", tKey("nav.killchain", "Kill Chain"), tKey("comp.openChapter", "Abrir capítulo")],
+    ];
+    return '<h3 class="font-headline-md text-on-surface mb-sm flex items-center gap-sm">' +
+      '<i data-lucide="link" class="text-primary"></i>' +
+      escapeHtml(tKey("comp.connectedTitle", "Superficies conectadas")) + "</h3>" +
+      '<p class="font-body-sm text-on-surface-variant mb-md">' +
+      escapeHtml(tKey("comp.connectedLead", "OSINT, grafo de ataque y ATT&CK del mismo análisis.")) + "</p>" +
+      '<div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">' +
+      cards.map(function (c) {
+        return '<a class="flex items-center gap-sm p-sm rounded-lg border border-outline-variant/40 hover:bg-surface-container-low transition-colors" href="' +
+          escapeHtml(c[0]) + '"><i data-lucide="' + c[1] + '" class="icon-sm text-primary"></i><span>' +
+          '<span class="font-label-md text-on-surface block">' + escapeHtml(c[2]) + "</span>" +
+          '<span class="font-body-sm text-on-surface-variant">' + escapeHtml(c[3]) + "</span></span></a>";
+      }).join("") + "</div>";
+  }
+
+  function bindScanExport(btnId, findings, meta, scanId, kind) {
+    var btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.onclick = function () {
+      if (window.DarkSpearExport && DarkSpearExport.run) {
+        DarkSpearExport.run(kind || "pdf", {
+          findings: findings || [],
+          target: meta && meta.target,
+          scope: meta && meta.scope,
+          engagementId: scanId,
+        });
+      }
+    };
+  }
+
   function renderComprehensiveDocument(findings, meta, scanId) {
     var all = findings || [];
-    var c = sevCounts(all);
-
     var tbl = document.getElementById("sec-00-table");
-    if (tbl) {
-      var rows = [
-        [tKey("comp.dtTarget", "Target"), meta.target || "—"],
-        [tKey("comp.dtScope", "Scope"), meta.scope || "—"],
-        [tKey("comp.dtStarted", "Inicio del engagement"), formatEngagementStarted(meta.started_at)],
-        [tKey("comp.dtGenerated", "Documento generado"), new Date().toLocaleString()],
-        [tKey("comp.dtPhase", "Fase alcanzada"), meta.phase != null ? String(meta.phase) : "—"],
-        [tKey("comp.dtTotal", "Hallazgos totales"), String(all.length)],
-      ];
-      tbl.innerHTML = rows.map(function (r) {
-        return '<div class="flex justify-between gap-md border-b border-outline-variant/20 pb-xs"><dt class="text-on-surface-variant">' +
-          escapeHtml(r[0]) + '</dt><dd class="font-semibold text-on-surface text-right">' + escapeHtml(r[1]) + "</dd></div>";
-      }).join("");
-    }
-
+    if (tbl) tbl.innerHTML = htmlDocControlRows(all, meta || {});
+    var exec = document.getElementById("sec-01-body");
+    if (exec) exec.innerHTML = htmlExecChapter(all, meta || {});
+    var sum = document.getElementById("sec-02-body");
+    if (sum) sum.innerHTML = htmlSevSummaryTable(all);
     var rc = document.getElementById("sec-03-list");
-    if (rc) {
-      var hits = ROOT_CAUSE_BUCKETS.map(function (b) {
-        var n = all.filter(function (f) { return b.re.test(findingBlob(f)); }).length;
-        return { label: b.es, n: n };
-      }).filter(function (h) { return h.n > 0; }).sort(function (a, b) { return b.n - a.n; }).slice(0, 6);
-      rc.innerHTML = hits.length
-        ? hits.map(function (h) {
-            return "<li>" + escapeHtml(h.label) + ' <span class="text-on-surface-variant">(' + h.n + ")</span></li>";
-          }).join("")
-        : "<li>" + escapeHtml(tKey("comp.sec03Empty", "Sin hallazgos suficientes todavía para agrupar causas raíz.")) + "</li>";
-    }
-
+    if (rc) rc.innerHTML = htmlRootCauseItems(all);
+    var list = document.getElementById("comp-findings");
+    if (list) renderReportFindingDossiers("comp-findings", all, scanId);
     var ctl = document.getElementById("sec-05-list");
-    if (ctl) {
-      var minor = all.filter(function (f) {
-        var s = String(f.severity || "").toLowerCase();
-        return s === "low" || s === "info";
-      });
-      ctl.innerHTML = minor.length
-        ? minor.slice(0, 8).map(function (f) {
-            return "<li><span class=\"font-semibold\">" + escapeHtml(f.title || "—") + "</span> — " +
-              escapeHtml((f.remediation || f.description || "").slice(0, 140)) + "</li>";
-          }).join("")
-        : "<li>" + escapeHtml(tKey("comp.sec05Empty", "No se identificaron controles compensatorios suficientes: la mayoría de los hallazgos son de severidad media, alta o crítica.")) + "</li>";
+    if (ctl) ctl.innerHTML = htmlControlItems(all);
+    var rem = document.getElementById("sec-06-body");
+    if (rem) rem.innerHTML = htmlRemediationPlan(all, scanId);
+    var appx = document.getElementById("sec-07-meta");
+    if (appx) {
+      appx.textContent = tKey("comp.sec07Meta", "{n} hallazgos confirmados en este análisis. Cada uno enlaza a su ficha con evidencia de sonda.")
+        .replace("{n}", String(all.length));
     }
-
+    var mx = document.getElementById("sec-08-matrix");
+    if (mx) mx.innerHTML = htmlRiskMatrix3x3(all);
+    var rgpd = document.getElementById("sec-08-rgpd");
+    if (rgpd) rgpd.innerHTML = htmlRgpdChapter(all);
+    var mat = document.getElementById("sec-08e");
+    if (mat) {
+      mat.innerHTML = htmlMaturityChapter(all, meta || {}, "comp-maturity-radar", scanId);
+      renderMaturityRadar(maturityDomainsFromFindings(all), "comp-maturity-radar");
+    }
+    var conn = document.getElementById("sec-08-connected");
+    if (conn) conn.innerHTML = htmlConnectedSurfaces(all, meta || {}, scanId);
+    var kc = document.getElementById("sec-08f-killchain");
+    if (kc) kc.innerHTML = htmlMitreKillChain(all);
+    var imp = document.getElementById("sec-08-impact");
+    if (imp) imp.innerHTML = htmlBusinessImpact(all, meta || {});
     var concl = document.getElementById("sec-09-body");
-    if (concl) {
-      concl.textContent = tKey("comp.sec09Body", "Este análisis contra {target} identificó {n} hallazgos: {c} críticos, {h} altos, {m} medios, {l} bajos y {i} informativos. Se recomienda priorizar la remediación de los hallazgos críticos y altos según el plan de la sección 06, y repetir el análisis tras aplicar las correcciones para verificar el cierre de cada hallazgo.")
-        .replace("{target}", meta.target || "—")
-        .replace("{n}", String(all.length))
-        .replace("{c}", String(c.critical))
-        .replace("{h}", String(c.high))
-        .replace("{m}", String(c.medium))
-        .replace("{l}", String(c.low))
-        .replace("{i}", String(c.info));
-    }
-
-    var q = scanId ? ("?scan=" + encodeURIComponent(scanId)) : "";
-    ["toc-01", "toc-02", "toc-06", "toc-08", "toc-08-rgpd", "toc-08-maturity", "toc-08f"].forEach(function (id) {
-      var a = document.getElementById(id);
-      if (a) a.href = a.getAttribute("href").split("?")[0] + q;
-    });
-
+    if (concl) concl.textContent = conclusionsText(all, meta || {});
     var footDate = document.getElementById("comp-doc-footer-date");
     if (footDate) footDate.textContent = new Date().toLocaleString();
+    if (window.lucide) lucide.createIcons();
+  }
+
+  function renderPreviewPaper(findings, meta, scanId) {
+    var root = document.getElementById("preview-paper");
+    if (!root) return;
+    var m = meta || {};
+    var all = findings || [];
+    var name = scanDisplayName(m) || m.target || "—";
+    root.innerHTML =
+      '<div id="watermark" class="pdf-watermark">Dark Spear</div>' +
+      '<div class="flex justify-between items-start mb-xl border-b border-surface-dim pb-md">' +
+      '<div class="flex items-center gap-sm"><img src="vendor/logo.png" alt="Dark Spear" class="w-8 h-8"/>' +
+      '<span class="font-headline-lg font-bold text-on-surface">Dark Spear</span></div>' +
+      '<div id="client-logo" class="w-32 h-12 border border-dashed border-outline-variant rounded flex items-center justify-center text-secondary font-body-sm bg-surface-container-lowest">' +
+      escapeHtml(tKey("preview.clientLogo", "[Logo cliente]")) + "</div></div>" +
+      '<div class="mb-xl text-center"><h1 class="font-headline-xl font-bold text-on-surface mb-xs">' +
+      escapeHtml(tKey("preview.paperTitle", "Informe de evaluación de seguridad")) + "</h1>" +
+      '<p class="font-body-lg text-secondary">' + escapeHtml(tKey("preview.engagement", "Engagement")) + ": " +
+      escapeHtml(name) + '</p><p class="font-body-sm text-secondary mt-sm">' +
+      escapeHtml(tKey("comp.dtGenerated", "Documento generado")) + ": " + escapeHtml(new Date().toLocaleString()) +
+      "</p></div>" +
+      '<section data-section="sec-00" class="mb-xl"><h2><span>00</span> ' + escapeHtml(tKey("comp.sec00Title", "Control documental")) +
+      "</h2><dl>" + htmlDocControlRows(all, m) + "</dl></section>" +
+      '<section data-section="sec-01" class="mb-xl"><h2><span>01</span> ' + escapeHtml(tKey("comp.sec01Title", "Resumen ejecutivo")) +
+      "</h2>" + htmlExecChapter(all, m) + "</section>" +
+      '<section data-section="sec-02" class="mb-xl"><h2><span>02</span> ' + escapeHtml(tKey("comp.sec02Title", "Resumen de hallazgos")) +
+      "</h2>" + htmlSevSummaryTable(all) + "</section>" +
+      '<section data-section="sec-03" class="mb-xl"><h2><span>03</span> ' + escapeHtml(tKey("comp.sec03Title", "Causa raíz")) +
+      "</h2><ul class=\"list-disc pl-lg\">" + htmlRootCauseItems(all) + "</ul></section>" +
+      '<section data-section="sec-04" class="mb-xl"><h2><span>04</span> ' + escapeHtml(tKey("comp.sec04Title", "Hallazgos detallados")) +
+      "</h2><p class=\"font-body-sm text-on-surface-variant mb-md\">" +
+      escapeHtml(tKey("comp.sec04Lead", "Ficha completa de cada hallazgo del escaneo.")) +
+      '</p><div id="preview-dossiers" class="flex flex-col gap-md"></div></section>' +
+      '<section data-section="sec-05" class="mb-xl"><h2><span>05</span> ' + escapeHtml(tKey("comp.sec05Title", "Controles vigentes")) +
+      "</h2><ul class=\"list-disc pl-lg\">" + htmlControlItems(all) + "</ul></section>" +
+      '<section data-section="sec-06" class="mb-xl"><h2><span>06</span> ' + escapeHtml(tKey("comp.sec06Title", "Remediación priorizada")) +
+      "</h2><div class=\"flex flex-col gap-md\">" + htmlRemediationPlan(all, scanId) + "</div></section>" +
+      '<section data-section="sec-07" class="mb-xl"><h2><span>07</span> ' + escapeHtml(tKey("comp.sec07Title", "Apéndice técnico")) +
+      "</h2><p>" + escapeHtml(tKey("comp.sec07Body", "Metodología PTES.")) + "</p></section>" +
+      '<section data-section="sec-08" class="mb-xl"><h2><span>08</span> ' + escapeHtml(tKey("comp.sec08Title", "Gobernanza")) + "</h2>" +
+      '<div data-section="sec-08c" class="mb-lg">' + htmlRiskMatrix3x3(all) + "</div>" +
+      '<div data-section="sec-08a" class="mb-lg">' + htmlRgpdChapter(all) + "</div>" +
+      '<div data-section="sec-08e" class="mb-lg">' + htmlMaturityChapter(all, m, "preview-maturity-radar", scanId) + "</div>" +
+      '<div data-section="sec-08d" class="mb-lg">' + htmlBusinessImpact(all, m) + "</div></section>" +
+      '<section data-section="sec-08f" class="mb-xl"><h2><span>08f</span> ' + escapeHtml(tKey("comp.sec08fTitle", "Kill Chain y MITRE")) +
+      "</h2>" + htmlMitreKillChain(all) + "</section>" +
+      '<section data-section="sec-09" class="mb-xl"><h2><span>09</span> ' + escapeHtml(tKey("comp.sec09Title", "Conclusiones")) +
+      "</h2><p>" + escapeHtml(conclusionsText(all, m)) + "</p></section>" +
+      '<section data-section="sec-gallery" class="mb-xl hidden-section"><h2>' +
+      escapeHtml(tKey("preview.gallery", "Galería de evidencia")) + "</h2>" +
+      '<p class="font-body-sm text-on-surface-variant">' +
+      escapeHtml(tKey("preview.galleryLead", "Las evidencias de sonda viven en la ficha de cada hallazgo.")) + "</p></section>";
+    if (window.lucide) lucide.createIcons();
+    renderReportFindingDossiers("preview-dossiers", all, scanId);
+    renderMaturityRadar(maturityDomainsFromFindings(all), "preview-maturity-radar");
+    document.querySelectorAll("input[data-toggle]").forEach(function (cb) {
+      document.querySelectorAll('[data-section="' + cb.getAttribute("data-toggle") + '"]').forEach(function (el) {
+        el.classList.toggle("hidden-section", !cb.checked);
+      });
+    });
   }
 
   function bootComprehensiveReport() {
@@ -3728,14 +4465,17 @@
       ctaKey: "comp.open",
       ctaFallback: "Abrir informe",
       ctaIcon: "file-text",
+      hideOnListIds: ["comp-toc"],
       onDetail: function (findings, meta, scanId, status) {
         renderSevStatsGrid("comp-stats", findings);
-        var list = document.getElementById("comp-findings");
-        if (list && window.DarkSpearFindings) DarkSpearFindings.renderList(list, findings, "all");
-        renderChapterNav("comp-chapters", scanId, "comprehensive-report.html");
         renderComprehensiveDocument(findings, meta, scanId);
         var titleEl = document.getElementById("comp-doc-title");
         if (titleEl) titleEl.textContent = scanDisplayName(meta) || tKey("comp.docTitle", "Informe integral");
+        var crumb = document.getElementById("comp-crumb-scan");
+        if (crumb) crumb.textContent = scanDisplayName(meta) || (meta && meta.target) || "—";
+        var preview = document.getElementById("comp-link-preview");
+        if (preview) preview.href = "report-preview.html" + (scanId ? "?scan=" + encodeURIComponent(scanId) : "");
+        bindScanExport("btn-export", findings, meta, scanId, "pdf");
         var isActive = !!(meta && meta.active) || !!(status && status.active);
         var reachedMax = meta && meta.phase != null && meta.max_phase != null && Number(meta.phase) >= Number(meta.max_phase);
         var finished = !isActive || reachedMax;
@@ -3785,6 +4525,7 @@
         var domains = maturityDomainsFromFindings(findings);
         var avg = domains.reduce(function (a, d) { return a + d.actual; }, 0) / (domains.length || 1);
         var toward = Math.round((avg / 4) * 100);
+        var expScore = computeExposureRisk(findings);
         var sumEl = document.getElementById("maturity-summary");
         if (sumEl) {
           sumEl.innerHTML =
@@ -3794,6 +4535,8 @@
             ' <span class="font-body-md text-on-surface-variant">/ 5.0</span></p>' +
             '<p class="font-body-sm text-on-surface-variant">' + escapeHtml(m.level) +
             " · " + m.score + "/100 " + escapeHtml(tKey("maturity.fromFindings", "desde hallazgos abiertos")) + "</p>" +
+            '<p class="font-label-md text-on-surface">' + escapeHtml(tKey("osint.exposureTitle", "Índice de exposición")) +
+            ": " + expScore.grade + " · " + expScore.risk + "/100</p>" +
             '<div class="flex justify-between font-label-md"><span class="text-on-surface-variant">' +
             escapeHtml(tKey("maturity.toward", "Progreso hacia objetivo 4.0")) +
             '</span><span class="text-primary">' + toward + "%</span></div>" +
@@ -4100,19 +4843,31 @@
       ctaKey: "preview.open",
       ctaFallback: "Configurar preview",
       ctaIcon: "file-search",
+      hideOnListIds: ["preview-config", "preview-actionbar"],
       onDetail: function (findings, meta, scanId) {
-        renderSevStatsGrid("preview-stats", findings);
-        var list = document.getElementById("preview-findings");
-        if (list && window.DarkSpearFindings) DarkSpearFindings.renderList(list, findings, "all");
+        var title = document.getElementById("preview-detail-title");
+        if (title) title.textContent = scanDisplayName(meta) || tKey("preview.title", "Vista previa PDF");
+        var sub = document.getElementById("preview-detail-subtitle");
+        if (sub) {
+          sub.textContent = ((meta && meta.target) || "—") +
+            (meta && meta.scope ? " · " + meta.scope : "") +
+            " · " + (findings || []).length + " " + tKey("scan.findings", "hallazgos");
+        }
+        renderPreviewPaper(findings, meta, scanId);
+        var fmt = document.getElementById("fmt");
         var btn = document.getElementById("btn-generate-fmt");
-        if (btn && window.DarkSpearExport && DarkSpearExport.run) {
+        if (btn) {
           btn.onclick = function () {
-            DarkSpearExport.run("pdf", {
-              findings: findings,
-              target: meta && meta.target,
-              scope: meta && meta.scope,
-              engagementId: scanId,
-            });
+            var v = fmt ? String(fmt.value || "").toLowerCase() : "pdf";
+            var kind = v.indexOf("json") !== -1 ? "json" : v.indexOf("html") !== -1 ? "html" : "pdf";
+            if (window.DarkSpearExport && DarkSpearExport.run) {
+              DarkSpearExport.run(kind, {
+                findings: findings,
+                target: meta && meta.target,
+                scope: meta && meta.scope,
+                engagementId: scanId,
+              });
+            }
           };
         }
       },
@@ -4336,9 +5091,27 @@
     showEmpty();
   }
 
+  function bootSettings() {
+    var btn = document.getElementById("panic-btn");
+    if (!btn || btn.dataset.bound) return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", function () {
+      var msg = "Esto borra el pool cifrado de API keys. No afecta hallazgos ni evidencia. ¿Continuar?";
+      if (window.DarkSpear && DarkSpear.lang && DarkSpear.lang() === "en") {
+        msg = "This deletes the encrypted API key pool. Findings and evidence are not affected. Continue?";
+      }
+      if (!window.confirm(msg)) return;
+      bridgePost("/keystore/panic", { confirm: "WIPE_KEYS" }).then(function (data) {
+        var ok = data && data.ok;
+        window.alert(ok ? "Pool de claves borrado." : "Error: " + ((data && data.error) || "desconocido"));
+      });
+    });
+  }
+
   function boot() {
     var p = page();
     if (p === "index.html") bootDashboard();
+    else if (p === "settings.html") bootSettings();
     else if (p === "finding-detail.html" || p === "remediation-detail.html") bootFindingDetail();
     else if (p === "vulnerabilities.html") bootVulnerabilities();
     else if (p === "critical-findings.html") bootCriticalFindings();

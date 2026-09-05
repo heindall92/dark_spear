@@ -72,6 +72,7 @@ ALLOWED_TOOLS = {
     "samrdump.py", "mssqlclient.py", "ticketer.py", "getST.py",
     "raiseChild.py", "dcomexec.py", "adscan",
     "dnsrecon", "searchsploit",
+    "ufw", "iptables", "nft",
 }
 
 PHASE_NAMES = {
@@ -88,7 +89,7 @@ PHASE_NAMES = {
 # phase's OWN additions, not the running total.
 PHASE_TOOLS = {
     1: {"nmap", "whatweb", "dig", "nslookup", "dnsrecon", "ldapsearch",
-        "enum4linux", "rpcclient", "echo", "curl"},
+        "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"},
     2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "smbclient", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
         "searchsploit", "adscan", "certipy"},
@@ -536,6 +537,55 @@ def _normalize_target_key(target: str) -> str:
     return t
 
 
+def _previous_scan_for_scope(scope: str, exclude_dir: str | None) -> dict:
+    """Último engagement completado del mismo host/scope (delta OSINT)."""
+    key = _scope_host(scope or "")
+    empty = {"engagement_dir": None, "findings": []}
+    if not key or not ENGAGEMENTS_ROOT.is_dir():
+        return empty
+    candidates = []
+    for child in ENGAGEMENTS_ROOT.iterdir():
+        if not child.is_dir() or child.name == exclude_dir:
+            continue
+        meta = _read_dir_meta(child)
+        hist = next((h for h in SCAN_HISTORY if h.get("engagement_dir") == child.name), {})
+        tgt = (
+            hist.get("scope")
+            or meta.get("scope")
+            or hist.get("target")
+            or meta.get("target")
+            or ""
+        )
+        if _scope_host(str(tgt)) != key:
+            continue
+        status = str(hist.get("status") or meta.get("status") or "completed")
+        if status in ("running", "paused"):
+            continue
+        findings = _load_findings_from_dir(child)
+        titles = [
+            {
+                "title": f.get("title") or "",
+                "severity": f.get("severity") or "",
+                "asset": f.get("asset") or "",
+            }
+            for f in findings
+            if f.get("status") != "rejected" and f.get("title")
+        ]
+        if not titles:
+            continue
+        ts = hist.get("started_at") or meta.get("started_at") or child.stat().st_mtime
+        try:
+            ts_f = float(ts)
+        except (TypeError, ValueError):
+            ts_f = 0.0
+        candidates.append((ts_f, child.name, titles))
+    if not candidates:
+        return empty
+    candidates.sort(key=lambda x: x[0], reverse=True)
+    _, name, titles = candidates[0]
+    return {"engagement_dir": name, "findings": titles}
+
+
 def _dedupe_engagement_rows(rows: list[dict]) -> list[dict]:
     """One card per name/objective, or per target if unnamed — keep more findings."""
     best: dict[str, dict] = {}
@@ -706,6 +756,33 @@ def _apply_finding_edits(finding: dict, edited_fields: dict) -> str | None:
                 return f"invalid_severity: must be one of {sorted(FINDING_SEVERITIES)}"
             finding[key] = edited_fields[key]
     return None
+
+
+def _apply_finding_status_transition(finding: dict, action: str) -> str | None:
+    """Applies a post-acceptance reporting-lifecycle transition in place.
+
+    proposed -> accepted -> verifying -> reported (reported is terminal;
+    correcting a reported finding goes through "edit" first, same escape
+    hatch the accept/reject/edit flow already uses).
+
+    Returns None on success, or an error string on invalid transition.
+    Does not touch evidence, disk persistence, or audit_log — the caller
+    (/findings/review handler) does that, same as the accept/reject/edit
+    branches.
+    """
+    if action == "verify":
+        if finding["status"] != "accepted":
+            return "invalid_transition"
+        finding["status"] = "verifying"
+        finding["reviewed_at"] = time.time()
+        return None
+    if action == "mark_reported":
+        if finding["status"] not in ("accepted", "verifying"):
+            return "invalid_transition"
+        finding["status"] = "reported"
+        finding["reviewed_at"] = time.time()
+        return None
+    return "invalid_action"
 
 
 def audit_log(entry: dict) -> None:
@@ -1321,6 +1398,11 @@ class Handler(BaseHTTPRequestHandler):
             badge = "Paused" if ENGAGEMENT_PAUSED else (
                 "Scanning" if CURRENT_PHASE <= 1 else "Analyzing" if CURRENT_PHASE <= 2 else "Exploiting"
             )
+            prev_dir = CURRENT_ENGAGEMENT_DIR.name if CURRENT_ENGAGEMENT_DIR else None
+            previous_scan = _previous_scan_for_scope(
+                CURRENT_SCOPE.get("scope") or CURRENT_SCOPE.get("target") or "",
+                prev_dir,
+            )
             self._send_json(200, {
                 "active": True,
                 "paused": ENGAGEMENT_PAUSED,
@@ -1343,6 +1425,7 @@ class Handler(BaseHTTPRequestHandler):
                 "status_badge": badge,
                 "engagement_dir": CURRENT_ENGAGEMENT_DIR.name if CURRENT_ENGAGEMENT_DIR else None,
                 "history": SCAN_HISTORY[:20],
+                "previous_scan": previous_scan,
             })
             return
 
@@ -1427,6 +1510,18 @@ class Handler(BaseHTTPRequestHandler):
             audit_log({"event": "phase_advanced", "from": CURRENT_PHASE - 1, "to": CURRENT_PHASE})
             self._send_json(200, {"ok": True, "phase": CURRENT_PHASE,
                                    "unlocked_tools": sorted(PHASE_TOOLS.get(CURRENT_PHASE, set()))})
+            return
+
+        if self.path == "/keystore/panic":
+            body = self._read_json()
+            confirm = body.get("confirm", "")
+            if confirm != "WIPE_KEYS":
+                self._send_json(400, {"error": "confirmation_required",
+                                       "detail": "send {\"confirm\": \"WIPE_KEYS\"}"})
+                return
+            wiped = keystore.wipe()
+            audit_log({"event": "keystore_panic", "wiped": wiped})
+            self._send_json(200, {"ok": True, "wiped": wiped})
             return
 
         if self.path == "/findings/propose":
@@ -1521,7 +1616,7 @@ class Handler(BaseHTTPRequestHandler):
             if finding is None:
                 self._send_json(404, {"error": "finding_not_found"})
                 return
-            if action not in {"accept", "reject", "edit"}:
+            if action not in {"accept", "reject", "edit", "verify", "mark_reported"}:
                 self._send_json(400, {"error": "invalid_action"})
                 return
 
@@ -1551,6 +1646,12 @@ class Handler(BaseHTTPRequestHandler):
                 finding["evidence_hashes"] = hashes
                 finding["status"] = "accepted"
                 finding["reviewed_at"] = time.time()
+            elif action in ("verify", "mark_reported"):
+                error = _apply_finding_status_transition(finding, action)
+                if error:
+                    self._send_json(409 if error == "invalid_transition" else 400,
+                                     {"error": error})
+                    return
 
             if disk_dir is not None:
                 _save_findings_to_dir(disk_dir, findings_ref)

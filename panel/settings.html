@@ -15,6 +15,7 @@
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/export.js" defer></script>
 <script src="vendor/splash.js" defer></script>
+<script src="vendor/panel-live.js" defer></script>
 <script id="tailwind-config">
         tailwind.config = {
           darkMode: "class",
@@ -287,6 +288,15 @@
 <input id="org-name" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" placeholder="—" type="text"/>
 <label class="font-label-md text-on-surface-variant" for="org-email">Contacto</label>
 <input id="org-email" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" placeholder="—" type="email"/>
+</div>
+<div class="glass-panel rounded-xl p-lg max-w-2xl flex flex-col gap-md mt-lg">
+<h3 class="font-headline-sm text-error" data-i18n="settings.dangerZone">Zona de riesgo</h3>
+<p class="font-body-md text-on-surface-variant" data-i18n="settings.panicLead">Borra el pool cifrado de claves de API. No afecta hallazgos ni evidencia de ningún engagement.</p>
+<button id="panic-btn" class="self-start px-md py-sm rounded-lg bg-error-container text-on-error-container font-label-md flex items-center gap-xs hover:bg-error hover:text-on-error transition-colors">
+<i data-lucide="skull" class="icon-sm"></i>
+<span data-i18n="settings.panicButton">Borrar pool de claves (panic button)</span>
+</button>
+</div>
 </div>
 </main>
 </div>
