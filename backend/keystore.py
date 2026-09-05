@@ -61,3 +61,16 @@ def save(passphrase: str, keys: list[dict]) -> None:
     finally:
         os.close(fd)
     os.replace(tmp_path, KEYSTORE_PATH)
+
+
+def wipe() -> bool:
+    """Delete the encrypted keystore file. Used by the panel's panic button.
+
+    Never touches engagement data or findings — this only destroys the
+    API key pool, so a compromised or coerced operator can kill token
+    access without losing case evidence.
+    """
+    if not KEYSTORE_PATH.is_file():
+        return False
+    KEYSTORE_PATH.unlink()
+    return True
