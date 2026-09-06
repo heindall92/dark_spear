@@ -3220,8 +3220,73 @@ export function adAuthCollectionSteps(step, host) {
       desc: "Enumerar equipos de dominio (netexec smb --computers)",
       skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
     }),
+    step("p2-ad-nxc-dc-list", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["ldap", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--dc-list");
+      return args;
+    }, null, {
+      desc: "Listar Domain Controllers (netexec ldap --dc-list)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-gpp", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "-M", "gpp_password");
+      return args;
+    }, null, {
+      desc: "GPP cpassword en SYSVOL (netexec -M gpp_password) — solo lectura",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-gpp-autologin", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "-M", "gpp_autologin");
+      return args;
+    }, null, {
+      desc: "GPP autologon en SYSVOL (netexec -M gpp_autologin)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-ldap-trusts", "ldapsearch", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      const dn = adDomainToDn(d);
+      if (!dn) return null;
+      return [
+        "-x", "-H", `ldap://${h}`,
+        "-D", `${user}@${d}`,
+        "-w", pass,
+        "-b", `CN=System,${dn}`,
+        "(objectClass=trustedDomain)",
+        "cn", "flatName", "trustDirection", "trustType", "trustAttributes",
+      ];
+    }, null, {
+      desc: "Trusts AD vía LDAP (objectClass=trustedDomain)",
+      skipIf: skipCreds,
+    }),
   );
   return steps;
+}
+
+/** CORP.LOCAL → DC=CORP,DC=LOCAL */
+export function adDomainToDn(domain) {
+  const d = String(domain || "").trim().replace(/^DC=/i, "");
+  if (!d || !/[A-Za-z0-9]/.test(d)) return "";
+  return d.split(".").filter(Boolean).map((p) => `DC=${p}`).join(",");
 }
 
 /** Fase 3: validez WinRM con creds — netexec winrm, sin evil-winrm / shell. */
@@ -3908,6 +3973,124 @@ export function netexecComputersFindings(stdout) {
   }];
 }
 
+/** netexec ldap --dc-list. */
+export function netexecDcListFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED|Invalid credentials/i.test(text)
+    && !/DC=|Domain Controller|dNSHostName|--dc-list/i.test(text)) {
+    return [];
+  }
+  const dcs = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/\b([A-Za-z0-9][A-Za-z0-9._-]{1,64}\.(?:[A-Za-z0-9._-]+)+)\b/g)) {
+    const h = m[1];
+    if (/example\.|microsoft\.|schema\./i.test(h)) continue;
+    if (seen.has(h.toLowerCase())) continue;
+    seen.add(h.toLowerCase());
+    dcs.push(h);
+    if (dcs.length >= 12) break;
+  }
+  for (const m of text.matchAll(/\b([A-Za-z0-9_-]{2,40}DC[A-Za-z0-9_-]*)\b/gi)) {
+    const h = m[1];
+    if (seen.has(h.toLowerCase())) continue;
+    seen.add(h.toLowerCase());
+    dcs.push(h);
+    if (dcs.length >= 12) break;
+  }
+  if (!dcs.length && !/--dc-list|Domain Controller/i.test(text)) return [];
+  return [{
+    title: dcs.length
+      ? `AD: ${dcs.length} Domain Controller(s) (--dc-list)`
+      : "AD: enumeración de Domain Controllers (netexec --dc-list)",
+    severity: "Info",
+    description: dcs.length
+      ? `netexec ldap --dc-list: ${dcs.slice(0, 8).join(", ")}${dcs.length > 8 ? "…" : ""}. Inventario de DCs; no se atacó ninguno.`
+      : "netexec --dc-list devolvió salida de enumeración; revisar evidencia.",
+    remediation: `Restringir 88/389/445/5985 al admin net. ${HOSTS_TIP}`,
+  }];
+}
+
+/** netexec -M gpp_password: cpassword en SYSVOL. */
+export function gppPasswordFindings(stdout) {
+  const text = String(stdout || "");
+  if (!/Found SYSVOL|Groups\.xml|Services\.xml|cpassword|Password\s*[:=]|GPP/i.test(text)) {
+    return [];
+  }
+  if (/STATUS_ACCESS_DENIED|LOGIN FAILED/i.test(text) && !/cpassword|Password\s*[:=]/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:User(?:name)?|Account)\s*[:=]\s*([^\s\\]+(?:\\[^\s]+)?)/gi)) {
+    const u = m[1].trim();
+    if (seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+  }
+  const hasSecret = /cpassword|Password\s*[:=]\s*\S+/i.test(text);
+  if (!hasSecret && !/Found SYSVOL|Searching for potential XML/i.test(text)) return [];
+  if (!hasSecret) {
+    return [{
+      title: "AD: SYSVOL legible (GPP scan sin cpassword)",
+      severity: "Info",
+      description: "netexec -M gpp_password accedió a SYSVOL pero no reportó cpassword descifrado. Postura: share SYSVOL accesible a la cuenta usada.",
+      remediation: "Auditar ACLs de SYSVOL; eliminar XML GPP legacy con secretos.",
+    }];
+  }
+  return [{
+    title: `AD: GPP cpassword en SYSVOL${users.length ? ` (${users.slice(0, 3).join(", ")})` : ""}`,
+    severity: "Critical",
+    description: `netexec -M gpp_password encontró y descifró secretos GPP en SYSVOL${users.length ? ` para: ${users.slice(0, 6).join(", ")}` : ""}. AES-256 GPP es conocido desde 2012 (MS14-025). Solo lectura de SYSVOL; no se usó el secreto para lateral movement.`,
+    remediation: "Eliminar Groups/Services/ScheduledTasks.xml con cpassword de SYSVOL; rotar todas las cuentas afectadas; no volver a usar GPP para passwords (MS14-025).",
+  }];
+}
+
+/** netexec -M gpp_autologin. */
+export function gppAutologinFindings(stdout) {
+  const text = String(stdout || "");
+  if (!/autologin|DefaultPassword|DefaultUserName|Registry\.xml|GPP/i.test(text)) return [];
+  if (/LOGIN FAILED|STATUS_ACCESS_DENIED/i.test(text) && !/DefaultPassword|Password/i.test(text)) {
+    return [];
+  }
+  const has = /DefaultPassword|Password\s*[:=]|Username\s*[:=]/i.test(text);
+  if (!has) return [];
+  return [{
+    title: "AD: GPP autologon con credenciales en SYSVOL",
+    severity: "Critical",
+    description: "netexec -M gpp_autologin encontró DefaultUserName/DefaultPassword (o equivalente) en preferencias GPP de SYSVOL. Credencial en claro para cualquiera con lectura de SYSVOL.",
+    remediation: "Eliminar el GPP de autologon; rotar la cuenta; usar LAPS/gMSA donde aplique.",
+  }];
+}
+
+/** ldapsearch objectClass=trustedDomain. */
+export function ldapTrustFindings(stdout) {
+  const text = String(stdout || "");
+  if (/Invalid credentials|Can't contact|Strong\(er\) authentication/i.test(text)
+    && !/trustedDomain|trustDirection|flatName/i.test(text)) {
+    return [];
+  }
+  const trusts = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:^|\n)(?:cn|flatName):\s*([A-Za-z0-9._-]+)/gi)) {
+    const n = m[1];
+    if (/^System$/i.test(n)) continue;
+    if (seen.has(n.toLowerCase())) continue;
+    seen.add(n.toLowerCase());
+    trusts.push(n);
+    if (trusts.length >= 15) break;
+  }
+  const directions = [...text.matchAll(/trustDirection:\s*(\d+)/gi)].map((m) => m[1]);
+  if (!trusts.length && !/objectClass:\s*trustedDomain|trustDirection/i.test(text)) return [];
+  return [{
+    title: trusts.length
+      ? `AD: ${trusts.length} trust(s) de dominio (LDAP)`
+      : "AD: trusts de dominio enumerados (LDAP)",
+    severity: trusts.length > 1 ? "Medium" : "Info",
+    description: `ldapsearch (objectClass=trustedDomain) listó trusts${trusts.length ? `: ${trusts.join(", ")}` : ""}${directions.length ? ` (trustDirection: ${directions.slice(0, 6).join(", ")})` : ""}. Inventario cross-domain; no se abusó del trust (raiseChild/SID history fuera del playbook).`,
+    remediation: "Auditar trusts bidireccionales y forest trusts; eliminar trusts obsoletos; SID filtering donde corresponda.",
+  }];
+}
+
 /** Consolida parsers AD sobre el texto de cada sonda. */
 export function adCollectionFindings(kind, stdout) {
   if (kind === "netexec") return netexecSmbFindings(stdout);
@@ -3927,5 +4110,9 @@ export function adCollectionFindings(kind, stdout) {
   if (kind === "bloodhound") return bloodhoundFindings(stdout);
   if (kind === "delegation") return findDelegationFindings(stdout);
   if (kind === "nxc-computers") return netexecComputersFindings(stdout);
+  if (kind === "nxc-dc-list") return netexecDcListFindings(stdout);
+  if (kind === "gpp") return gppPasswordFindings(stdout);
+  if (kind === "gpp-autologin") return gppAutologinFindings(stdout);
+  if (kind === "trusts") return ldapTrustFindings(stdout);
   return [];
 }

@@ -3071,7 +3071,7 @@
     (findings || []).forEach(function (f) {
       var t = String((f && f.title) || "");
       if (!/^AD:/i.test(t) && !/SMB \(TCP\/445\)|LDAP \(TCP\/389\)|Kerberos \(TCP\/88\)|LDAPS \(TCP\/636\)/i.test(t)) return;
-      if (/AS-REP|SPN|Kerberoastable|ADCS|WinRM|BloodHound|grupos privilegiados|política de contraseñas|complejidad de contraseña|delegación Kerberos/i.test(t)) auth.push(f);
+      if (/AS-REP|SPN|Kerberoastable|ADCS|WinRM|BloodHound|grupos privilegiados|política de contraseñas|complejidad de contraseña|delegación Kerberos|GPP |trust\(s\)|trusts de dominio/i.test(t)) auth.push(f);
       else if (/SMB signing|bind LDAP|longitud mínima|Domain Controller|escritura en C\$/i.test(t)) posture.push(f);
       else if (/usuario|RPC null|RID cycling|SAMR \(samrdump\)|netexec --users/i.test(t)) users.push(f);
       else if (/share|sesión nula|guest\/null/i.test(t)) shares.push(f);
@@ -3100,6 +3100,12 @@
         mitreBtn.href = scanId
           ? "mitre.html?scan=" + encodeURIComponent(scanId)
           : "mitre.html?scan=program";
+      }
+      var graphBtn = document.getElementById("ad-btn-graph");
+      if (graphBtn) {
+        graphBtn.href = scanId
+          ? "attack-graph.html?scan=" + encodeURIComponent(scanId)
+          : "attack-graph.html";
       }
 
       function adTable(items) {
@@ -3131,6 +3137,15 @@
         '<p class="font-body-sm text-on-surface">' + escapeHtml(tKey("ad.banner",
           "Hallazgos AD (collection + enum). Kerberoast con -request, relay y shells requieren aprobación humana fuera del playbook automático.")) +
         "</p></div>" +
+        (groups.auth.some(function (f) { return /BloodHound/i.test(f.title || ""); })
+          ? '<div class="glass-panel rounded-xl p-md flex items-start gap-sm border-l-4 border-l-secondary">' +
+            '<i data-lucide="share-2" class="icon-md text-secondary shrink-0 mt-xs"></i>' +
+            '<p class="font-body-sm text-on-surface">' + escapeHtml(tKey("ad.bhHint",
+              "BloodHound DCOnly dejó un zip en ~/.auditor/engagements/<id>/evidence/bloodhound/. Ábrelo en BloodHound CE offline; el Attack Graph del panel usa los hallazgos AD (no importa el zip todavía).")) +
+            ' <a class="text-primary hover:underline font-label-md" href="' +
+            (scanId ? "attack-graph.html?scan=" + encodeURIComponent(scanId) : "attack-graph.html") +
+            '">' + escapeHtml(tKey("ad.viewGraph", "Ver Attack Graph")) + "</a></p></div>"
+          : "") +
         '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-md">' +
         osintKpiCard("network", tKey("ad.kpiDomain", "Dominio / fingerprint"), groups.domain.length + dcN, (groups.domain.length || dcN) ? "warn" : "neutral") +
         osintKpiCard("users", tKey("ad.kpiUsers", "Usuarios enumerados"), groups.users.length, groups.users.length ? "warn" : "neutral") +
@@ -3432,6 +3447,53 @@
         });
         findingsByNode.client = clientFindings;
         edges.push({ from: "client", to: "target", critical: false });
+      }
+
+      // Rama Active Directory: dominio / DC / creds GPP si hay hallazgos AD.
+      var adFindings = (findings || []).filter(function (f) {
+        return /^AD:/i.test(String(f.title || ""));
+      });
+      if (adFindings.length) {
+        var domainHit = adFindings.find(function (f) {
+          return /dominio |Domain Controller|--dc-list/i.test(f.title || "");
+        });
+        var domainLabel = "Active Directory";
+        var dm = domainHit && String(domainHit.title || "").match(/dominio\s+([A-Za-z0-9._-]+)/i);
+        if (dm) domainLabel = dm[1];
+        else if (domainHit && /Domain Controller/i.test(domainHit.title || "")) domainLabel = "AD / DC";
+        var adCrit = adFindings.some(function (f) {
+          var s = String(f.severity || "").toLowerCase();
+          return s === "critical" || s === "high";
+        });
+        nodes.push({
+          id: "ad-domain",
+          label: domainLabel.slice(0, 28),
+          kind: adCrit ? "critical" : "host",
+          x: 70,
+          y: 58,
+          icon: "network",
+          badge: adCrit ? "AD crítico" : "AD",
+          critical: adCrit,
+        });
+        findingsByNode["ad-domain"] = adFindings;
+        edges.push({ from: "target", to: "ad-domain", critical: adCrit });
+        var gppHits = adFindings.filter(function (f) {
+          return /GPP /i.test(f.title || "");
+        });
+        if (gppHits.length) {
+          nodes.push({
+            id: "ad-gpp",
+            label: "SYSVOL / GPP",
+            kind: "critical",
+            x: 88,
+            y: 68,
+            icon: "key-round",
+            badge: "Credencial GPP",
+            critical: true,
+          });
+          findingsByNode["ad-gpp"] = gppHits;
+          edges.push({ from: "ad-domain", to: "ad-gpp", critical: true });
+        }
       }
 
       return { nodes: nodes, edges: edges, findingsByNode: findingsByNode, target: targetRaw || target };

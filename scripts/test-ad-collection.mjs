@@ -24,6 +24,11 @@ import {
   AD_SURFACE_PORTS,
   findDelegationFindings,
   netexecComputersFindings,
+  netexecDcListFindings,
+  gppPasswordFindings,
+  gppAutologinFindings,
+  ldapTrustFindings,
+  adDomainToDn,
 } from "../backend/js/vuln-kb.js";
 import { stepsForPhase, buildPlaybookContext } from "../backend/js/playbook.js";
 import { collectHeuristicFindings } from "../backend/js/finding-heuristics.js";
@@ -92,6 +97,10 @@ check("nxc users", ids2.includes("p2-ad-nxc-users"));
 check("bloodhound DCOnly", ids2.includes("p2-ad-bloodhound-dconly"));
 check("findDelegation", ids2.includes("p2-ad-finddelegation"));
 check("nxc computers", ids2.includes("p2-ad-nxc-computers"));
+check("dc-list", ids2.includes("p2-ad-nxc-dc-list"));
+check("gpp_password", ids2.includes("p2-ad-nxc-gpp"));
+check("ldap trusts", ids2.includes("p2-ad-ldap-trusts"));
+check("adDomainToDn", adDomainToDn("CORP.LOCAL") === "DC=CORP,DC=LOCAL");
 const asrepSpec = stepsP2.find((s) => s.id === "p2-ad-asrep-1");
 const asrepArgs = typeof asrepSpec.args === "function"
   ? asrepSpec.args({ adDomain: "CORP.LOCAL", adUsers: ["alice"], isAdTarget: true })
@@ -151,6 +160,12 @@ const delOut = "DC01$   Unconstrained\nsvc_web  Constrained\nWEB01$  Resource-Ba
 check("delegation High", findDelegationFindings(delOut).some((f) => /delegación Kerberos/.test(f.title) && f.severity === "High"));
 const compsOut = "SMB  10.10.10.10  445  DC01  DC01$\nSMB  10.10.10.10  445  DC01  WEB01$\n";
 check("computers Info", netexecComputersFindings(compsOut).some((f) => /equipo/.test(f.title)));
+const dcListOut = "LDAP  10.10.10.10  389  DC01  dc01.corp.local\nLDAP  10.10.10.10  389  DC01  dc02.corp.local\n";
+check("dc-list Info", netexecDcListFindings(dcListOut).some((f) => /Domain Controller/.test(f.title)));
+const gppOut = "Found SYSVOL share\nFound Policies\\\\{GUID}\\\\Machine\\\\Preferences\\\\Groups\\\\Groups.xml\nUsername: CORP\\\\svc_backup\nPassword: Secret123!\n";
+check("GPP Critical", gppPasswordFindings(gppOut).some((f) => /GPP cpassword/.test(f.title) && f.severity === "Critical"));
+const trustOut = "dn: CN=CHILD,CN=System,DC=corp,DC=local\ncn: CHILD\nflatName: CHILD\ntrustDirection: 3\nobjectClass: trustedDomain\n";
+check("trusts Medium/Info", ldapTrustFindings(trustOut).some((f) => /trust/.test(f.title)));
 
 const heur = collectHeuristicFindings(
   dcNmap + nxc + asrepOut,
@@ -173,6 +188,9 @@ const heur = collectHeuristicFindings(
     { id: "p2-ad-bloodhound-dconly", text: bhOut },
     { id: "p2-ad-finddelegation", text: delOut },
     { id: "p2-ad-nxc-computers", text: compsOut },
+    { id: "p2-ad-nxc-dc-list", text: dcListOut },
+    { id: "p2-ad-nxc-gpp", text: gppOut },
+    { id: "p2-ad-ldap-trusts", text: trustOut },
   ],
 );
 check("heurística DC", heur.some((f) => /Domain Controller probable/.test(f.title)));
@@ -188,6 +206,8 @@ check("heurística nxc users", heur.some((f) => /netexec --users/.test(f.title))
 check("heurística bloodhound", heur.some((f) => /BloodHound DCOnly/.test(f.title)));
 check("heurística delegation", heur.some((f) => /delegación Kerberos/.test(f.title)));
 check("heurística computers", heur.some((f) => /equipo/.test(f.title)));
+check("heurística GPP", heur.some((f) => /GPP cpassword/.test(f.title)));
+check("heurística trusts", heur.some((f) => /trust/.test(f.title)));
 
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
