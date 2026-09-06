@@ -49,6 +49,9 @@ import {
   sqlmapFindings,
   httpxFindings,
   testsslFindings,
+  niktoFindings,
+  dnsreconFindings,
+  wpscanFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
   extractAsnFromBlob,
@@ -130,6 +133,9 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
     if (r.id === "p1-testssl") push("testssl", text);
+    if (r.id === "p2-nikto") push("nikto", text);
+    if (r.id === "p1-osint-dnsrecon") push("dnsrecon", text);
+    if (r.id === "p2-wpscan" || r.id === "p2-wpscan-plugins") push("wpscan", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -528,7 +534,7 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       add(
         `Directorio ${path}/ listable sin autenticación (hallado por fuerza bruta)`,
         "High",
-        `gobuster encontró «${path}» durante la enumeración de directorios y GET ${path}/ devuelve un listado de directorio real (autoindex/serve-index), exponiendo nombres de archivo internos sin autenticación (CWE-548, CWE-200).`,
+        `La enumeración (gobuster/ffuf/ferox) encontró «${path}» y GET ${path}/ devuelve un listado de directorio real (autoindex/serve-index), exponiendo nombres de archivo internos sin autenticación (CWE-548, CWE-200).`,
         "Desactivar el listado de directorios en el servidor web; retirar del document root cualquier archivo que no deba ser público.",
       );
     }
@@ -618,6 +624,24 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const testsslText = probeIdx["testssl"];
   if (testsslText) {
     testsslFindings(testsslText, ctx.host || asset).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  const niktoText = probeIdx["nikto"];
+  if (niktoText) {
+    niktoFindings(niktoText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  const dnsreconText = probeIdx["dnsrecon"];
+  if (dnsreconText) {
+    dnsreconFindings(dnsreconText, scopeRoot(ctx.host || "", ctx.scope)).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  const wpscanText = probeIdx["wpscan"];
+  if (wpscanText) {
+    wpscanFindings(wpscanText).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
@@ -833,15 +857,6 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       "High",
       "La página de setup muestra usuario MySQL, host y nombre de base de datos.",
       "Proteger setup.php tras la instalación; no exponer detalles de la base de datos.",
-    );
-  }
-
-  if (/nikto/i.test(lower) && /osvdb|cve-|vulnerability/i.test(b)) {
-    add(
-      "Nikto reportó posibles issues en el servicio web",
-      "Medium",
-      "La salida de Nikto contiene referencias a vulnerabilidades o checks positivos. Revisar el informe completo en el feed.",
-      "Priorizar remediación según severidad CVSS; validar manualmente cada hallazgo antes de explotación.",
     );
   }
 

@@ -1,0 +1,63 @@
+#!/usr/bin/env node
+/** Parseo de salida real de Nikto → findings (no un Medium genérico). */
+import { niktoFindings } from "../backend/js/vuln-kb.js";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
+
+let ok = true;
+function check(name, cond) {
+  console.log((cond ? "OK" : "FAIL") + `: ${name}`);
+  ok = ok && cond;
+}
+
+const sample = `
+- Nikto v2.5.0
+---------------------------------------------------------------------------
++ Target IP:          127.0.0.1
++ Target Hostname:    localhost
++ Target Port:        80
++ Start Time:         2026-09-06
+---------------------------------------------------------------------------
++ Server: Apache/2.4.57
++ /: Retrieved x-powered-by header: PHP/8.1.2.
++ The anti-clickjacking X-Frame-Options header is not present.
++ The X-Content-Type-Options header is not set.
++ No CGI Directories found (use '-C all' to force check all possible dirs)
++ /config.php: PHP Config file may contain database IDs and passwords.
++ OSVDB-3092: /admin/: This might be interesting...
++ /icons/: Directory indexing found.
++ /phpinfo.php: Output from the phpinfo() function was found.
++ OSVDB-3233: /icons/README: Apache default file found.
++ CVE-2017-7679: /cgi-bin/: Apache mod_mime buffer overflow.
++ 12 item(s) reported on remote host
+`;
+
+const hits = niktoFindings(sample);
+check("no inventa hallazgo por cabeceras ya cubiertas (XFO/XCTO)", !hits.some((f) => /X-Frame|X-Content-Type/i.test(f.title)));
+check("no inventa hallazgo por x-powered-by / Server", !hits.some((f) => /x-powered-by|Apache\/2/i.test(f.title)));
+check("captura config.php como High", hits.some((f) => /config\.php/.test(f.title) && f.severity === "High"));
+check("captura phpinfo como High", hits.some((f) => /phpinfo\.php/.test(f.title) && f.severity === "High"));
+check("captura directory indexing como Medium", hits.some((f) => /icons/.test(f.title) && /indexing/i.test(f.title + f.description) && f.severity === "Medium"));
+check("captura CVE en título/desc y High", hits.some((f) => /CVE-2017-7679/.test(f.title + f.description) && f.severity === "High"));
+check("captura OSVDB-3092 /admin/", hits.some((f) => /\/admin\//.test(f.title)));
+check("tope razonable (≤8)", hits.length <= 8 && hits.length >= 4);
+check("sin salida -> []", niktoFindings("").length === 0);
+check("solo ruido de cabecera -> []", niktoFindings("+ The X-Frame-Options header is not present.\n").length === 0);
+
+const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
+const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
+const sandbox = { window: {}, console, localStorage: { getItem: () => "es" } };
+sandbox.window = sandbox;
+sandbox.global = sandbox;
+vm.runInNewContext(code.replace("(window);", "(this);"), sandbox);
+const d = sandbox.DarkSpearDossier.enrich({
+  title: hits[0].title,
+  severity: hits[0].severity,
+  description: hits[0].description,
+  remediation: hits[0].remediation,
+  asset: "http://127.0.0.1",
+});
+check("dossier Nikto no cae al genérico CWE-1035", !(d.cwe || []).includes("CWE-1035"));
+check("dossier Nikto cita la ruta en el ejecutivo", /Nikto:|Ruta señalada/.test(d.exec));
+
+process.exit(ok ? 0 : 1);

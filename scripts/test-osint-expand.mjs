@@ -90,7 +90,10 @@ const domainSteps = stepsForPhase(1, "https://example.com", { host: "example.com
 const ids = domainSteps.map((s) => s.id);
 assert(ids.includes("p1-idp-entra-oidc"), "paso entra oidc");
 assert(ids.includes("p1-idp-saml-fedmeta"), "paso saml");
+assert(ids.includes("p1-osint-dnsrecon"), "paso dnsrecon en dominio");
 assert(ids.some((id) => id.startsWith("p1-secretval-")), "pasos validador");
+const ipSteps = stepsForPhase(1, "http://127.0.0.1", { host: "127.0.0.1", scope: "127.0.0.1" });
+assert(!ipSteps.some((s) => s.id === "p1-osint-dnsrecon"), "dnsrecon no corre contra IP");
 
 assert(scopeRoot("www.cubadebate.cu", "http://www.cubadebate.cu/") === "cubadebate.cu", "apex sin www");
 const wwwSteps = stepsForPhase(1, "http://www.example.com", { host: "www.example.com", scope: "http://www.example.com" });
