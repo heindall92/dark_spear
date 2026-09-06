@@ -1279,7 +1279,7 @@ const CODE_DANGER_PROBE_BUILDERS = {
     "--data-urlencode", `${hit.param}=<script>alert(1)</script>`],
   authz_missing_middleware: (hit, baseUrl) => {
     const url = new URL(hit.route, baseUrl || "http://localhost").toString();
-    return ["-s", "-L", "--max-time", "15", url];
+    return ["-s", "-L", "--max-time", "15", "-w", "\nDS_HTTP:%{http_code}\n", url];
   },
 };
 
@@ -1300,6 +1300,57 @@ export function codeDangerProbeSteps(step, hits, baseUrl = "") {
       codeDangerSeverity: hit.severity,
     });
   }).filter(Boolean);
+}
+
+const CODE_DANGER_CONFIRM_RE = {
+  // Errores de motor SQL en el cuerpo: la comilla del payload rompió la
+  // consulta y el servidor filtró el error en vez de manejarlo — evidencia
+  // de que el input llega crudo al motor, no solo "la app respondió 200".
+  sqli_concat: /SQL syntax|mysql_fetch|You have an error in your SQL|ORA-\d{5}|SQLSTATE\[|PostgreSQL.*ERROR|SQLite3::|Unclosed quotation mark|syntax error at or near/i,
+  // Firma clásica de /etc/passwd (línea de root) — no un simple 200, el
+  // cuerpo tiene que contener contenido real del fichero del sistema.
+  lfi_include: /root:.*:0:0:/,
+  // El payload tiene que aparecer SIN escapar en el cuerpo — si el filtro
+  // lo convirtió a &lt;script&gt; no hay XSS real, solo un eco seguro.
+  xss_unescaped_echo: /<script>alert\(1\)<\/script>/,
+};
+
+/**
+ * Confirma (o descarta) cada hit de codeDangerProbeSteps contra la
+ * respuesta real de su sonda dirigida — mismo principio que el resto del
+ * motor: la sonda propone, la evidencia de la respuesta confirma. No basta
+ * con "el código parecía peligroso"; hace falta ver el efecto en el cuerpo.
+ */
+export function codeDangerFinding(probeText, hit) {
+  const text = String(probeText || "");
+  if (hit.kind === "authz_missing_middleware") {
+    const code = parseDsHttp(text);
+    if (code !== "200") return [];
+    return [{
+      title: `Ruta administrativa accesible sin autenticación (${hit.route})`,
+      severity: hit.severity,
+      description: `El código fuente filtrado define la ruta ${hit.route} sin middleware de autenticación visible en su declaración. Se confirmó con una petición GET anónima: el servidor respondió HTTP 200 en vez de redirigir a login o devolver 401/403 (${hit.cwe}).`,
+      remediation: "Aplicar el middleware de autenticación/autorización correspondiente a esta ruta; añadir un test de regresión que falle si vuelve a quedar accesible sin sesión.",
+    }];
+  }
+  const confirmRe = CODE_DANGER_CONFIRM_RE[hit.kind];
+  if (!confirmRe || !confirmRe.test(text)) return [];
+  const titleByKind = {
+    sqli_concat: `Inyección SQL confirmada en parámetro «${hit.param}» (código fuente filtrado)`,
+    lfi_include: `Lectura de fichero arbitrario confirmada en parámetro «${hit.param}» (código fuente filtrado)`,
+    xss_unescaped_echo: `XSS reflejado confirmado en parámetro «${hit.param}» (código fuente filtrado)`,
+  };
+  const descByKind = {
+    sqli_concat: `El código fuente filtrado concatena directamente el parámetro «${hit.param}» dentro de una consulta SQL sin binding. Una comilla simple en ese parámetro rompió la consulta y el motor de base de datos filtró su error en la respuesta — confirma que el input llega crudo al SQL (${hit.cwe}).`,
+    lfi_include: `El código fuente filtrado pasa el parámetro «${hit.param}» directamente a una función de lectura de fichero sin sanitizar. Al pedir «file:///etc/passwd» en ese parámetro, la respuesta contiene contenido real del fichero de sistema (${hit.cwe}).`,
+    xss_unescaped_echo: `El código fuente filtrado hace echo directo del parámetro «${hit.param}» sin escapar. El payload de prueba (<script>alert(1)</script>) volvió sin codificar en el cuerpo de la respuesta (${hit.cwe}).`,
+  };
+  return [{
+    title: titleByKind[hit.kind],
+    severity: hit.severity,
+    description: descByKind[hit.kind],
+    remediation: "Reescribir el punto exacto identificado en el código filtrado: consultas parametrizadas para SQL, allow-list de esquema/ruta para lecturas de fichero, escapado contextual para salida reflejada. Priorizar por ser una vulnerabilidad confirmada, no solo sospechada.",
+  }];
 }
 
 export function jsSecretSignatureCount() {

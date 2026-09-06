@@ -138,6 +138,16 @@
     return "info";
   }
 
+  function statusClass(status) {
+    var s = String(status || "").toLowerCase();
+    if (s === "reported") return "st-reported";
+    if (s === "verifying") return "st-verifying";
+    if (s === "accepted") return "st-accepted";
+    if (s === "rejected") return "st-rejected";
+    if (s === "edited") return "st-edited";
+    return "st-proposed";
+  }
+
   function findLivePaper() {
     return document.getElementById("preview-paper") || document.getElementById("comp-paper");
   }
@@ -427,7 +437,7 @@
       return "<article class=\"finding\">" +
         "<header><span class=\"id\">" + escHtml(f.id) + "</span>" +
         "<span class=\"sev " + sevClass(f.severity) + "\">" + escHtml(f.severity) + "</span>" +
-        "<span class=\"st\">" + escHtml(f.status) + "</span></header>" +
+        "<span class=\"st " + statusClass(f.status) + "\">" + escHtml(f.status) + "</span></header>" +
         "<h2>" + escHtml(f.title) + "</h2>" +
         "<p class=\"asset\">" + escHtml(f.asset) + "</p>" +
         "<p>" + escHtml(f.description || "—") + "</p>" +
@@ -462,7 +472,11 @@
       ".finding h2{font-size:16px;margin:0 0 6px;color:#181c1f}" +
       ".finding .asset{font-family:'JetBrains Mono',monospace;font-size:12px;color:#005faa}" +
       ".id{font-family:'JetBrains Mono',monospace;font-size:12px;color:#505f79}" +
-      ".st{font-size:11px;color:#717783}" +
+      ".st{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:4px;color:#717783;background:#eceef1}" +
+      ".st.st-reported{background:#d4f2dd;color:#0f6b34}" +
+      ".st.st-verifying{background:#fff2cc;color:#8a6300}" +
+      ".st.st-accepted{background:#d3e3ff;color:#004883}" +
+      ".st.st-rejected{background:#f0f0f0;color:#5c5c5c;text-decoration:line-through}" +
       ".sev{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:4px}" +
       ".sev.crit{background:#ffdad6;color:#93000a}" +
       ".sev.high{background:#ffdad6;color:#ba1a1a}" +

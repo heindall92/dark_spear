@@ -2283,6 +2283,82 @@
       },
       refs: [{ label: "HackTricks", href: "https://hacktricks.wiki/en/index.html" }],
     },
+    dvwaCard({
+      re: /Inyección SQL confirmada en parámetro|SQL injection confirmed in parameter/i,
+      cwe: ["CWE-89"],
+      owasp: "A03:2021 Injection",
+      mitre: [{ id: "T1190", name: "Exploit Public-Facing Application", tactic: "Initial Access" }],
+      refs: [{ label: "HackTricks — SQL Injection", href: HT + "sql-injection/index.html" }],
+      narrative: {
+        es: "A diferencia de una sonda genérica, este hallazgo parte de haber leído el código fuente real (filtrado por otra vulnerabilidad, p. ej. exposición de .env/.git o un source map) y haber visto ahí una consulta SQL armada por concatenación de string con un parámetro concreto. La sonda dirigida confirmó el efecto: el motor de base de datos filtró un error SQL en la respuesta, evidencia de que el parámetro llega crudo al motor.",
+        en: "Unlike a generic probe, this finding starts from reading real leaked source code and seeing a SQL query built by string concatenation with a specific parameter. The targeted probe confirmed the effect: the DB engine leaked a SQL error in the response.",
+      },
+      exec: {
+        es: "Inyección SQL confirmada (no solo sospechada) en un parámetro identificado leyendo el código fuente filtrado de la aplicación. Prioridad máxima: es explotación probada, no una sonda genérica sin confirmar.",
+        en: "Confirmed (not just suspected) SQL injection in a parameter identified by reading leaked source code. Top priority: proven exploitation, not an unconfirmed generic probe.",
+      },
+      steps: {
+        es: ["Localizar el punto exacto en el código (concatenación string en la consulta).", "Migrar a consultas parametrizadas/prepared statements.", "Rol de BD de mínimo privilegio.", "Revisar si el mismo patrón se repite en otros controladores."],
+        en: ["Locate the exact code (string-concatenated query).", "Migrate to parameterized queries.", "Least-privilege DB role.", "Check if the same pattern repeats elsewhere."],
+      },
+    }),
+    dvwaCard({
+      re: /Lectura de fichero arbitrario confirmada en parámetro|Arbitrary file read confirmed in parameter/i,
+      cwe: ["CWE-98", "CWE-22"],
+      owasp: "A03:2021 / A01:2021",
+      mitre: [{ id: "T1083", name: "File and Directory Discovery", tactic: "Discovery" }],
+      refs: [{ label: "HackTricks — File inclusion", href: HT + "file-inclusion/index.html" }],
+      narrative: {
+        es: "El código fuente filtrado mostró una función de lectura de fichero (file_get_contents/include/require) alimentada directamente por un parámetro de la petición, sin sanitizar. La sonda dirigida a ese parámetro exacto confirmó el efecto: la respuesta trae contenido real de un fichero del sistema (/etc/passwd), no una simple página de error.",
+        en: "Leaked source code showed a file-read function fed directly by a request parameter, unsanitized. The targeted probe confirmed it: the response contains real system file content.",
+      },
+      exec: {
+        es: "Lectura arbitraria de fichero confirmada, no sospechada — se vio el código y se probó el efecto real. Riesgo de lectura de secretos de configuración del propio servidor.",
+        en: "Confirmed arbitrary file read — code seen and effect proven. Risk of reading the server's own configuration secrets.",
+      },
+      steps: {
+        es: ["Localizar el punto exacto en el código.", "Allow-list de nombres/rutas de fichero permitidas, nunca concatenar path de usuario.", "Ejecutar el proceso con permisos mínimos sobre el filesystem.", "Revisar si el mismo patrón se repite en otros controladores."],
+        en: ["Locate the exact code.", "Allow-list permitted file paths, never concatenate user path.", "Run the process with minimal filesystem permissions.", "Check if the same pattern repeats elsewhere."],
+      },
+    }),
+    dvwaCard({
+      re: /XSS reflejado confirmado en parámetro|Reflected XSS confirmed in parameter/i,
+      cwe: ["CWE-79"],
+      owasp: "A03:2021 Injection",
+      mitre: [{ id: "T1189", name: "Drive-by Compromise", tactic: "Initial Access" }],
+      refs: [{ label: "HackTricks — XSS", href: HT + "xss-cross-site-scripting/index.html" }],
+      narrative: {
+        es: "El código fuente filtrado mostró un echo/print directo de un parámetro de la petición sin escapar. La sonda dirigida confirmó el efecto real: el payload de prueba volvió sin codificar en el cuerpo de la respuesta (no como &lt;script&gt;, sino como <script> literal), confirmando ejecución potencial en el navegador de la víctima.",
+        en: "Leaked source showed a direct unescaped echo of a request parameter. The targeted probe confirmed the real effect: the test payload came back unencoded in the response body.",
+      },
+      exec: {
+        es: "XSS reflejado confirmado en un parámetro identificado leyendo el código fuente. Codificar salida y CSP con prioridad alta.",
+        en: "Confirmed reflected XSS in a parameter identified from source code. Encode output and add CSP as top priority.",
+      },
+      steps: {
+        es: ["Localizar el punto exacto en el código (echo/print sin escapar).", "Encoding contextual (HTML/attr/JS) al renderizar.", "CSP sin unsafe-inline.", "Revisar si el mismo patrón se repite en otros controladores."],
+        en: ["Locate the exact code (unescaped echo/print).", "Contextual encoding on render.", "CSP without unsafe-inline.", "Check if the same pattern repeats elsewhere."],
+      },
+    }),
+    dvwaCard({
+      re: /Ruta administrativa accesible sin autenticación|Administrative route accessible without authentication/i,
+      cwe: ["CWE-862"],
+      owasp: "A01:2021 Broken Access Control",
+      mitre: [{ id: "T1190", name: "Exploit Public-Facing Application", tactic: "Initial Access" }],
+      refs: [{ label: "HackTricks — Broken Access Control", href: "https://hacktricks.wiki/en/index.html" }],
+      narrative: {
+        es: "El código fuente filtrado declara una ruta de aspecto administrativo/interno sin ningún middleware de autenticación visible en la misma declaración. La sonda dirigida confirmó el efecto: una petición GET anónima recibió HTTP 200 en vez de una redirección a login o un 401/403.",
+        en: "Leaked source declares an admin/internal-looking route with no visible auth middleware. The targeted probe confirmed it: an anonymous GET got HTTP 200 instead of a login redirect or 401/403.",
+      },
+      exec: {
+        es: "Ruta administrativa alcanzable sin sesión, confirmada por petición real (no solo por lectura de código). Riesgo directo de acceso no autorizado a funcionalidad interna.",
+        en: "Admin route reachable without a session, confirmed by a real request. Direct risk of unauthorized access to internal functionality.",
+      },
+      steps: {
+        es: ["Aplicar el middleware de autenticación/autorización correspondiente.", "Auditar todas las rutas admin/internal del mismo fichero de rutas por el mismo patrón.", "Test de regresión que falle si la ruta vuelve a quedar accesible sin sesión."],
+        en: ["Apply the corresponding auth middleware.", "Audit every admin/internal route in the same routes file for the same pattern.", "Regression test that fails if the route becomes reachable without a session again."],
+      },
+    }),
   ];
 
   function sevKey(sev) {
