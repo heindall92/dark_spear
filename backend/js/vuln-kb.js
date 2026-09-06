@@ -2417,3 +2417,121 @@ export function exposureDeltaFindings(currentTitles, previousTitles) {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------------ *
+ * Nuclei — catálogo curado por stack detectado (no el catálogo completo:
+ * eso es ruido). Salida -jsonl: un objeto JSON por línea, cada uno ya trae
+ * severity/CVE/nombre propios — no hace falta heurística de confirmación,
+ * nuclei solo reporta cuando su template hizo match real contra la
+ * respuesta.
+ * ------------------------------------------------------------------------ */
+const NUCLEI_SEVERITY_MAP = {
+  critical: "Critical",
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+  info: "Info",
+  unknown: "Info",
+};
+
+/**
+ * Tags de nuclei a correr según el stack detectado por buildPlaybookContext.
+ * Siempre incluye "exposure,misconfig" (bajo ruido, alto valor en cualquier
+ * stack); suma tags específicos solo si aplican, para no correr miles de
+ * templates irrelevantes contra cada target.
+ */
+export function nucleiTagsForContext(ctx) {
+  const tags = ["exposure", "misconfig", "default-login"];
+  if (ctx.isWordpress) tags.push("wordpress", "wp-plugin");
+  if (ctx.isApache) tags.push("apache");
+  if (ctx.isDvwa) tags.push("php");
+  return tags;
+}
+
+export function nucleiCurlArgs(baseUrl, tags) {
+  return ["-target", baseUrl, "-tags", tags.join(","), "-jsonl", "-silent",
+    "-timeout", "10", "-rate-limit", "50"];
+}
+
+/**
+ * Parsea la salida -jsonl de nuclei (una línea = un match confirmado) a
+ * findings del motor. Máximo 10 por corrida: nuclei puede devolver muchos
+ * hallazgos de baja severidad (headers informativos) que no aportan más
+ * que ruido en el informe si se listan todos sin límite.
+ */
+export function nucleiFindings(stdout) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  for (const line of lines) {
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const info = hit.info || {};
+    const severity = NUCLEI_SEVERITY_MAP[String(info.severity || "").toLowerCase()] || "Info";
+    const cveIds = Array.isArray(info.classification?.["cve-id"]) ? info.classification["cve-id"] : [];
+    const cveSuffix = cveIds.length ? ` (${cveIds.join(", ")})` : "";
+    out.push({
+      title: `Nuclei: ${info.name || hit["template-id"] || "hallazgo sin nombre"}${cveSuffix}`,
+      severity,
+      description: `Template nuclei «${hit["template-id"] || "?"}» confirmó match real contra ${hit["matched-at"] || hit.host || "el target"}. ${info.description || ""}`.trim(),
+      remediation: (info.remediation || "Revisar el template y su referencia; aplicar el parche/hardening correspondiente a la CVE o misconfiguración detectada.").trim(),
+    });
+    if (out.length >= 10) break;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * SQLMap — descubrimiento de formularios propio de sqlmap (--forms/--crawl)
+ * en vez de que el motor intente capturar el formulario a mano: sqlmap ya
+ * resuelve eso mejor que un capture genérico. --level=1 --risk=1 son los
+ * valores más conservadores (evita payloads pesados/tiempo-based por
+ * defecto). Parseo de stdout: sqlmap imprime "Parameter: X (...)" y
+ * "Type: ..." por cada punto de inyección confirmado.
+ * ------------------------------------------------------------------------ */
+export function sqlmapCurlArgs(baseUrl) {
+  return ["-u", baseUrl, "--forms", "--crawl=2", "--batch",
+    "--level=1", "--risk=1", "--random-agent", "--flush-session"];
+}
+
+const SQLMAP_PARAM_RE = /Parameter:\s*([^\s(]+)/g;
+const SQLMAP_TYPE_RE = /Type:\s*(.+)/g;
+
+/**
+ * sqlmap confirma la inyección él mismo (no hace falta heurística extra
+ * sobre su output): si imprime "Parameter: X" es porque ya validó el
+ * punto de inyección con sus propios tests. Aquí solo se extrae esa
+ * confirmación al formato de finding del motor.
+ */
+export function sqlmapFindings(stdout) {
+  const text = String(stdout || "");
+  if (!/is vulnerable|sqlmap identified the following injection point/i.test(text)) return [];
+  const params = [...text.matchAll(SQLMAP_PARAM_RE)].map((m) => m[1]);
+  const types = [...text.matchAll(SQLMAP_TYPE_RE)].map((m) => m[1].trim());
+  if (!params.length) {
+    // Confirmado pero sin poder extraer el nombre exacto del parámetro:
+    // igual se reporta (evidencia real en el propio texto), sin inventar.
+    return [{
+      title: "Inyección SQL confirmada por sqlmap",
+      severity: "Critical",
+      description: "sqlmap confirmó al menos un punto de inyección SQL explotable durante el descubrimiento automático de formularios (--forms --crawl).",
+      remediation: "Revisar el reporte completo de sqlmap (--dump-all para el detalle); migrar a consultas parametrizadas en el/los formulario(s) afectado(s).",
+    }];
+  }
+  const seen = new Set();
+  const out = [];
+  params.forEach((param, i) => {
+    if (seen.has(param)) return;
+    seen.add(param);
+    out.push({
+      title: `Inyección SQL confirmada por sqlmap en parámetro «${param}»`,
+      severity: "Critical",
+      description: `sqlmap confirmó explotación real (no solo sospecha) del parámetro «${param}» durante el descubrimiento automático de formularios.${types[i] ? ` Tipo: ${types[i]}.` : ""}`,
+      remediation: "Migrar a consultas parametrizadas/prepared statements en el punto exacto; ejecutar sqlmap --dump-all solo con autorización explícita para medir el alcance real de los datos expuestos.",
+    });
+  });
+  return out;
+}

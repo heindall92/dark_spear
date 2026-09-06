@@ -45,6 +45,8 @@ import {
   GCS_LISTING_RE,
   secretValidateFindings,
   codeDangerFinding,
+  nucleiFindings,
+  sqlmapFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
   extractAsnFromBlob,
@@ -122,6 +124,8 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-nmap-perimeter") push("nmap-perimeter", text);
     if (r.id === "p1-waf-trigger") push("waf-trigger", text);
     if (r.id === "p1-wafw00f") push("wafw00f", text);
+    if (r.id === "p2-nuclei") push("nuclei", text);
+    if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -584,6 +588,20 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     codeDangerFinding(text, hit).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   });
+
+  // Nuclei: cada línea -jsonl ya viene confirmada por el propio template.
+  const nucleiText = probeIdx["nuclei"];
+  if (nucleiText) {
+    nucleiFindings(nucleiText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // sqlmap: descubrimiento + explotación propios (--forms --crawl).
+  const sqlmapText = probeIdx["sqlmap-forms"];
+  if (sqlmapText) {
+    sqlmapFindings(sqlmapText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
 
   // SSRF genérico → metadata AWS (IMDS): señal fuerte (credencial IAM real
   // en la respuesta) vs. señal débil (solo el listado de categorías IMDS,
