@@ -70,6 +70,10 @@ import {
   bloodhoundFindings,
   findDelegationFindings,
   netexecComputersFindings,
+  netexecDcListFindings,
+  gppPasswordFindings,
+  gppAutologinFindings,
+  ldapTrustFindings,
   domainControllerFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
@@ -173,6 +177,10 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-ad-bloodhound-dconly") push("ad-bloodhound", text);
     if (r.id === "p2-ad-finddelegation") push("ad-delegation", text);
     if (r.id === "p2-ad-nxc-computers") push("ad-nxc-computers", text);
+    if (r.id === "p2-ad-nxc-dc-list") push("ad-nxc-dc-list", text);
+    if (r.id === "p2-ad-nxc-gpp") push("ad-gpp", text);
+    if (r.id === "p2-ad-nxc-gpp-autologin") push("ad-gpp-autologin", text);
+    if (r.id === "p2-ad-ldap-trusts") push("ad-trusts", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -775,6 +783,26 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adNxcComputers = probeIdx["ad-nxc-computers"];
   if (adNxcComputers) {
     netexecComputersFindings(adNxcComputers).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adDcList = probeIdx["ad-nxc-dc-list"];
+  if (adDcList) {
+    netexecDcListFindings(adDcList).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adGpp = probeIdx["ad-gpp"];
+  if (adGpp) {
+    gppPasswordFindings(adGpp).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adGppAuto = probeIdx["ad-gpp-autologin"];
+  if (adGppAuto) {
+    gppAutologinFindings(adGppAuto).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adTrusts = probeIdx["ad-trusts"];
+  if (adTrusts) {
+    ldapTrustFindings(adTrusts).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
