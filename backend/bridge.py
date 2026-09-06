@@ -71,7 +71,7 @@ ALLOWED_TOOLS = {
     "crackmapexec", "netexec", "echo",  # echo kept for manual verification
     "ntlmrelayx.py", "smbexec.py", "atexec.py", "lookupsid.py",
     "samrdump.py", "mssqlclient.py", "ticketer.py", "getST.py",
-    "raiseChild.py", "dcomexec.py", "adscan",
+    "raiseChild.py", "dcomexec.py", "adscan", "findDelegation.py",
     "dnsrecon", "searchsploit",
     "ufw", "iptables", "nft",
 }
@@ -93,7 +93,7 @@ PHASE_TOOLS = {
         "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"},
     2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
-        "searchsploit", "adscan", "certipy"},
+        "searchsploit", "adscan", "certipy", "findDelegation.py"},
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
         "smbexec.py", "atexec.py", "dcomexec.py", "mssqlclient.py",
         "ntlmrelayx.py", "crackmapexec", "netexec", "ticketer.py",
@@ -131,6 +131,7 @@ TOOL_PATH_ALIASES: dict[str, tuple[str, ...]] = {
     "ticketer.py": ("ticketer.py", "impacket-ticketer"),
     "getST.py": ("getST.py", "impacket-getST"),
     "raiseChild.py": ("raiseChild.py", "impacket-raiseChild"),
+    "findDelegation.py": ("findDelegation.py", "impacket-findDelegation"),
     "certipy": ("certipy", "certipy-ad"),
 }
 
