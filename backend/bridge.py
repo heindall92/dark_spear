@@ -26,6 +26,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.error
@@ -62,7 +63,7 @@ CORS_ORIGINS = {
 }
 
 ALLOWED_TOOLS = {
-    "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "nuclei", "subfinder", "httpx", "testssl.sh", "hydra", "sqlmap",
+    "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "nuclei", "subfinder", "httpx", "testssl.sh", "semgrep", "hydra", "sqlmap",
     "wpscan",
     "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
@@ -88,7 +89,7 @@ PHASE_NAMES = {
 # are cumulative (see cumulative_phase_tools) — this dict holds only each
 # phase's OWN additions, not the running total.
 PHASE_TOOLS = {
-    1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "dig", "nslookup", "dnsrecon", "ldapsearch",
+    1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
         "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"},
     2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "smbclient", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
@@ -99,6 +100,16 @@ PHASE_TOOLS = {
         "getST.py", "raiseChild.py"},
     4: {"hashcat", "john"},
 }
+
+# Herramientas de análisis estático que operan sobre un fichero en disco,
+# no sobre una URL de red — distinto del modelo de /exec (tool+args contra
+# el target). Reciben el contenido ya filtrado por otra sonda, se escribe
+# a un fichero temporal 0600 y se borra al terminar; nunca se guarda en
+# el engagement ni se expone la ruta del fichero al cliente.
+SCAN_SOURCE_TOOLS: dict[str, list[str]] = {
+    "semgrep": ["--config=p/owasp-top-ten", "--json", "--timeout", "30", "--quiet"],
+}
+MAX_SCAN_SOURCE_BYTES = 500_000
 
 MAX_PHASE = max(PHASE_TOOLS)
 
@@ -1522,6 +1533,72 @@ class Handler(BaseHTTPRequestHandler):
             wiped = keystore.wipe()
             audit_log({"event": "keystore_panic", "wiped": wiped})
             self._send_json(200, {"ok": True, "wiped": wiped})
+            return
+
+        if self.path == "/tools/scan-source":
+            if CURRENT_SCOPE is None:
+                self._send_json(400, {"error": "no_active_engagement"})
+                return
+            body = self._read_json()
+            tool = body.get("tool", "")
+            content = body.get("content", "")
+            filename = body.get("filename", "leaked")
+            target = body.get("target", "")
+
+            if tool not in SCAN_SOURCE_TOOLS:
+                audit_log({"event": "scan_source_tool_not_allowlisted", "tool": tool})
+                self._send_json(403, {"error": "tool_not_allowlisted", "verdict": "tool_not_allowlisted"})
+                return
+            if tool not in cumulative_phase_tools(CURRENT_PHASE):
+                audit_log({"event": "phase_locked", "tool": tool, "current_phase": CURRENT_PHASE})
+                self._send_json(403, {"error": "phase_locked", "verdict": "phase_locked"})
+                return
+            scope = CURRENT_SCOPE["scope"]
+            if not _target_in_scope(target, scope):
+                audit_log({"event": "scope_violation", "tool": tool, "target": target, "scope": scope})
+                self._send_json(403, {"error": "scope_violation", "verdict": "scope_violation"})
+                return
+            if not isinstance(content, str) or not content.strip():
+                self._send_json(400, {"error": "empty_content"})
+                return
+            if len(content.encode("utf-8", errors="replace")) > MAX_SCAN_SOURCE_BYTES:
+                self._send_json(400, {"error": "content_too_large"})
+                return
+
+            resolved = shutil.which(tool)
+            if resolved is None:
+                result = {"stdout": "", "stderr": f"{tool}: command not found",
+                          "exit_code": -1, "verdict": "error"}
+                self._send_json(200, result)
+                return
+
+            # Nombre de fichero saneado (solo la extensión importa para el
+            # analizador de lenguaje del tool) — nunca se usa el filename
+            # del cliente como ruta real, solo como sufijo.
+            safe_suffix = "".join(c for c in os.path.splitext(filename)[1] if c.isalnum() or c == ".")[:10] or ".txt"
+            fd, tmp_path = tempfile.mkstemp(suffix=safe_suffix, prefix="ds-scan-")
+            try:
+                os.chmod(tmp_path, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as f:
+                    f.write(content)
+                cmd = [resolved] + SCAN_SOURCE_TOOLS[tool] + [tmp_path]
+                try:
+                    proc = subprocess.run(cmd, capture_output=True, text=True,
+                                           encoding="utf-8", errors="replace", timeout=45)
+                    stdout = _truncate_output(proc.stdout).replace(tmp_path, filename)
+                    stderr = _truncate_output(proc.stderr).replace(tmp_path, filename)
+                    result = {"stdout": stdout, "stderr": stderr,
+                              "exit_code": proc.returncode, "verdict": "ok"}
+                except subprocess.TimeoutExpired:
+                    result = {"stdout": "", "stderr": f"{tool}: timeout", "exit_code": -1, "verdict": "timeout"}
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+            audit_log({"event": "scan_source", "tool": tool, "filename": filename,
+                       "bytes": len(content), "exit_code": result["exit_code"]})
+            self._send_json(200, result)
             return
 
         if self.path == "/findings/propose":

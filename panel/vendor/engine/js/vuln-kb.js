@@ -2665,3 +2665,88 @@ export function testsslFindings(stdout, host) {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------------ *
+ * Semgrep — análisis estático real cuando una sonda de exposición filtra
+ * código fuente reconstruible (no solo config/.env), en vez de las 4
+ * firmas regex a mano de JS_CODE_DANGER_SIGNATURES. Se dispara desde
+ * agent.js contra el texto CRUDO de cualquier paso (no el blob acumulado
+ * completo, para no repetir el mismo hallazgo N veces) cuando ese texto
+ * pinta como código fuente real.
+ * ------------------------------------------------------------------------ */
+// <?php es señal suficiente por sí sola: el literal casi nunca aparece
+// fuera de un fichero PHP real (a diferencia de "function"/"class", que
+// sí pueden colarse en prosa de error genérica).
+const STRONG_SOURCE_SIGN = /<\?php\b/;
+
+const SOURCE_CODE_SIGNS = [
+  /^\s*(import|from)\s+[\w.]+\s+(import|as)\b/m,
+  /^\s*def\s+\w+\s*\(/m,
+  /^\s*(function|class)\s+\w+/m,
+  /^\s*(const|let|var)\s+\w+\s*=\s*require\(/m,
+  /^\s*public\s+(class|function|static)\b/m,
+  /\$\w+\s*=\s*\$_(?:GET|POST|REQUEST|SERVER)\[/,
+  /^\s*(if|foreach|while)\s*\(.{0,80}\)\s*\{/m,
+];
+
+/**
+ * Filtro barato antes de gastar el análisis caro (semgrep): exige una
+ * señal fuerte de lenguaje real (p. ej. <?php) o varias señales débiles
+ * combinadas, más un tamaño mínimo — evita disparar sobre un mensaje de
+ * error genérico que mencione "function" de pasada.
+ */
+export function looksLikeSourceCode(text) {
+  const t = String(text || "");
+  if (t.length < 120) return false;
+  if (STRONG_SOURCE_SIGN.test(t)) return true;
+  let hits = 0;
+  for (const re of SOURCE_CODE_SIGNS) {
+    if (re.test(t)) hits += 1;
+    if (hits >= 2) return true;
+  }
+  return false;
+}
+
+/** Extensión aproximada para que semgrep elija el parser correcto. */
+export function guessSourceExtension(text) {
+  const t = String(text || "");
+  if (STRONG_SOURCE_SIGN.test(t)) return ".php";
+  if (/^\s*def\s+\w+\s*\(/m.test(t) || /^\s*(import|from)\s+[\w.]+\s+(import|as)\b/m.test(t)) return ".py";
+  if (/^\s*public\s+(class|static)\b/m.test(t)) return ".java";
+  if (/^\s*(const|let|var)\s+\w+\s*=\s*require\(/m.test(t) || /^\s*(function|class)\s+\w+/m.test(t)) return ".js";
+  return ".txt";
+}
+
+const SEMGREP_SEVERITY_MAP = { ERROR: "High", WARNING: "Medium", INFO: "Low" };
+
+/**
+ * Parsea `semgrep --json`: cada `results[]` ya es un match real de una
+ * regla (no una sospecha), con su propio CWE/OWASP en `extra.metadata`.
+ * Máximo 8 por archivo escaneado — evita un solo leak generando decenas
+ * de findings casi idénticos.
+ */
+export function semgrepFindings(stdout, filename) {
+  let json;
+  try {
+    json = JSON.parse(String(stdout || ""));
+  } catch {
+    return [];
+  }
+  const results = Array.isArray(json.results) ? json.results : [];
+  const out = [];
+  for (const r of results) {
+    const extra = r.extra || {};
+    const meta = extra.metadata || {};
+    const cwe = Array.isArray(meta.cwe) ? meta.cwe[0] : (meta.cwe || null);
+    const owasp = Array.isArray(meta.owasp) ? meta.owasp[0] : (meta.owasp || null);
+    const line = r.start && r.start.line;
+    out.push({
+      title: `Semgrep: ${extra.message ? extra.message.slice(0, 80).trim() : (r.check_id || "hallazgo")} (${filename}${line ? `:${line}` : ""})`,
+      severity: SEMGREP_SEVERITY_MAP[extra.severity] || "Medium",
+      description: `Regla «${r.check_id || "?"}» de semgrep confirmó un match real en código fuente filtrado (${filename}${line ? `, línea ${line}` : ""}).${cwe ? ` ${cwe}.` : ""} ${extra.message || ""}`.trim(),
+      remediation: (extra.fix ? `Fix sugerido por la propia regla: ${extra.fix}. ` : "") + `Revisar y corregir el patrón exacto en ${filename}${line ? ` (línea ${line})` : ""}.${owasp ? ` Categoría: ${owasp}.` : ""}`,
+    });
+    if (out.length >= 8) break;
+  }
+  return out;
+}

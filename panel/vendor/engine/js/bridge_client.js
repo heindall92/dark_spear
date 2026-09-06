@@ -147,6 +147,14 @@ export async function execTool(tool, args, target) {
   return data;
 }
 
+export async function scanSource(tool, filename, content, target) {
+  const data = await postJSON("/tools/scan-source", withEngagementDir({ tool, filename, content, target }));
+  if (data.verdict && data.stdout === undefined) {
+    return { stdout: "", stderr: data.error || data.verdict, exit_code: data.exit_code ?? -1, verdict: data.verdict };
+  }
+  return data;
+}
+
 export function llmChat(endpoint, payload) {
   return postJSON("/llm/chat", { endpoint, payload });
 }
