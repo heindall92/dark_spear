@@ -22,6 +22,8 @@ import {
   bloodhoundFindings,
   PERIMETER_PORTS,
   AD_SURFACE_PORTS,
+  findDelegationFindings,
+  netexecComputersFindings,
 } from "../backend/js/vuln-kb.js";
 import { stepsForPhase, buildPlaybookContext } from "../backend/js/playbook.js";
 import { collectHeuristicFindings } from "../backend/js/finding-heuristics.js";
@@ -88,6 +90,8 @@ check("lookupsid null", ids2.includes("p2-ad-lookupsid-null"));
 check("samrdump null", ids2.includes("p2-ad-samrdump-null"));
 check("nxc users", ids2.includes("p2-ad-nxc-users"));
 check("bloodhound DCOnly", ids2.includes("p2-ad-bloodhound-dconly"));
+check("findDelegation", ids2.includes("p2-ad-finddelegation"));
+check("nxc computers", ids2.includes("p2-ad-nxc-computers"));
 const asrepSpec = stepsP2.find((s) => s.id === "p2-ad-asrep-1");
 const asrepArgs = typeof asrepSpec.args === "function"
   ? asrepSpec.args({ adDomain: "CORP.LOCAL", adUsers: ["alice"], isAdTarget: true })
@@ -143,6 +147,10 @@ const passpolOut = "Minimum password length: 7\nPassword Complexity: False\nAcco
 check("passpol weak", netexecPassPolFindings(passpolOut).some((f) => /longitud mínima/.test(f.title)));
 const bhOut = "Found 120 users\nFound 45 computers\nFound 80 groups\nDone in 00:00:42\nCompressing output into ds_bloodhound.zip\n";
 check("bloodhound Info", bloodhoundFindings(bhOut).some((f) => /BloodHound DCOnly/.test(f.title) && f.severity === "Info"));
+const delOut = "DC01$   Unconstrained\nsvc_web  Constrained\nWEB01$  Resource-Based\n";
+check("delegation High", findDelegationFindings(delOut).some((f) => /delegación Kerberos/.test(f.title) && f.severity === "High"));
+const compsOut = "SMB  10.10.10.10  445  DC01  DC01$\nSMB  10.10.10.10  445  DC01  WEB01$\n";
+check("computers Info", netexecComputersFindings(compsOut).some((f) => /equipo/.test(f.title)));
 
 const heur = collectHeuristicFindings(
   dcNmap + nxc + asrepOut,
@@ -163,6 +171,8 @@ const heur = collectHeuristicFindings(
     { id: "p2-ad-nxc-groups", text: nxcGroupsOut },
     { id: "p2-ad-nxc-passpol", text: passpolOut },
     { id: "p2-ad-bloodhound-dconly", text: bhOut },
+    { id: "p2-ad-finddelegation", text: delOut },
+    { id: "p2-ad-nxc-computers", text: compsOut },
   ],
 );
 check("heurística DC", heur.some((f) => /Domain Controller probable/.test(f.title)));
@@ -176,6 +186,8 @@ check("heurística lookupsid", heur.some((f) => /RID cycling/.test(f.title)));
 check("heurística samrdump", heur.some((f) => /SAMR/.test(f.title)));
 check("heurística nxc users", heur.some((f) => /netexec --users/.test(f.title)));
 check("heurística bloodhound", heur.some((f) => /BloodHound DCOnly/.test(f.title)));
+check("heurística delegation", heur.some((f) => /delegación Kerberos/.test(f.title)));
+check("heurística computers", heur.some((f) => /equipo/.test(f.title)));
 
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");

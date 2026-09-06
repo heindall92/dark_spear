@@ -42,7 +42,7 @@ const PHASE_TOOLS = {
       "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"],
   2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
-      "searchsploit", "adscan", "certipy"],
+      "searchsploit", "adscan", "certipy", "findDelegation.py"],
   3: ["sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
       "smbexec.py", "atexec.py", "dcomexec.py", "mssqlclient.py",
       "ntlmrelayx.py", "crackmapexec", "netexec", "ticketer.py",

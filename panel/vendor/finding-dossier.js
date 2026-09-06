@@ -1911,6 +1911,32 @@
       },
     },
     {
+      re: /^AD:\s*delegación Kerberos/i,
+      cwe: ["CWE-269"],
+      owasp: "A01:2021 Broken Access Control",
+      mitre: [{ id: "T1134.001", name: "Access Token Manipulation: Token Impersonation/Theft", tactic: "Privilege Escalation" }],
+      govKey: "misconfig",
+      gdpr: ["Art. 32"],
+      iso: ["A.8.2", "A.8.9"],
+      ens: "Alto",
+      nis2: "Art. 21.2.i",
+      kill: "Privilege Escalation",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:C/C:H/I:H/A:N",
+      impact: { confidentiality: "high", integrity: "high", availability: "none" },
+      narrative: {
+        es: "findDelegation listó unconstrained, constrained o RBCD. Es superficie de impersonación Kerberos; Dark Spear no pidió tickets ni escribió msDS-AllowedToActOnBehalfOfOtherIdentity.",
+        en: "findDelegation listed unconstrained, constrained or RBCD. That is Kerberos impersonation surface; Dark Spear did not request tickets or write msDS-AllowedToActOnBehalfOfOtherIdentity.",
+      },
+      exec: {
+        es: "Delegación peligrosa inventariada. Retirar TrustedForDelegation y auditar RBCD.",
+        en: "Dangerous delegation inventoried. Remove TrustedForDelegation and audit RBCD.",
+      },
+      steps: {
+        es: ["Quitar unconstrained en servers no DC.", "Revisar constrained a HTTP/CIFS sensibles.", "Auditar quién puede escribir RBCD."],
+        en: ["Remove unconstrained on non-DC servers.", "Review constrained to sensitive HTTP/CIFS.", "Audit who can write RBCD."],
+      },
+    },
+    {
       re: /^AD:\s*(?:WinRM autenticado|autenticación WinRM válida)/i,
       cwe: ["CWE-287"],
       owasp: "A07:2021 Identification and Authentication Failures",

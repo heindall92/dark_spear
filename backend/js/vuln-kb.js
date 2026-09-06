@@ -3197,6 +3197,29 @@ export function adAuthCollectionSteps(step, host) {
       desc: "BloodHound DCOnly (LDAP, sin sesiones en hosts) → zip en evidence",
       skipIf: skipCreds,
     }),
+    step("p2-ad-finddelegation", "findDelegation.py", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      return [`${d}/${user}:${pass}`, "-dc-ip", h];
+    }, null, {
+      desc: "Delegación unconstrained/constrained/RBCD (findDelegation)",
+      skipIf: skipCreds,
+    }),
+    step("p2-ad-nxc-computers", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--computers");
+      return args;
+    }, null, {
+      desc: "Enumerar equipos de dominio (netexec smb --computers)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
   );
   return steps;
 }
@@ -3798,6 +3821,93 @@ export function bloodhoundFindings(stdout) {
   }];
 }
 
+/** findDelegation.py — unconstrained / constrained / RBCD inventory. */
+export function findDelegationFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|KDC_ERR|Invalid credentials|LDAP.*failed/i.test(text)
+    && !/Unconstrained|Constrained|Resource-Based|AccountName/i.test(text)) {
+    return [];
+  }
+  const unconstrained = [];
+  const constrained = [];
+  const rbcd = [];
+  for (const line of text.split("\n")) {
+    if (/Unconstrained/i.test(line)) {
+      const m = line.match(/\b([A-Za-z0-9._$-]+(?:\$)?)\b/);
+      if (m) unconstrained.push(m[1]);
+    } else if (/Resource-Based|RBCD/i.test(line)) {
+      const m = line.match(/\b([A-Za-z0-9._$-]+(?:\$)?)\b/);
+      if (m) rbcd.push(m[1]);
+    } else if (/Constrained/i.test(line)) {
+      const m = line.match(/\b([A-Za-z0-9._$-]+(?:\$)?)\b/);
+      if (m) constrained.push(m[1]);
+    }
+  }
+  // Table-style Impacket output often lists AccountName + DelegationType
+  for (const m of text.matchAll(/([A-Za-z0-9._$-]+\$?)\s+(Unconstrained|Constrained|Resource-Based)/gi)) {
+    const name = m[1];
+    const kind = m[2].toLowerCase();
+    if (kind.startsWith("unconst")) unconstrained.push(name);
+    else if (kind.startsWith("resource")) rbcd.push(name);
+    else constrained.push(name);
+  }
+  const uniq = (arr) => [...new Set(arr.map((x) => x))];
+  const u = uniq(unconstrained);
+  const c = uniq(constrained);
+  const r = uniq(rbcd);
+  if (!u.length && !c.length && !r.length
+    && !/AccountName|DelegationType|findDelegation/i.test(text)) {
+    return [];
+  }
+  if (!u.length && !c.length && !r.length) {
+    return [{
+      title: "AD: findDelegation sin relaciones listadas",
+      severity: "Info",
+      description: "findDelegation corrió con creds pero no parseó unconstrained/constrained/RBCD. Revisar evidencia o importar BloodHound.",
+      remediation: "Confirmar que la cuenta puede leer msDS-AllowedToDelegateTo / TrustedForDelegation.",
+    }];
+  }
+  const sev = u.length || r.length ? "High" : "Medium";
+  const parts = [];
+  if (u.length) parts.push(`unconstrained: ${u.slice(0, 6).join(", ")}`);
+  if (c.length) parts.push(`constrained: ${c.slice(0, 6).join(", ")}`);
+  if (r.length) parts.push(`RBCD: ${r.slice(0, 6).join(", ")}`);
+  return [{
+    title: `AD: delegación Kerberos${u.length ? " unconstrained" : ""}${r.length ? " / RBCD" : ""}${!u.length && !r.length ? " constrained" : ""}`,
+    severity: sev,
+    description: `findDelegation inventarió relaciones de delegación — ${parts.join("; ")}. Superficie de abuso (T1134.001); no se solicitó ticket ni se modificó msDS-AllowedToActOnBehalfOfOtherIdentity.`,
+    remediation: "Retirar TrustedForDelegation innecesario; auditar constrained a servicios sensibles; restringir quién puede escribir RBCD en computer objects.",
+  }];
+}
+
+/** netexec smb --computers. */
+export function netexecComputersFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED/i.test(text) && !/\$|computer|rid:/i.test(text)) {
+    return [];
+  }
+  const comps = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:^|[\s\\])([A-Za-z0-9._-]{2,64}\$)/g)) {
+    const c = m[1];
+    if (seen.has(c.toLowerCase())) continue;
+    seen.add(c.toLowerCase());
+    comps.push(c);
+    if (comps.length >= 30) break;
+  }
+  if (!comps.length && !/--computers|Enumerat.*computer/i.test(text)) return [];
+  return [{
+    title: comps.length
+      ? `AD: ${comps.length} equipo(s) de dominio (netexec --computers)`
+      : "AD: enumeración de equipos de dominio (netexec --computers)",
+    severity: "Info",
+    description: comps.length
+      ? `netexec smb --computers listó: ${comps.slice(0, 12).join(", ")}${comps.length > 12 ? "…" : ""}. Inventario de machine accounts.`
+      : "netexec --computers devolvió salida de enumeración; revisar evidencia si la lista no parseó.",
+    remediation: "Retirar equipos huérfanos del dominio; segmentar servers administrativos.",
+  }];
+}
+
 /** Consolida parsers AD sobre el texto de cada sonda. */
 export function adCollectionFindings(kind, stdout) {
   if (kind === "netexec") return netexecSmbFindings(stdout);
@@ -3815,5 +3925,7 @@ export function adCollectionFindings(kind, stdout) {
   if (kind === "nxc-groups") return netexecGroupsFindings(stdout);
   if (kind === "nxc-passpol") return netexecPassPolFindings(stdout);
   if (kind === "bloodhound") return bloodhoundFindings(stdout);
+  if (kind === "delegation") return findDelegationFindings(stdout);
+  if (kind === "nxc-computers") return netexecComputersFindings(stdout);
   return [];
 }

@@ -10,7 +10,7 @@ const ALLOWED_TOOLS_HINT = [
   "crackmapexec", "netexec", "echo",
   "ntlmrelayx.py", "smbexec.py", "atexec.py", "lookupsid.py",
   "samrdump.py", "mssqlclient.py", "ticketer.py", "getST.py",
-  "raiseChild.py", "dcomexec.py", "adscan",
+  "raiseChild.py", "dcomexec.py", "adscan", "findDelegation.py",
   "dnsrecon", "searchsploit",
   "ufw", "iptables", "nft",
 ];

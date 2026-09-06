@@ -68,6 +68,8 @@ import {
   netexecGroupsFindings,
   netexecPassPolFindings,
   bloodhoundFindings,
+  findDelegationFindings,
+  netexecComputersFindings,
   domainControllerFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
@@ -169,6 +171,8 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-ad-nxc-groups") push("ad-nxc-groups", text);
     if (r.id === "p2-ad-nxc-passpol") push("ad-nxc-passpol", text);
     if (r.id === "p2-ad-bloodhound-dconly") push("ad-bloodhound", text);
+    if (r.id === "p2-ad-finddelegation") push("ad-delegation", text);
+    if (r.id === "p2-ad-nxc-computers") push("ad-nxc-computers", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -761,6 +765,16 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adBloodhound = probeIdx["ad-bloodhound"];
   if (adBloodhound) {
     bloodhoundFindings(adBloodhound).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adDelegation = probeIdx["ad-delegation"];
+  if (adDelegation) {
+    findDelegationFindings(adDelegation).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adNxcComputers = probeIdx["ad-nxc-computers"];
+  if (adNxcComputers) {
+    netexecComputersFindings(adNxcComputers).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

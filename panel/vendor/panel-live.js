@@ -3071,7 +3071,7 @@
     (findings || []).forEach(function (f) {
       var t = String((f && f.title) || "");
       if (!/^AD:/i.test(t) && !/SMB \(TCP\/445\)|LDAP \(TCP\/389\)|Kerberos \(TCP\/88\)|LDAPS \(TCP\/636\)/i.test(t)) return;
-      if (/AS-REP|SPN|Kerberoastable|ADCS|WinRM|BloodHound|grupos privilegiados|política de contraseñas|complejidad de contraseña/i.test(t)) auth.push(f);
+      if (/AS-REP|SPN|Kerberoastable|ADCS|WinRM|BloodHound|grupos privilegiados|política de contraseñas|complejidad de contraseña|delegación Kerberos/i.test(t)) auth.push(f);
       else if (/SMB signing|bind LDAP|longitud mínima|Domain Controller|escritura en C\$/i.test(t)) posture.push(f);
       else if (/usuario|RPC null|RID cycling|SAMR \(samrdump\)|netexec --users/i.test(t)) users.push(f);
       else if (/share|sesión nula|guest\/null/i.test(t)) shares.push(f);
