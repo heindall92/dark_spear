@@ -45,6 +45,9 @@ import {
   nucleiTagsForContext,
   nucleiCurlArgs,
   sqlmapCurlArgs,
+  subfinderArgs,
+  extractSubfinderHosts,
+  httpxArgsForHosts,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -225,6 +228,9 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
     dangerousCodeHits: (ctx.dangerousCodeHits && ctx.dangerousCodeHits.length)
       ? ctx.dangerousCodeHits
       : extractDangerousCodePatterns(rawBlob),
+    subfinderHosts: (ctx.subfinderHosts && ctx.subfinderHosts.length)
+      ? ctx.subfinderHosts
+      : extractSubfinderHosts(rawBlob, root),
     extractedAsn: ctx.extractedAsn || extractAsnFromBlob(rawBlob),
     asnHolder: ctx.asnHolder || extractAsnHolderFromBlob(rawBlob),
     asnIsHyperscaler: ctx.asnIsHyperscaler === true
@@ -271,6 +277,15 @@ function domainOsintSteps(root, host) {
       `https://crt.sh/?q=${ctHost}&output=json`,
     ], null, {
       desc: "Certificate Transparency pasivo (crt.sh JSON)",
+    }),
+    step("p1-osint-subfinder", "subfinder", subfinderArgs(root), null, {
+      desc: "Enumeración pasiva de subdominios (subfinder, sin tocar el target)",
+    }),
+    step("p1-osint-httpx", "httpx", (c) => (
+      c.subfinderHosts && c.subfinderHosts.length ? httpxArgsForHosts(c.subfinderHosts) : null
+    ), null, {
+      desc: "Fingerprint HTTP de los subdominios hallados por subfinder",
+      skipIf: (c) => !c.subfinderHosts || !c.subfinderHosts.length,
     }),
     ...idpDiscoveryCurlSteps(step, root),
   ];
