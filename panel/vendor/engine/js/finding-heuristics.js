@@ -47,6 +47,7 @@ import {
   codeDangerFinding,
   nucleiFindings,
   sqlmapFindings,
+  httpxFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
   extractAsnFromBlob,
@@ -126,6 +127,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-wafw00f") push("wafw00f", text);
     if (r.id === "p2-nuclei") push("nuclei", text);
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
+    if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -600,6 +602,13 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const sqlmapText = probeIdx["sqlmap-forms"];
   if (sqlmapText) {
     sqlmapFindings(sqlmapText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // httpx sobre subdominios de subfinder: inventario consolidado (1 finding).
+  const httpxText = probeIdx["httpx-hosts"];
+  if (httpxText) {
+    httpxFindings(httpxText, scopeRoot(ctx.host || "", ctx.scope)).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

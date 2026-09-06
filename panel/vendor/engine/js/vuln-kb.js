@@ -2535,3 +2535,67 @@ export function sqlmapFindings(stdout) {
   });
   return out;
 }
+
+/* ------------------------------------------------------------------------ *
+ * subfinder + httpx — enumeración pasiva de subdominios y fingerprint HTTP
+ * real, en vez de la lista fija de 6 prefijos adivinados (www/mail/vpn/
+ * dev/api/staging). subfinder solo consulta fuentes pasivas (CT logs,
+ * agregadores DNS) — no toca el target directamente, cero tráfico extra
+ * hacia el cliente por esta sonda. httpx sí toca cada subdominio hallado
+ * (fingerprint HTTP real), acotado a MAX_HTTPX_HOSTS para no convertir un
+ * dominio con cientos de subdominios en un scan sin límite.
+ * ------------------------------------------------------------------------ */
+const MAX_HTTPX_HOSTS = 8;
+
+export function subfinderArgs(root) {
+  return ["-d", root, "-silent", "-timeout", "10"];
+}
+
+/** Un hostname por línea en modo -silent; descarta líneas vacías/ruido. */
+export function extractSubfinderHosts(stdout, root) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim().toLowerCase()).filter(Boolean);
+  const seen = new Set();
+  const out = [];
+  for (const line of lines) {
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(line)) continue;
+    if (line === root || seen.has(line)) continue;
+    seen.add(line);
+    out.push(line);
+    if (out.length >= MAX_HTTPX_HOSTS) break;
+  }
+  return out;
+}
+
+export function httpxArgsForHosts(hosts) {
+  const args = ["-silent", "-json", "-tech-detect", "-status-code", "-title", "-timeout", "8"];
+  for (const h of hosts) args.push("-u", `https://${h}`);
+  return args;
+}
+
+/**
+ * Consolida el fingerprint de todos los subdominios vivos en UN finding
+ * Info (inventario de activos, no vulnerabilidad) en vez de uno por
+ * subdominio — evita ruido cuando hay varios subdominios activos.
+ */
+export function httpxFindings(stdout, root) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const hosts = [];
+  for (const line of lines) {
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!hit.url) continue;
+    const tech = Array.isArray(hit.tech) && hit.tech.length ? ` [${hit.tech.slice(0, 4).join(", ")}]` : "";
+    hosts.push(`${hit.url} (${hit.status_code || "?"})${hit.title ? ` "${hit.title}"` : ""}${tech}`);
+  }
+  if (!hosts.length) return [];
+  return [{
+    title: `${hosts.length} subdominio(s) activo(s) de ${root} descubiertos pasivamente`,
+    severity: "Info",
+    description: `Enumeración pasiva (subfinder, sin tocar el target) seguida de fingerprint HTTP (httpx) sobre los subdominios hallados: ${hosts.join("; ")}. Contexto de superficie de ataque: confirmar con el cliente si todos pertenecen al alcance autorizado antes de sondear más a fondo cada uno.`,
+    remediation: "Ninguna por sí sola: es inventario de activos. Ampliar el alcance formalmente si aparece infraestructura relevante no contemplada, o retirar del DNS público lo que no deba ser accesible.",
+  }];
+}

@@ -1677,6 +1677,32 @@
       },
     },
     {
+      re: /subdominio\(s\) activo\(s\).*descubiertos pasivamente/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1590.002", name: "Gather Victim Network Information: DNS", tactic: "Reconnaissance" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Enumeración pasiva de subdominios (sin tocar el target) seguida de fingerprint HTTP de cada uno hallado vivo. Contexto de inventario de superficie de ataque: confirma qué activos están realmente publicados bajo el dominio, útil para verificar cobertura de alcance y detectar infraestructura olvidada (staging, dev, paneles internos indexados por error en DNS público).",
+        en: "Passive subdomain enumeration (no traffic to the target) followed by HTTP fingerprinting of each one found alive. Attack-surface inventory context: confirms which assets are actually published under the domain, useful for scope coverage and spotting forgotten infrastructure (staging, dev, internal panels mistakenly public in DNS).",
+      },
+      exec: {
+        es: "Inventario de subdominios activos bajo el dominio en alcance. Ninguna acción de remediación por sí sola: revisar si alguno no debería ser público.",
+        en: "Inventory of active subdomains under the in-scope domain. No remediation action by itself: review whether any shouldn't be public.",
+      },
+      steps: {
+        es: ["Confirmar con el cliente que todos los subdominios listados están en el alcance autorizado.", "Retirar del DNS público cualquier subdominio de staging/dev/interno que no deba serlo.", "Si algún subdominio muestra tecnología/versión notable, sondearlo específicamente en una fase posterior."],
+        en: ["Confirm with the client that every listed subdomain is in the authorized scope.", "Remove any staging/dev/internal subdomain that shouldn't be public from DNS.", "If a subdomain shows a notable tech/version, probe it specifically in a later phase."],
+      },
+    },
+    {
       re: /confirmado como tenant Microsoft 365/i,
       cwe: [],
       owasp: "N/A",
