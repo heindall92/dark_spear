@@ -44,6 +44,7 @@ import {
   AZURE_BLOB_LISTING_RE,
   GCS_LISTING_RE,
   secretValidateFindings,
+  codeDangerFinding,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
   extractAsnFromBlob,
@@ -116,6 +117,8 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-idp-saml-wellknown") push("idp-saml-wk", text);
     m = /^p1-secretval-(\d+)$/.exec(r.id);
     if (m) push(`secretval:${m[1]}`, text);
+    m = /^p2-codeguided-(\d+)$/.exec(r.id);
+    if (m) push(`codeguided:${m[1]}`, text);
     if (r.id === "p1-nmap-perimeter") push("nmap-perimeter", text);
     if (r.id === "p1-waf-trigger") push("waf-trigger", text);
     if (r.id === "p1-wafw00f") push("wafw00f", text);
@@ -569,6 +572,16 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     const text = probeIdx[`secretval:${i + 1}`];
     if (!text) return;
     secretValidateFindings(text, hit.kind, hit.label).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  });
+
+  // Sondas dirigidas por código fuente/config filtrado: confirma (o
+  // descarta) cada hit contra la respuesta real de su sonda p2-codeguided-N.
+  const dangerousCodeHits = ctx.dangerousCodeHits || [];
+  dangerousCodeHits.forEach(function (hit, i) {
+    const text = probeIdx[`codeguided:${i + 1}`];
+    if (!text) return;
+    codeDangerFinding(text, hit).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   });
 
