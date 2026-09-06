@@ -48,6 +48,7 @@ import {
   subfinderArgs,
   extractSubfinderHosts,
   httpxArgsForHosts,
+  testsslArgs,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -550,6 +551,9 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
   if (sslPort && !ipTarget) {
     steps.push(step("p1-osint-nmap-ssl-cert", "nmap", ["--script", "ssl-cert", "-p", sslPort, host], null, {
       desc: "Certificado TLS vía nmap ssl-cert",
+    }));
+    steps.push(step("p1-testssl", "testssl.sh", testsslArgs(host, sslPort), null, {
+      desc: `Protocolos/ciphers/vulnerabilidades TLS conocidas (testssl.sh, puerto ${sslPort})`,
     }));
   }
 

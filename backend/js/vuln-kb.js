@@ -2599,3 +2599,69 @@ export function httpxFindings(stdout, root) {
     remediation: "Ninguna por sí sola: es inventario de activos. Ampliar el alcance formalmente si aparece infraestructura relevante no contemplada, o retirar del DNS público lo que no deba ser accesible.",
   }];
 }
+
+/* ------------------------------------------------------------------------ *
+ * testssl.sh — hueco total previo: cero verificación de TLS/cipher/cert.
+ * Se parsea el output de texto plano (por defecto, sin --json*): cada
+ * check imprime una línea "<nombre>  <resultado>", formato estable entre
+ * versiones de la herramienta. No se intenta usar --jsonfile-pretty
+ * /dev/stdout: eso intercala el JSON con el texto normal en el mismo
+ * stream y produce salida no parseable de forma fiable.
+ * ------------------------------------------------------------------------ */
+export function testsslArgs(host, port = "443") {
+  return ["--fast", "--color", "0", "-p", "-U", `${host}:${port}`];
+}
+
+const DEPRECATED_PROTOCOLS = ["SSLv2", "SSLv3", "TLS 1", "TLS 1.1"];
+
+/** Protocolos obsoletos que la línea marca como "offered" (no "not offered"). */
+export function testsslDeprecatedProtocols(stdout) {
+  const text = String(stdout || "");
+  const found = [];
+  for (const proto of DEPRECATED_PROTOCOLS) {
+    const re = new RegExp(`^\\s*${proto.replace(".", "\\.")}\\s+offered\\b`, "m");
+    if (re.test(text)) found.push(proto);
+  }
+  return found;
+}
+
+/**
+ * testssl marca una vulnerabilidad real con "VULNERABLE (NOT ok)" — texto
+ * exacto y estable de la herramienta, distinto de "not vulnerable (OK)".
+ * Filtrar por ese literal evita falsos positivos por la palabra
+ * "vulnerable" apareciendo también en el caso negativo.
+ */
+export function testsslVulnerabilities(stdout) {
+  const text = String(stdout || "");
+  const out = [];
+  for (const line of text.split("\n")) {
+    if (!/VULNERABLE \(NOT ok\)/i.test(line)) continue;
+    const name = line.split(/VULNERABLE \(NOT ok\)/i)[0].trim();
+    if (name) out.push(name);
+  }
+  return out;
+}
+
+export function testsslFindings(stdout, host) {
+  const out = [];
+  const vulns = testsslVulnerabilities(stdout);
+  vulns.forEach((name) => {
+    out.push({
+      title: `${host || "El target"} vulnerable a ${name} (testssl.sh)`,
+      severity: "Critical",
+      description: `testssl.sh confirmó la vulnerabilidad "${name}" contra el servicio TLS de ${host || "el target"} (evidencia: "VULNERABLE (NOT ok)" en el output de la herramienta, no una sospecha por versión).`,
+      remediation: "Parchear la librería TLS del servidor (OpenSSL/similar) o deshabilitar la configuración específica que la herramienta identifica; volver a correr testssl.sh tras el cambio para confirmar cierre.",
+    });
+  });
+  const deprecated = testsslDeprecatedProtocols(stdout);
+  if (deprecated.length) {
+    const critical = deprecated.some((p) => p.startsWith("SSL"));
+    out.push({
+      title: `Protocolo(s) TLS/SSL obsoleto(s) habilitado(s): ${deprecated.join(", ")}`,
+      severity: critical ? "Critical" : "Medium",
+      description: `El servicio TLS de ${host || "el target"} sigue aceptando ${deprecated.join(", ")}. ${deprecated.some((p) => p.startsWith("SSL")) ? "SSLv2/SSLv3 tienen fallos criptográficos conocidos sin mitigación (no es cuestión de configurarlos mejor, hay que deshabilitarlos)." : "TLS 1.0/1.1 están deprecados (PCI-DSS los prohíbe desde 2018) aunque no tengan un exploit trivial por sí solos."}`,
+      remediation: "Deshabilitar los protocolos listados en la configuración del servidor web/balanceador, dejando como mínimo TLS 1.2 y, si el stack lo soporta, TLS 1.3 únicamente.",
+    });
+  }
+  return out;
+}

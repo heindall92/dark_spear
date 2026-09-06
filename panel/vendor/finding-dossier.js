@@ -2423,6 +2423,44 @@
         en: ["Apply the corresponding auth middleware.", "Audit every admin/internal route in the same routes file for the same pattern.", "Regression test that fails if the route becomes reachable without a session again."],
       },
     }),
+    dvwaCard({
+      re: /vulnerable a .*\(testssl\.sh\)/i,
+      cwe: ["CWE-327", "CWE-326"],
+      owasp: "A02:2021 Cryptographic Failures",
+      mitre: [{ id: "T1040", name: "Network Sniffing", tactic: "Credential Access" }],
+      refs: [{ label: "HackTricks — TLS/SSL", href: "https://hacktricks.wiki/en/index.html" }],
+      narrative: {
+        es: "testssl.sh confirmó una vulnerabilidad TLS concreta (Heartbleed, CCS injection, Ticketbleed, POODLE, etc.) con evidencia real de la herramienta ('VULNERABLE (NOT ok)'), no una sospecha por versión de librería reportada en un banner. Estas vulnerabilidades suelen permitir extraer memoria del proceso servidor (claves privadas, sesiones de otros usuarios) o descifrar tráfico sin comprometer credenciales.",
+        en: "testssl.sh confirmed a concrete TLS vulnerability (Heartbleed, CCS injection, Ticketbleed, POODLE, etc.) with real tool evidence, not a version-banner guess. These typically allow extracting server process memory (private keys, other users' sessions) or decrypting traffic without stealing credentials first.",
+      },
+      exec: {
+        es: "Vulnerabilidad TLS confirmada por herramienta especializada. Prioridad máxima: puede exponer claves privadas o tráfico cifrado de otros usuarios.",
+        en: "TLS vulnerability confirmed by a specialized tool. Top priority: can expose private keys or other users' encrypted traffic.",
+      },
+      steps: {
+        es: ["Actualizar OpenSSL/la librería TLS del servidor a una versión parcheada.", "Si aplica (Heartbleed), rotar el certificado y la clave privada — no basta con parchear.", "Re-ejecutar testssl.sh tras el cambio para confirmar cierre."],
+        en: ["Update OpenSSL/the server's TLS library to a patched version.", "If applicable (Heartbleed), rotate the certificate and private key — patching alone is not enough.", "Re-run testssl.sh after the change to confirm closure."],
+      },
+    }),
+    dvwaCard({
+      re: /Protocolo\(s\) TLS\/SSL obsoleto/i,
+      cwe: ["CWE-327"],
+      owasp: "A02:2021 Cryptographic Failures",
+      mitre: [{ id: "T1040", name: "Network Sniffing", tactic: "Credential Access" }],
+      refs: [{ label: "HackTricks — TLS/SSL", href: "https://hacktricks.wiki/en/index.html" }],
+      narrative: {
+        es: "El servicio TLS acepta protocolos obsoletos (SSLv2/SSLv3 rotos criptográficamente sin mitigación posible, o TLS 1.0/1.1 deprecados por PCI-DSS desde 2018). No requiere un exploit específico para ser un hallazgo de compliance/hardening real: un cliente que fuerce el protocolo viejo degrada la conexión a cifrado débil o roto.",
+        en: "The TLS service accepts obsolete protocols (SSLv2/SSLv3 cryptographically broken with no possible mitigation, or TLS 1.0/1.1 deprecated by PCI-DSS since 2018). No specific exploit is needed for this to be a real compliance/hardening finding: a client forcing the old protocol downgrades to weak or broken encryption.",
+      },
+      exec: {
+        es: "Protocolos TLS obsoletos habilitados. Riesgo criptográfico y de compliance (PCI-DSS, ENS). Deshabilitar en la configuración del servidor.",
+        en: "Obsolete TLS protocols enabled. Cryptographic and compliance risk (PCI-DSS, ENS). Disable in the server configuration.",
+      },
+      steps: {
+        es: ["Deshabilitar SSLv2/SSLv3/TLS 1.0/TLS 1.1 en la configuración del servidor web o balanceador.", "Dejar como mínimo TLS 1.2, TLS 1.3 si el stack lo soporta.", "Re-ejecutar testssl.sh para confirmar que solo quedan protocolos modernos."],
+        en: ["Disable SSLv2/SSLv3/TLS 1.0/TLS 1.1 in the web server or load balancer configuration.", "Keep TLS 1.2 as the minimum, TLS 1.3 if the stack supports it.", "Re-run testssl.sh to confirm only modern protocols remain."],
+      },
+    }),
   ];
 
   function sevKey(sev) {
