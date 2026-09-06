@@ -3070,10 +3070,10 @@
     (findings || []).forEach(function (f) {
       var t = String((f && f.title) || "");
       if (!/^AD:/i.test(t) && !/SMB \(TCP\/445\)|LDAP \(TCP\/389\)|Kerberos \(TCP\/88\)|LDAPS \(TCP\/636\)/i.test(t)) return;
-      if (/SMB signing|bind LDAP|longitud mínima/i.test(t)) posture.push(f);
-      else if (/usuario/i.test(t)) users.push(f);
-      else if (/share|sesión nula/i.test(t)) shares.push(f);
-      else if (/dominio|fingerprint|enum4linux\)/i.test(t) || /TCP\/(445|389|88|636)/.test(t)) domain.push(f);
+      if (/SMB signing|bind LDAP|longitud mínima|Domain Controller|escritura en C\$/i.test(t)) posture.push(f);
+      else if (/usuario|RPC null/i.test(t)) users.push(f);
+      else if (/share|sesión nula|guest\/null/i.test(t)) shares.push(f);
+      else if (/dominio|fingerprint|enum4linux\)/i.test(t) || /TCP\/(445|389|88|636|135|5985)/.test(t)) domain.push(f);
       else if (/^AD:/i.test(t)) other.push(f);
     });
     return { domain: domain, users: users, shares: shares, posture: posture, other: other };
@@ -3088,6 +3088,7 @@
       var target = (meta && meta.target) || "—";
       var groups = adClassifyFindings(findings);
       var all = groups.domain.concat(groups.users, groups.shares, groups.posture, groups.other);
+      var dcN = all.filter(function (f) { return /Domain Controller probable/i.test(f.title || ""); }).length;
       var crumb = document.getElementById("ad-detail-crumb");
       var scanBtn = document.getElementById("ad-btn-scan-target");
       var mitreBtn = document.getElementById("ad-btn-mitre");
@@ -3129,10 +3130,10 @@
           "Hallazgos de la fase Collection (read-only). No incluyen Kerberoast, relay ni abuso de ACL: eso requiere credenciales y aprobación humana.")) +
         "</p></div>" +
         '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">' +
-        osintKpiCard("network", tKey("ad.kpiDomain", "Dominio / fingerprint"), groups.domain.length, groups.domain.length ? "warn" : "neutral") +
+        osintKpiCard("network", tKey("ad.kpiDomain", "Dominio / fingerprint"), groups.domain.length + dcN, (groups.domain.length || dcN) ? "warn" : "neutral") +
         osintKpiCard("users", tKey("ad.kpiUsers", "Usuarios enumerados"), groups.users.length, groups.users.length ? "warn" : "neutral") +
         osintKpiCard("folder-open", tKey("ad.kpiShares", "Shares / null session"), groups.shares.length, groups.shares.length ? "warn" : "neutral") +
-        osintKpiCard("shield-alert", tKey("ad.kpiPosture", "Postura (signing / LDAP)"), groups.posture.length, groups.posture.length ? "warn" : "neutral") +
+        osintKpiCard("shield-alert", tKey("ad.kpiPosture", "Postura (signing / LDAP / DC)"), groups.posture.length + dcN, (groups.posture.length || dcN) ? "warn" : "neutral") +
         "</div>" +
         '<div class="acrylic-panel rounded-xl p-lg ambient-shadow flex flex-col gap-md">' +
         '<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">' +

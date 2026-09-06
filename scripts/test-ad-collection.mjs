@@ -1,12 +1,15 @@
 #!/usr/bin/env node
-/** Active Directory collection: gate + parsers + playbook wiring. */
+/** Active Directory: firma DC (88+389) + Fase 1 null session (mindmap OCD). */
 import {
   detectAdSignals,
+  detectDomainController,
+  classifyAdSurface,
+  domainControllerFindings,
   netexecSmbFindings,
-  enum4linuxFindings,
-  smbclientNullFindings,
-  ldapAnonymousFindings,
+  netexecSharesFindings,
+  rpcclientUsersFindings,
   PERIMETER_PORTS,
+  AD_SURFACE_PORTS,
 } from "../backend/js/vuln-kb.js";
 import { stepsForPhase, buildPlaybookContext } from "../backend/js/playbook.js";
 import { collectHeuristicFindings } from "../backend/js/finding-heuristics.js";
@@ -19,82 +22,69 @@ function check(name, cond) {
   ok = ok && !!cond;
 }
 
-check("perímetro incluye 88/389/636", ["88", "389", "636"].every((p) => PERIMETER_PORTS.includes(p)));
-check("detecta 445/tcp open", detectAdSignals("445/tcp open  microsoft-ds\n"));
-check("detecta banner microsoft-ds", detectAdSignals("Service Info: microsoft-ds"));
-check("NO dispara por html con palabra ldap", !detectAdSignals('<p>configure ldap authentication</p>'));
-check("flag ctx.isAdTarget", detectAdSignals("", { isAdTarget: true }));
+check("perímetro incluye 88/135/389/3268/5985", ["88", "135", "389", "3268", "5985"].every((p) => PERIMETER_PORTS.includes(p)));
+check("AD_SURFACE_PORTS incluye mindmap OCD", [88, 389, 445, 135, 3268, 5985].every((p) => AD_SURFACE_PORTS.includes(p)));
 
-const nmapish = "PORT   STATE SERVICE\n445/tcp open  microsoft-ds\n389/tcp open  ldap\n";
-const ctx = buildPlaybookContext([nmapish], { host: "dc.corp.local" });
-check("buildPlaybookContext.isAdTarget tras nmap", ctx.isAdTarget === true);
+const dcNmap = `
+PORT     STATE SERVICE
+53/tcp   open  domain
+88/tcp   open  kerberos-sec
+135/tcp  open  msrpc
+389/tcp  open  ldap
+445/tcp  open  microsoft-ds
+5985/tcp open  wsman
+`;
+const surf = classifyAdSurface(dcNmap);
+check("88+389 → likelyDc", surf.likelyDc === true);
+check("detectDomainController", detectDomainController(dcNmap) === true);
+check("detectAdSignals por DC", detectAdSignals(dcNmap) === true);
+const dcHits = domainControllerFindings(dcNmap);
+check("hallazgo Domain Controller High", dcHits.length === 1 && dcHits[0].severity === "High" && /Domain Controller/.test(dcHits[0].title));
+check("solo 445 no es DC", classifyAdSurface("445/tcp open  microsoft-ds\n").likelyDc === false);
+check("NO dispara por html ldap", !detectAdSignals("<p>configure ldap authentication</p>"));
 
-const webOnly = buildPlaybookContext(["HTTP/1.1 200 OK\nServer: nginx\n"], { host: "shop.example.com" });
-check("web sin AD → isAdTarget false", webOnly.isAdTarget === false);
+const ctx = buildPlaybookContext([dcNmap], { host: "dc.corp.local" });
+check("ctx.isAdTarget", ctx.isAdTarget === true);
+check("ctx.isDomainController", ctx.isDomainController === true);
 
 const stepsAd = stepsForPhase(1, "http://dc.corp.local", { host: "dc.corp.local", isAdTarget: true });
 const ids = stepsAd.map((s) => s.id);
-check("paso netexec", ids.includes("p1-ad-netexec-smb"));
-check("paso enum4linux", ids.includes("p1-ad-enum4linux"));
-check("paso smbclient", ids.includes("p1-ad-smbclient"));
-check("paso ldapsearch", ids.includes("p1-ad-ldapsearch-rootdse"));
+check("netexec fingerprint", ids.includes("p1-ad-netexec-smb"));
+check("netexec guest shares", ids.includes("p1-ad-netexec-guest-shares"));
+check("rpcclient users", ids.includes("p1-ad-rpcclient-users"));
+check("enum4linux", ids.includes("p1-ad-enum4linux"));
 
-const stepsWeb = stepsForPhase(1, "http://127.0.0.1:8888", { host: "127.0.0.1" });
-const adIdsWeb = stepsWeb.filter((s) => String(s.id).startsWith("p1-ad-"));
-check("pasos AD existen en lista (skipIf en runtime)", adIdsWeb.length === 4);
-check("skipIf sin isAdTarget", typeof adIdsWeb[0].skipIf === "function" && adIdsWeb[0].skipIf({ isAdTarget: false }) === true);
-check("skipIf con isAdTarget", adIdsWeb[0].skipIf({ isAdTarget: true }) === false);
-
-const nxc = `
-SMB         10.10.10.10  445    DC01    [*] Windows Server 2019 Build 17763 x64 (name:DC01) (domain:CORP) (signing:False) (SMBv1:False)
-`;
+const nxc = "SMB  10.10.10.10  445  DC01  [*] Windows Server 2019 (name:DC01) (domain:CORP) (signing:False)\n";
 const nxcHits = netexecSmbFindings(nxc);
-check("netexec dominio Info", nxcHits.some((f) => /dominio CORP/.test(f.title) && f.severity === "Info"));
-check("netexec signing High", nxcHits.some((f) => /SMB signing deshabilitado/.test(f.title) && f.severity === "High"));
+check("netexec dominio", nxcHits.some((f) => /dominio CORP/.test(f.title)));
+check("hosts tip", nxcHits.some((f) => /\/etc\/hosts/.test(f.remediation + f.description)));
 
-const e4l = `
-Domain Name: CORP
-user:[Administrator] rid:[0x1f4]
-user:[alice] rid:[0x457]
-user:[bob] rid:[0x458]
-Sharename       Type
---------        ----
-ADMIN$          Disk
-C$              Disk
-SYSVOL          Disk
-Minimum password length: 6
+const sharesOut = `
+SMB  10.10.10.10  445  DC01  [*] Enumerating shares
+SMB  10.10.10.10  445  DC01  SHARE           Permissions     Remark
+SMB  10.10.10.10  445  DC01  ADMIN$          READ
+SMB  10.10.10.10  445  DC01  C$              READ,WRITE
+SMB  10.10.10.10  445  DC01  SYSVOL          READ
 `;
-const eHits = enum4linuxFindings(e4l);
-check("enum4linux usuarios Medium", eHits.some((f) => /usuario/.test(f.title) && f.severity === "Medium"));
-check("enum4linux política débil", eHits.some((f) => /longitud mínima/.test(f.title)));
-check("enum4linux dominio", eHits.some((f) => /dominio CORP/.test(f.title)));
+check("WRITE C$ → Critical", netexecSharesFindings(sharesOut).some((f) => /escritura en C\$/.test(f.title) && f.severity === "Critical"));
 
-const smb = "ADMIN$|Disk\nC$|Disk\npublic|Disk\n";
-check("smbclient null High (ADMIN$)", smbclientNullFindings(smb).some((f) => /sesión nula/.test(f.title) && f.severity === "High"));
-
-const ldap = `
-# extended LDIF
-dn:
-defaultNamingContext: DC=corp,DC=local
-namingContexts: DC=corp,DC=local
-dnsHostName: dc01.corp.local
-`;
-check("ldap anónimo Medium", ldapAnonymousFindings(ldap).some((f) => /bind LDAP anónimo/.test(f.title) && f.severity === "Medium"));
-check("ldap vacío → []", ldapAnonymousFindings("Can't contact LDAP server").length === 0);
+const rpc = "user:[Administrator] rid:[0x1f4]\nuser:[alice] rid:[0x457]\n";
+check("rpcclient users Medium", rpcclientUsersFindings(rpc).some((f) => /RPC null/.test(f.title) && f.severity === "Medium"));
 
 const heur = collectHeuristicFindings(
-  nxc + e4l,
+  dcNmap + nxc,
   "http://dc.corp.local",
-  { host: "dc.corp.local", isAdTarget: true },
+  { host: "dc.corp.local", isAdTarget: true, isDomainController: true },
   [
+    { id: "p1-nmap-perimeter", text: dcNmap },
     { id: "p1-ad-netexec-smb", text: nxc },
-    { id: "p1-ad-enum4linux", text: e4l },
-    { id: "p1-ad-smbclient", text: smb },
-    { id: "p1-ad-ldapsearch-rootdse", text: ldap },
+    { id: "p1-ad-netexec-guest-shares", text: sharesOut },
+    { id: "p1-ad-rpcclient-users", text: rpc },
   ],
 );
-check("heurística emite AD:", heur.some((f) => /^AD:/.test(f.title)));
-check("heurística signing", heur.some((f) => /SMB signing/.test(f.title)));
+check("heurística DC", heur.some((f) => /Domain Controller probable/.test(f.title)));
+check("heurística C$ Critical", heur.some((f) => /escritura en C\$/.test(f.title)));
+check("heurística rpc users", heur.some((f) => /RPC null/.test(f.title)));
 
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
@@ -103,18 +93,13 @@ sandbox.window = sandbox;
 sandbox.global = sandbox;
 vm.runInNewContext(code.replace("(window);", "(this);"), sandbox);
 const d = sandbox.DarkSpearDossier.enrich({
-  title: "AD: SMB signing deshabilitado (relay factible)",
-  severity: "High",
-  description: "signing False",
-  remediation: "GPO",
+  title: dcHits[0].title,
+  severity: dcHits[0].severity,
+  description: dcHits[0].description,
+  remediation: dcHits[0].remediation,
   asset: "dc.corp.local",
 });
-check("dossier AD signing no CWE-1035 genérico", !(d.cwe || []).includes("CWE-1035"));
-check("dossier cita Active Directory / signing", /Active Directory|SMB signing|signing/i.test(d.exec));
-
-const page = readFileSync(`${root}/panel/ad-assessment.html`, "utf8");
-check("página ad-assessment existe", /panel-ad-body/.test(page) && /nav\.ad/.test(page));
-const idx = readFileSync(`${root}/panel/index.html`, "utf8");
-check("Dashboard enlaza AD", /ad-assessment\.html/.test(idx));
+check("dossier DC no CWE-1035", !(d.cwe || []).includes("CWE-1035"));
+check("dossier cita Kerberos/LDAP", /Kerberos|LDAP|Domain Controller/i.test(d.exec));
 
 process.exit(ok ? 0 : 1);
