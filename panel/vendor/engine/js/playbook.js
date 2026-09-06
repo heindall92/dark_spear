@@ -34,6 +34,8 @@ import {
   perimeterNmapArgs,
   ipRdapCheckStep,
   idpDiscoveryCurlSteps,
+  extractDangerousCodePatterns,
+  codeDangerProbeSteps,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -208,6 +210,9 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
       ? ctx.bruteDiscovered
       : extractBruteDiscoveredPaths(rawBlob),
     capturedJwt: ctx.capturedJwt || extractCapturedJwt(rawBlob),
+    dangerousCodeHits: (ctx.dangerousCodeHits && ctx.dangerousCodeHits.length)
+      ? ctx.dangerousCodeHits
+      : extractDangerousCodePatterns(rawBlob),
     s3BucketHost: ctx.s3BucketHost || extractS3BucketHost(rawBlob),
     azureBlobContainer: ctx.azureBlobContainer || extractAzureBlobContainer(rawBlob),
     gcsBucketName: ctx.gcsBucketName || extractGcsBucket(rawBlob),
@@ -570,6 +575,17 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
       desc: "Sigue el 3er hallazgo real de gobuster",
       skipIf: (c) => !c.bruteDiscovered?.[2],
     }),
+    ...[1, 2, 3].map((i) =>
+      step(`p2-codeguided-${i}`, "curl", (c) => {
+        const hit = (c.dangerousCodeHits || [])[i - 1];
+        if (!hit) return null;
+        const built = codeDangerProbeSteps(step, [hit], baseUrl)[0];
+        return built ? built.args : null;
+      }, null, {
+        desc: `Sonda dirigida por código fuente filtrado #${i}`,
+        skipIf: (c) => !(c.dangerousCodeHits || [])[i - 1],
+      }),
+    ),
   );
 
   if (ctx.isWordpress) {

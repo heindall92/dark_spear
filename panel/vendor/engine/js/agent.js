@@ -208,7 +208,30 @@ async function runHeuristicFindings(db, engagementId, target, outputs, playbookC
 function stepOutput(step) {
   if (step.verdict === "agent_error" || step.tool === "(agent)") return "";
   const out = step.output ?? step.stdout ?? "";
-  return String(out).slice(0, 800);
+  return sanitizeUntrustedOutput(String(out).slice(0, 800));
+}
+
+/**
+ * Wraps raw tool/HTTP output before it enters the LLM prompt. This content
+ * comes from the target (a page body, a header, a file the target served)
+ * and is therefore untrusted — it can contain text engineered to look like
+ * a system instruction and hijack the next tool call the model picks.
+ * We don't strip the content (the model/operator still needs to see it to
+ * do the pentest) — we defang the two things that make injected text read
+ * as an instruction instead of as inert data:
+ *   1. Line-start role labels ("SYSTEM:", "ASSISTANT:", "USER:", "###
+ *      Instruction:") get a zero-width marker spliced in so they no longer
+ *      match at line-start for any prompt-format the model was trained on.
+ *   2. The whole blob is wrapped in an explicit <untrusted-tool-output>
+ *      delimiter so the system prompt's rule has something concrete to
+ *      point at.
+ */
+export function sanitizeUntrustedOutput(text) {
+  const defanged = text.replace(
+    /^(\s*)(SYSTEM|ASSISTANT|USER|HUMAN|###\s*Instruction)(\s*:)/gim,
+    "$1$2​$3",
+  );
+  return `<untrusted-tool-output>\n${defanged}\n</untrusted-tool-output>`;
 }
 
 function normalizeStep(id, engagementId, fields) {
