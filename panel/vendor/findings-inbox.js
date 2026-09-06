@@ -68,7 +68,14 @@
       }
     });
     return Object.keys(byFp).map(function (k) { return byFp[k]; })
-      .sort(function (a, b) { return (b.created_at || 0) - (a.created_at || 0); });
+      .sort(function (a, b) { return (b.created_at || 0) - (a.created_at || 0); })
+      .filter(function (f, _i, arr) {
+        var hasWaf = arr.some(function (x) {
+          return /WAF activo:|WAF\/CDN identificado:/i.test((x && x.title) || "");
+        });
+        if (!hasWaf) return true;
+        return !/Sin WAF\/CDN identificable/i.test((f && f.title) || "");
+      });
   }
 
   function push(finding) {

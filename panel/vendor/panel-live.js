@@ -1212,12 +1212,14 @@
         else penalty += 0.15;
       });
       var actual = Math.max(1, Math.min(5, Math.round((5 - penalty) * 10) / 10));
+      var examples = hits.slice(0, 3).map(function (f) { return f.title || ""; }).filter(Boolean);
       return {
         key: d.key,
         label: langEn ? d.en : d.es,
         actual: actual,
         target: 4,
         hits: hits.length,
+        examples: examples,
       };
     });
   }
@@ -2813,7 +2815,11 @@
     var likelihood = 1 - (1 - E) * (1 - T);
     var risk = Math.round(likelihood * I * 1000) / 10;
     var grade = risk >= 80 ? "F" : risk >= 60 ? "D" : risk >= 40 ? "C" : risk >= 20 ? "B" : "A";
-    return { risk: risk, grade: grade, exposure: Math.round(E * 1000) / 10, threat: Math.round(T * 1000) / 10, impact: Math.round(I * 1000) / 10 };
+    var eN = Math.round(E * 1000) / 10;
+    var tN = Math.round(T * 1000) / 10;
+    var iN = Math.round(I * 1000) / 10;
+    var dominant = eN >= tN && eN >= iN ? "exposure" : tN >= iN ? "breach-likelihood" : "business-impact";
+    return { risk: risk, grade: grade, exposure: eN, threat: tN, impact: iN, dominant: dominant };
   }
 
   function exposureRiskCardHtml(score) {
@@ -4133,6 +4139,72 @@
       '<div class="space-y-sm">' + art32Block + art33Block + "</div>";
   }
 
+  function maturityDomainWhy(key) {
+    var map = {
+      iam: tKey("maturity.whyIam", "Identidad: login, sesiones, cookies, MFA e IdP (Entra/Workspace/SAML). Un SQLi en login o cookies sin flags tumba este dominio."),
+      net: tKey("maturity.whyNet", "Red y perímetro: TLS, cabeceras, SPF/DMARC, puertos. Un dominio sin DMARC o sin CSP baja este eje aunque el resto esté sano."),
+      data: tKey("maturity.whyData", "Datos: secretos en código, SQL, backups, buckets listables. Un crítico aquí es el que más duele en RGPD."),
+      ir: tKey("maturity.whyIr", "Respuesta a incidentes: RCE, inclusión de ficheros, uploads. Si el atacante ejecuta código, el IR no tiene margen."),
+      aware: tKey("maturity.whyAware", "Concienciación y higiene de despliegue: DVWA, debug, display_errors. Señala entornos que no deberían ser públicos."),
+      assets: tKey("maturity.whyAssets", "Inventario: directory listing, robots, document root. Superficie que el equipo no tenía mapeada."),
+    };
+    return map[key] || "";
+  }
+
+  function htmlMaturityStory(findings, meta) {
+    var m = maturityFromFindings(findings);
+    var domains = maturityDomainsFromFindings(findings);
+    var c = sevCounts(findings || []);
+    var weakest = domains.slice().sort(function (a, b) { return a.actual - b.actual; }).slice(0, 2);
+    var why = tKey("maturity.whyScore", "El índice {score}/100 ({level}) no es una nota de consultora: resta por hallazgos abiertos. En este análisis hay {c} críticos, {h} altos, {m} medios, {l} bajos y {i} infos. Cada crítico tira fuerte; un info apenas mueve. Por eso un único SQLi en login puede dejar IAM en 1.0 aunque el resto del radar se vea «verde».")
+      .replace("{score}", String(m.score))
+      .replace("{level}", m.level)
+      .replace("{c}", String(c.critical))
+      .replace("{h}", String(c.high))
+      .replace("{m}", String(c.medium))
+      .replace("{l}", String(c.low))
+      .replace("{i}", String(c.info));
+    var how = weakest.length
+      ? tKey("maturity.howUp", "Para subir de nivel cierra primero los dominios más bajos ({domains}). El objetivo 4.0 en un eje significa: no quedan críticos ni altos abiertos en ese control. Relanza el análisis después; si el radar no se mueve, el hallazgo sigue abierto o no está clasificado en ese dominio.")
+          .replace("{domains}", weakest.map(function (d) { return d.label + " " + d.actual.toFixed(1); }).join(", "))
+      : "";
+    var vsFair = tKey("maturity.vsFair", "No confundas este índice con el grado FAIR-lite de la ficha «Índice de exposición». FAIR resume riesgo de negocio (exposición × amenaza × impacto) para dirección. La madurez resume capacidad de control por dominio (1–5) para el CISO. Puedes tener FAIR C y madurez Inicial a la vez: mucha superficie y pocos controles demostrables.");
+    var cards = domains.map(function (d) {
+      var gap = d.actual < d.target;
+      return '<article class="rounded-lg border border-outline-variant/40 p-md bg-surface-container-lowest">' +
+        '<div class="flex justify-between items-start gap-sm mb-xs">' +
+        '<h4 class="font-headline-md text-on-surface">' + escapeHtml(d.label) + "</h4>" +
+        '<span class="font-mono-md ' + (gap ? "text-error" : "text-tertiary") + '">' + d.actual.toFixed(1) +
+        " / " + d.target.toFixed(1) + "</span></div>" +
+        '<p class="font-body-sm text-on-surface-variant mb-sm leading-relaxed">' + escapeHtml(maturityDomainWhy(d.key)) + "</p>" +
+        (d.hits
+          ? '<p class="font-label-md text-on-surface-variant uppercase mb-xs">' +
+            escapeHtml(tKey("maturity.domainHits", "Hallazgos que tiran de este eje")) + " · " + d.hits + "</p>" +
+            '<ul class="font-body-sm text-on-surface space-y-xs list-disc pl-md">' +
+            (d.examples || []).map(function (t) {
+              return "<li>" + escapeHtml(t) + "</li>";
+            }).join("") +
+            (d.hits > (d.examples || []).length ? "<li>…</li>" : "") +
+            "</ul>"
+          : '<p class="font-body-sm text-on-surface-variant italic">' +
+            escapeHtml(tKey("maturity.domainClear", "Ningún hallazgo de este análisis encaja en este dominio. Eso no certifica el control: solo dice que el playbook no vio un fallo aquí.")) +
+            "</p>") +
+        "</article>";
+    }).join("");
+    return '<div class="flex flex-col gap-md">' +
+      '<div class="rounded-lg border border-outline-variant/40 p-md bg-surface-container-lowest">' +
+      '<h4 class="font-headline-md text-on-surface mb-sm">' + escapeHtml(tKey("maturity.whyTitle", "Por qué esta puntuación")) + "</h4>" +
+      '<p class="font-body-md text-on-surface leading-relaxed mb-sm">' + escapeHtml(why) + "</p>" +
+      (how ? '<p class="font-body-md text-on-surface leading-relaxed mb-sm">' + escapeHtml(how) + "</p>" : "") +
+      '<p class="font-body-sm text-on-surface-variant leading-relaxed">' + escapeHtml(vsFair) + "</p>" +
+      (meta && (meta.target || scanDisplayName(meta))
+        ? '<p class="font-mono-md text-secondary mt-sm">' + escapeHtml(meta.target || scanDisplayName(meta)) + "</p>"
+        : "") +
+      "</div>" +
+      '<h4 class="font-headline-md text-on-surface">' + escapeHtml(tKey("maturity.domainsExplain", "Qué mide cada dominio y por qué está así")) + "</h4>" +
+      '<div class="grid grid-cols-1 md:grid-cols-2 gap-sm">' + cards + "</div></div>";
+  }
+
   function htmlMaturityChapter(findings, meta, canvasId, scanId) {
     var m = maturityFromFindings(findings);
     var domains = maturityDomainsFromFindings(findings);
@@ -4211,7 +4283,8 @@
       '<p class="font-mono-md text-secondary mt-sm">' +
       escapeHtml((meta && (meta.target || scanDisplayName(meta))) || "—") + "</p></div></div></div>" +
       '<div class="overflow-x-auto mb-sm">' + table + "</div>" +
-      '<a class="inline-flex items-center gap-xs font-label-md text-primary hover:underline" href="maturity-index.html' +
+      htmlMaturityStory(findings, meta) +
+      '<a class="inline-flex items-center gap-xs font-label-md text-primary hover:underline mt-md" href="maturity-index.html' +
       q + '"><i data-lucide="external-link" class="icon-sm"></i>' +
       escapeHtml(tKey("comp.openMaturityPage", "Abrir la matriz de riesgos completa")) + "</a>";
   }
@@ -4563,6 +4636,8 @@
             }).join("") +
             "</tbody></table></div>";
         }
+        var story = document.getElementById("maturity-story");
+        if (story) story.innerHTML = htmlMaturityStory(findings, meta);
         var list = document.getElementById("maturity-findings");
         if (list && window.DarkSpearFindings) DarkSpearFindings.renderList(list, findings, "all");
       },

@@ -34,6 +34,12 @@ import {
   perimeterNmapArgs,
   ipRdapCheckStep,
   idpDiscoveryCurlSteps,
+  extractCapturedSecrets,
+  extractAsnFromBlob,
+  extractAsnHolderFromBlob,
+  ripeAsnCurlSteps,
+  HYPERSCALER_HOLDER_RE,
+  secretValidateCurlSteps,
   extractDangerousCodePatterns,
   codeDangerProbeSteps,
 } from "./vuln-kb.js";
@@ -68,18 +74,18 @@ function parseTarget(target) {
   return { host: host || raw, port: port || "", baseUrl };
 }
 
+function hostLabel(value) {
+  const h = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, "")
+    .split("/")[0]
+    .split(":")[0];
+  return h.startsWith("www.") ? h.slice(4) : h;
+}
+
 function scopeRoot(host, scope) {
-  const fromScope = String(scope || "")
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .split("/")[0]
-    .split(":")[0];
-  const fromHost = String(host || "")
-    .trim()
-    .replace(/^https?:\/\//i, "")
-    .split("/")[0]
-    .split(":")[0];
-  return fromScope || fromHost;
+  return hostLabel(scope) || hostLabel(host);
 }
 
 function isIpHost(host) {
@@ -210,9 +216,18 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
       ? ctx.bruteDiscovered
       : extractBruteDiscoveredPaths(rawBlob),
     capturedJwt: ctx.capturedJwt || extractCapturedJwt(rawBlob),
+    capturedSecrets: (ctx.capturedSecrets && ctx.capturedSecrets.length)
+      ? ctx.capturedSecrets
+      : extractCapturedSecrets(rawBlob),
     dangerousCodeHits: (ctx.dangerousCodeHits && ctx.dangerousCodeHits.length)
       ? ctx.dangerousCodeHits
       : extractDangerousCodePatterns(rawBlob),
+    extractedAsn: ctx.extractedAsn || extractAsnFromBlob(rawBlob),
+    asnHolder: ctx.asnHolder || extractAsnHolderFromBlob(rawBlob),
+    asnIsHyperscaler: ctx.asnIsHyperscaler === true
+      || HYPERSCALER_HOLDER_RE.test(ctx.asnHolder || extractAsnHolderFromBlob(rawBlob) || ""),
+    previousFindingTitles: ctx.previousFindingTitles || [],
+    emitScanDelta: ctx.emitScanDelta === true,
     s3BucketHost: ctx.s3BucketHost || extractS3BucketHost(rawBlob),
     azureBlobContainer: ctx.azureBlobContainer || extractAzureBlobContainer(rawBlob),
     gcsBucketName: ctx.gcsBucketName || extractGcsBucket(rawBlob),
@@ -291,8 +306,12 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       skipIf: (c) => isLoopbackHost(c.host) || isLoopbackHost(host),
     }),
     ...(ipTarget && !isLoopbackHost(host) ? ipRdapCheckStep(step, root) : []),
+    ...(ipTarget && !isLoopbackHost(host) ? ripeAsnCurlSteps(step, root) : []),
     step("p1-osint-curl-head-root", "curl", ["-s", "-I", "--max-time", "15", baseUrl], null, {
       desc: "Cabeceras HTTP de la raíz",
+    }),
+    step("p1-wafw00f", "wafw00f", ["--no-colors", "-f", "json", "-o", "-", "-T", "10", baseUrl], null, {
+      desc: "Fingerprint WAF/CDN (wafw00f)",
     }),
     step("p1-waf-trigger", "curl", [
       "-s", "-i", "--max-time", "12", "-w", "\nDS_HTTP:%{http_code}\n",
@@ -417,6 +436,29 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       desc: "Bucket GCS referenciado por la app: ¿listado público?",
       skipIf: (c) => !c.gcsBucketName,
     }),
+    step("p1-osint-ripe-whois", "curl", (c) => (c.extractedAsn
+      ? ["-s", "--max-time", "15", `https://stat.ripe.net/data/whois/data.json?resource=AS${c.extractedAsn}`]
+      : null), null, {
+      desc: "RIPEstat whois del ASN (titular / hyperscaler guard)",
+      skipIf: (c) => !c.extractedAsn,
+    }),
+    step("p1-osint-ripe-prefixes", "curl", (c) => (c.extractedAsn && !c.asnIsHyperscaler
+      ? ["-s", "--max-time", "15", `https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS${c.extractedAsn}`]
+      : null), null, {
+      desc: "Prefijos anunciados por el ASN (solo si no es hyperscaler/CDN)",
+      skipIf: (c) => !c.extractedAsn || c.asnIsHyperscaler,
+    }),
+    ...[1, 2, 3, 4, 5].map((i) =>
+      step(`p1-secretval-${i}`, "curl", (c) => {
+        const hit = (c.capturedSecrets || [])[i - 1];
+        if (!hit) return null;
+        const built = secretValidateCurlSteps(step, [hit])[0];
+        return built ? built.args : null;
+      }, null, {
+        desc: `Validador read-only de credencial #${i} hallada en el activo`,
+        skipIf: (c) => !(c.capturedSecrets || [])[i - 1],
+      }),
+    ),
     step("p1-curl-cors-probe", "curl", [
       "-s", "-I", "--max-time", "12", "-H", `Origin: ${CORS_PROBE_ORIGIN}`, baseUrl,
     ], null, {

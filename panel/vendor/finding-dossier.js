@@ -107,6 +107,7 @@
       iso: ["A.8.8 Vulnerabilidades técnicas", "A.8.26 Seguridad en aplicaciones", "A.8.28 Codificación segura", "A.8.12 Prevención de fugas"],
       ens: { es: "Alto — dimensión confidencialidad", en: "High — confidentiality" },
       nis2: { es: "Art. 21.2.e — seguridad en adquisición, desarrollo y mantenimiento", en: "Art. 21.2.e — secure development" },
+      nist: ["PR.DS-01 Confidencialidad de datos", "PR.AA-05 Permisos de acceso", "ID.RA-01 Identificación de vulnerabilidades"],
       obligation: { es: "El responsable debe garantizar confidencialidad e integridad permanentes de los sistemas que tratan datos (Art. 32). Una inyección SQL o un backup de config en HTTP demuestra que esa medida no es demostrable.", en: "The controller must ensure ongoing confidentiality and integrity (Art. 32). SQLi or a web-readable config backup shows that measure is not demonstrable." },
       aepd: { es: "Ante un requerimiento, la AEPD pide medidas apropiadas al riesgo, RAT y capacidad de notificar en 72 h. Un SQLi o secretos en claro deja a la organización sin accountability: el incidente técnico se convierte en infracción de gobernanza, acumulable.", en: "A DPA will ask for appropriate measures, RoPA and a 72h notification clock. SQLi or plaintext secrets turn a technical incident into a governance infringement." },
       business: { operational: "Alto", reputational: "Alto", legal: "Alto", economic: "Alto" },
@@ -123,6 +124,7 @@
       iso: ["A.8.26 Seguridad en aplicaciones", "A.8.28 Codificación segura", "A.8.7 Protección contra malware", "A.8.3 Restricción de acceso"],
       ens: { es: "Alto — integridad y disponibilidad", en: "High — integrity and availability" },
       nis2: { es: "Art. 21.2.c — seguridad en la cadena de suministro y en el desarrollo", en: "Art. 21.2.c — supply-chain and development security" },
+      nist: ["PR.PS-01 Configuración segura", "PR.PS-02 Mantenimiento de software", "RS.MA-01 Gestión de incidentes"],
       obligation: { es: "Art. 32 exige integridad permanente. Command injection, file inclusion o upload ejecutable demuestran que un tercero puede ejecutar código o persistir en el servidor.", en: "Art. 32 requires ongoing integrity. Command injection, file inclusion or executable uploads show a third party can run code or persist on the host." },
       aepd: { es: "Un host comprometido anula copias de seguridad no probadas y el reloj de 72 h: no hay garantía de qué datos salieron. Sin IRP (como en el vacío GRC Aurora) el incidente no tiene dueño.", en: "A compromised host voids untested backups and the 72h clock: you cannot prove what left. Without an IRP the incident has no owner." },
       business: { operational: "Alto", reputational: "Alto", legal: "Alto", economic: "Alto" },
@@ -139,6 +141,7 @@
       iso: ["A.8.5 Autenticación segura", "A.8.24 Criptografía", "A.8.26 Seguridad en aplicaciones", "A.5.15 Control de acceso"],
       ens: { es: "Alto — autenticación y confidencialidad", en: "High — authentication and confidentiality" },
       nis2: { es: "Art. 21.2.d — control de acceso y gestión de activos", en: "Art. 21.2.d — access control" },
+      nist: ["PR.AA-03 Autenticación", "PR.DS-02 Confidencialidad en tránsito", "PR.PS-01 Configuración segura"],
       obligation: { es: "La sesión es la llave del tratamiento. Art. 25 y 32 exigen HttpOnly/Secure/SameSite, encoding de salida y tokens anti-CSRF. Sin ellos, un script o una petición forjada opera en nombre del usuario.", en: "The session is the key to processing. Arts. 25 and 32 require HttpOnly/Secure/SameSite, output encoding and anti-CSRF tokens." },
       aepd: { es: "Un secuestro de sesión con datos de clientes es brecha del Art. 4.12. Hay que evaluar notificación 33/34. No tener CSP ni HttpOnly debilita la defensa de «medidas apropiadas».", en: "Session hijack with customer data is a personal-data breach (Art. 4.12). Assess 33/34 notice. Missing CSP/HttpOnly weakens the 'appropriate measures' defence." },
       business: { operational: "Medio", reputational: "Alto", legal: "Alto", economic: "Medio" },
@@ -155,6 +158,7 @@
       iso: ["A.8.5 Autenticación segura", "A.5.17 Información de autenticación", "A.8.2 Identidades privilegiadas"],
       ens: { es: "Alto — autenticación", en: "High — authentication" },
       nis2: { es: "Art. 21.2.d — control de acceso a sistemas y datos", en: "Art. 21.2.d — access control to systems and data" },
+      nist: ["PR.AA-01 Identidades gestionadas", "PR.AA-03 Autenticación", "PR.AA-04 Proveedores de identidad"],
       obligation: { es: "Art. 32 exige autenticación apropiada al riesgo. Cuentas de fábrica, login sin rate-limit y CAPTCHA solo en cliente no son medidas demostrables.", en: "Art. 32 requires authentication appropriate to the risk. Factory accounts, unlimited login and client-only CAPTCHA are not demonstrable measures." },
       aepd: { es: "Una sola contraseña reutilizada abre el tratamiento. Sin MFA (como F-025/F-026 en Aurora) la posición Art. 32 queda débil aunque el código de negocio esté bien.", en: "One reused password opens processing. Without MFA the Art. 32 position is weak even if business code is sound." },
       business: { operational: "Alto", reputational: "Alto", legal: "Medio", economic: "Alto" },
@@ -164,6 +168,23 @@
       plan60: { es: "Política de contraseñas; revisión de cuentas privilegiadas; alertas de 401/403.", en: "Password policy; privileged-account review; 401/403 alerts." },
       plan90: { es: "IdP central; evidencia MFA en el RAT; simulacro de cuenta comprometida.", en: "Central IdP; MFA evidence in RoPA; compromised-account tabletop." },
     },
+    access_control: {
+      category: { es: "Control de acceso y perímetro", en: "Access control and perimeter" },
+      legalBase: { es: "RGPD Art. 32 · Art. 25 · NIS2 Art. 21.2.d · NIST CSF PR.AA", en: "GDPR Art. 32 · Art. 25 · NIS2 Art. 21.2.d · NIST CSF PR.AA" },
+      sanction: { art: "Art. 83.4 (y 83.5 si el bypass alcanza datos personales)", es: "Un JWT alg=none o un firewall en ACCEPT deja el tratamiento sin frontera. Medidas de acceso inadecuadas: techo 10 M€/2 %. Si se leen datos de interesados, 20 M€/4 %.", en: "JWT alg=none or INPUT ACCEPT removes the processing boundary. Inadequate access measures: €10M/2%. Access to data subjects: €20M/4%." },
+      iso: ["A.8.3 Restricción de acceso", "A.8.24 Criptografía", "A.8.20 Seguridad de redes"],
+      ens: { es: "Alto — control de acceso e integridad", en: "High — access control and integrity" },
+      nis2: { es: "Art. 21.2.d — control de acceso a sistemas y datos", en: "Art. 21.2.d — access control to systems and data" },
+      nist: ["PR.AA-01 Identidades gestionadas", "PR.AA-05 Permisos de acceso", "PR.IR-01 Protección de redes"],
+      obligation: { es: "Art. 32 exige que solo quien deba pueda operar el sistema. Forjar un JWT o una política de firewall abierta demuestra que la autorización no es una medida demostrable.", en: "Art. 32 requires that only those who should can operate the system. Forging a JWT or an open firewall policy shows authorization is not a demonstrable measure." },
+      aepd: { es: "Un bypass de autorización con datos de clientes es brecha (Art. 4.12). Hay que evaluar 33/34. Un perímetro en ACCEPT no es «segmentación apropiada».", en: "An authorization bypass with customer data is a personal-data breach (Art. 4.12). Assess 33/34. INPUT ACCEPT is not appropriate segmentation." },
+      business: { operational: "Alto", reputational: "Alto", legal: "Alto", economic: "Alto" },
+      costFix: { es: "Cerrar: 4–24 h (fijar algoritmo JWT, deny-by-default en el host). Barato frente a un compromiso de cuenta o de red.", en: "Fix: 4–24 h (pin JWT algorithm, deny-by-default on the host). Cheap versus account or network compromise." },
+      costIncident: { es: "Cuenta o red tomada: el resto de hallazgos se encadenan. Coste ≈ cadena completa, no este ítem aislado.", en: "Taken-over account or network: every other finding chains. Cost ≈ the whole chain, not this item alone." },
+      plan30: { es: "Rechazar alg=none; allow-list del algoritmo; política INPUT DROP/DENY; evidenciar 401 y reglas.", en: "Reject alg=none; algorithm allow-list; INPUT DROP/DENY; evidence 401 and rules." },
+      plan60: { es: "Claves asimétricas para JWT; revisión de Security Groups/UFW; alertas de 401 masivos.", en: "Asymmetric JWT keys; Security Group/UFW review; alerts on mass 401s." },
+      plan90: { es: "Evidencia PR.AA e ISO A.8.3/A.8.20; test de regresión de tokens y de firewall.", en: "PR.AA and ISO A.8.3/A.8.20 evidence; regression tests for tokens and firewall." },
+    },
     lab: {
       category: { es: "Software deliberadamente vulnerable / instalador vivo", en: "Deliberately vulnerable software / live installer" },
       legalBase: { es: "RGPD Art. 32 · Art. 25 · NIS2 Art. 21 (no operar sistemas inseguros por diseño en el perímetro de datos reales)", en: "GDPR Art. 32 · Art. 25 · NIS2 Art. 21" },
@@ -171,6 +192,7 @@
       iso: ["A.8.9 Gestión de la configuración", "A.8.19 Instalación de software", "A.8.8 Vulnerabilidades técnicas"],
       ens: { es: "Alto si hay datos reales; lab si está aislado y documentado", en: "High if real data; lab if isolated and documented" },
       nis2: { es: "Art. 21 — medidas apropiadas; no exponer entornos de entrenamiento al perímetro productivo", en: "Art. 21 — do not expose training environments on the production perimeter" },
+      nist: ["ID.AM-01 Inventario de activos", "PR.PS-06 Instalación de software", "GV.SC-01 Cadena de suministro"],
       obligation: { es: "El Art. 32 se evalúa al riesgo del tratamiento. Un laboratorio OWASP en una VLAN de producción no es «formación»: es superficie de inyección, XSS y RCE con credenciales de fábrica.", en: "Art. 32 is judged against processing risk. An OWASP lab on a production VLAN is injection/XSS/RCE surface with factory credentials." },
       aepd: { es: "Si el lab comparte red o BD con interesados, la AEPD no acepta «era un entorno de pruebas» como medida apropiada. Segmentar, datos sintéticos y no publicar el vhost.", en: "If the lab shares network or DB with data subjects, 'it was a test env' is not an appropriate measure. Segment, synthetic data, do not publish the vhost." },
       business: { operational: "Alto", reputational: "Alto", legal: "Alto", economic: "Medio" },
@@ -180,6 +202,23 @@
       plan60: { es: "Inventario de clones Docker/snapshots; prohibir DVWA/setup en CI de producción.", en: "Inventory Docker clones/snapshots; ban DVWA/setup from production CI." },
       plan90: { es: "Política de entornos (dev/lab/prod) en el SGSI; evidencia ENS.", en: "Env policy (dev/lab/prod) in the ISMS; ENS evidence." },
     },
+    context: {
+      category: { es: "Contexto OSINT / cuantificación de exposición", en: "OSINT context / exposure quantification" },
+      legalBase: { es: "ISO 27001 A.5.7 (inteligencia sobre amenazas) · NIST CSF ID.RA · no es un CWE explotable", en: "ISO 27001 A.5.7 (threat intelligence) · NIST CSF ID.RA · not an exploitable CWE" },
+      sanction: { art: "N/A — informativo", es: "No abre expediente sancionador por sí solo. Es inventario y puntuación FAIR-lite para priorizar; la AEPD miraría los hallazgos que alimentan el índice, no el número.", en: "Not a sanction item on its own. Inventory and FAIR-lite scoring for prioritization; a DPA would look at the findings behind the index, not the number." },
+      iso: ["A.5.7 Inteligencia sobre amenazas", "A.8.8 Vulnerabilidades técnicas"],
+      ens: { es: "Informativo — no degrada una dimensión ENS", en: "Informational — does not degrade an ENS dimension" },
+      nis2: { es: "N/A — no es un incidente ni una medida fallida", en: "N/A — not an incident or a failed control" },
+      nist: ["ID.RA-01 Identificación de vulnerabilidades", "GV.RM-02 Apetito de riesgo", "ID.RA-04 Impacto de riesgos"],
+      obligation: { es: "No hay obligación legal de «cerrar» un índice. Sirve para explicar a dirección qué peso relativo tiene esta auditoría (exposición × amenaza × impacto) sin inventar un CVSS.", en: "There is no legal duty to «close» an index. It explains to leadership the relative weight of this audit (exposure × threat × impact) without inventing a CVSS." },
+      aepd: { es: "Un índice 2.3/100 grado A no es un impago Art. 32. Si hay datos personales, el expediente se construye con los hallazgos de base (SPF, secretos, inyección), no con esta ficha.", en: "A 2.3/100 grade A index is not an Art. 32 failure. If personal data is in play, the file is built from the underlying findings, not this card." },
+      business: { operational: "Bajo", reputational: "Bajo", legal: "Bajo", economic: "Bajo" },
+      costFix: { es: "Ninguno para el índice. El coste es el de remediación de los hallazgos que lo suben.", en: "None for the index. Cost is remediating the findings that raise it." },
+      costIncident: { es: "El índice no es un incidente. Un grado D/F señala que sí los hay detrás.", en: "The index is not an incident. A D/F grade signals that there are incidents behind it." },
+      plan30: { es: "Usar el grado en el resumen ejecutivo; no abrir ticket contra f-score.", en: "Use the grade in the executive summary; do not open a ticket against the score finding." },
+      plan60: { es: "Recalcular tras cerrar Medium/High; el número debe bajar si la remediación es real.", en: "Recalculate after closing Medium/High; the number should drop if remediation is real." },
+      plan90: { es: "Serie temporal del mismo alcance (delta OSINT), nunca ranking entre clientes.", en: "Time series on the same scope (OSINT delta), never a ranking across clients." },
+    },
     misconfig: {
       category: { es: "Configuración insegura y fingerprint", en: "Insecure configuration and fingerprint" },
       legalBase: { es: "RGPD Art. 32 · Art. 25 · ISO 27001 A.8.9", en: "GDPR Art. 32 · Art. 25 · ISO 27001 A.8.9" },
@@ -187,6 +226,7 @@
       iso: ["A.8.9 Gestión de la configuración", "A.8.8 Vulnerabilidades técnicas", "A.8.27 Arquitectura de sistemas segura"],
       ens: { es: "Medio (Alto si filtra rutas o secretos)", en: "Medium (High if paths or secrets leak)" },
       nis2: { es: "Art. 21.2.a — políticas de análisis de riesgos y seguridad de sistemas", en: "Art. 21.2.a — risk-analysis and system-security policies" },
+      nist: ["PR.PS-01 Configuración segura", "ID.RA-01 Identificación de vulnerabilidades", "DE.CM-09 Monitorización de activos"],
       obligation: { es: "Art. 25 y 32 exigen minimizar lo que el sistema revela y no fiarse del cliente. Un banner con versión o un php.ini descargable no es explotable solo, pero documenta que el endurecimiento no está hecho.", en: "Arts. 25 and 32 require minimising disclosure and not trusting the client. A versioned banner or a downloadable php.ini is not exploitable alone, but it documents missing hardening." },
       aepd: { es: "En inspección, estos hallazgos pintan madurez baja (en Aurora el índice quedó 2.5/10). No son el titular, son la prueba de que no hay SGSI operativo.", en: "In an inspection these findings paint low maturity (Aurora scored 2.5/10). They are not the headline; they prove the ISMS is not operational." },
       business: { operational: "Bajo", reputational: "Medio", legal: "Medio", economic: "Bajo" },
@@ -204,6 +244,7 @@
     if (/CWE-78|CWE-434|CWE-98/.test(cwe)) return "rce";
     if (/CWE-89|CWE-538|CWE-540/.test(cwe)) return "data_breach";
     if (/CWE-79|CWE-352|CWE-330|CWE-1004|CWE-614|CWE-80/.test(cwe)) return "session";
+    if (/CWE-347|CWE-284/.test(cwe)) return "access_control";
     if (/CWE-307|CWE-798|CWE-521|CWE-804|CWE-799/.test(cwe)) return "authn";
     if (/CWE-489/.test(cwe)) return "lab";
     return "misconfig";
@@ -229,6 +270,7 @@
       iso: c.iso || ["A.8.8 Gestión de vulnerabilidades", "A.8.26 Seguridad en desarrollo"],
       ens: c.ens || "Alto",
       nis2: c.nis2 || "Art. 21.2.e — seguridad en desarrollo y adquisición",
+      nist: c.nist || ["PR.PS-01 Configuración segura", "ID.RA-01 Identificación de vulnerabilidades"],
       kill: c.kill || "Exploitation",
       impact: c.impact || { confidentiality: "high", integrity: "high", availability: "low" },
       narrative: c.narrative,
@@ -1230,8 +1272,8 @@
       impact: { confidentiality: "low", integrity: "none", availability: "none" },
       cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
       narrative: {
-        es: "Huella pasiva a partir de cabeceras de respuesta (sin enviar ningún payload malicioso de prueba): identifica qué WAF/CDN opera delante de la aplicación. No es una vulnerabilidad por sí sola; es contexto de gobierno que explica por qué ciertas sondas activas del propio informe pueden llegar bloqueadas o alteradas, y documenta que existe una capa de defensa perimetral que un atacante real tendría que sortear.",
-        en: "Passive fingerprint from response headers (no malicious test payload sent): identifies which WAF/CDN sits in front of the application. Not a vulnerability by itself; it is governance context explaining why some of the report's own active probes may arrive blocked or altered, and documents that a perimeter defense layer exists that a real attacker would have to bypass.",
+        es: "Huella de WAF/CDN: cabeceras de respuesta y, cuando corre, wafw00f (binario de Kali, firmas de producto). Identifica qué control opera delante de la aplicación. No es una vulnerabilidad por sí sola; es contexto de gobierno que explica por qué ciertas sondas activas pueden llegar bloqueadas y documenta la capa de defensa perimetral.",
+        en: "WAF/CDN fingerprint: response headers and, when it runs, wafw00f (Kali binary, product signatures). Identifies which control sits in front of the application. Not a vulnerability by itself; governance context explaining why some active probes may arrive blocked, and documents the perimeter defense layer.",
       },
       exec: {
         es: "Se identificó la solución de WAF/CDN delante de la aplicación. Información de contexto para el informe, sin acción correctiva requerida.",
@@ -1687,6 +1729,201 @@
       },
     },
     {
+      re: /viva confirmada \(validador read-only\)/i,
+      cwe: ["CWE-798"],
+      owasp: "A07:2021 Identification and Authentication Failures",
+      mitre: [{ id: "T1552.001", name: "Unsecured Credentials: Credentials In Files", tactic: "Credential Access" }],
+      govKey: "data_breach",
+      gdpr: ["Art. 32", "Art. 33", "Art. 5.1.f"],
+      iso: ["A.8.24", "A.8.9"],
+      ens: "Crítico",
+      nis2: "Art. 21.2.e",
+      kill: "Exploitation",
+      impact: { confidentiality: "high", integrity: "high", availability: "low" },
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:L",
+      narrative: {
+        es: "La credencial hallada en el bundle público sigue aceptada por el API del proveedor: un GET de identidad (whoami/auth.test/balance) devolvió 200. No se usó para escribir ni enumerar recursos ajenos. Quien descargue el JS tiene acceso vivo.",
+        en: "The credential found in the public bundle is still accepted by the provider API: a read-only identity GET returned 200. It was not used to write or list third-party resources. Anyone who downloads the JS has live access.",
+      },
+      exec: {
+        es: "Credencial de proveedor viva en código público. Revocar de inmediato.",
+        en: "Live provider credential in public code. Revoke immediately.",
+      },
+      steps: {
+        es: ["Revocar/rotar la credencial en el panel del proveedor.", "Auditar logs de uso no autorizado.", "Sacar secretos del bundle cliente (BFF).", "Añadir scanner de secretos al CI."],
+        en: ["Revoke/rotate the credential in the provider console.", "Audit logs for unauthorized use.", "Move secrets out of the client bundle (BFF).", "Add a secret scanner to CI."],
+      },
+    },
+    {
+      re: /presente en el activo pero revocada o inválida/i,
+      cwe: ["CWE-798"],
+      owasp: "A02:2021 Cryptographic Failures",
+      mitre: [{ id: "T1552.001", name: "Unsecured Credentials: Credentials In Files", tactic: "Credential Access" }],
+      govKey: "data_breach",
+      gdpr: ["Art. 32"],
+      iso: ["A.8.24"],
+      ens: "Medio",
+      nis2: "Art. 21.2.e",
+      kill: "Exploitation",
+      impact: { confidentiality: "low", integrity: "none", availability: "none" },
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      narrative: {
+        es: "El formato de la credencial es real pero el proveedor responde 401/403: ya está revocada o es un placeholder. Sigue sin deber vivir en el cliente.",
+        en: "The credential format is real but the provider returns 401/403: already revoked or a placeholder. It still should not live in client code.",
+      },
+      exec: {
+        es: "Secreto revocado aún embebido. Retirarlo del bundle.",
+        en: "Revoked secret still embedded. Remove it from the bundle.",
+      },
+      steps: {
+        es: ["Eliminar el valor del código cliente.", "Confirmar que no se reactivará.", "Scanner de secretos en CI."],
+        en: ["Remove the value from client code.", "Confirm it will not be reactivated.", "Add a secret scanner to CI."],
+      },
+    },
+    {
+      re: /AWS Access Key ID decodifica a account|ARN AWS en el activo referencia account|Tenant Azure\/Entra ID .+ referenciado|Proyecto GCP/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1580", name: "Cloud Infrastructure Discovery", tactic: "Discovery" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Identidad cloud observada en el propio activo (account ID AWS decodificado offline desde AKIA, ARN, tenant Azure o proyecto GCP). Ownership verified: observed, no permutación de nombres genéricos.",
+        en: "Cloud identity observed in the asset itself (offline AWS account ID from AKIA, ARN, Azure tenant, or GCP project). Ownership verified: observed, no generic name permutation.",
+      },
+      exec: {
+        es: "Inventario de cuenta cloud. Confirmar titularidad con el cliente.",
+        en: "Cloud account inventory. Confirm ownership with the client.",
+      },
+      steps: {
+        es: ["Confirmar que la cuenta/proyecto es del cliente.", "Inventariar recursos y aplicar mínimo privilegio.", "Si hay clave viva, rotarla."],
+        en: ["Confirm the account/project belongs to the client.", "Inventory resources and apply least privilege.", "If a live key exists, rotate it."],
+      },
+    },
+    {
+      re: /usa Google Workspace|usa Microsoft 365 \(MX Outlook\)|resuelve a tenant Entra ID|expone metadata SAML/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1589.002", name: "Gather Victim Identity Information: Email Addresses", tactic: "Reconnaissance" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Discovery pasivo de IdP: MX de Google Workspace, metadata OIDC de Entra (GUID de tenant) o FederationMetadata SAML/ADFS. Una GET pública; no se enumeran usuarios ni se prueban credenciales.",
+        en: "Passive IdP discovery: Google Workspace MX, Entra OIDC metadata (tenant GUID), or SAML/ADFS FederationMetadata. One public GET; no user enum, no credentials tried.",
+      },
+      exec: {
+        es: "El dominio usa un IdP conocido. MFA obligatorio y endurecer el tenant.",
+        en: "The domain uses a known IdP. Mandatory MFA and harden the tenant.",
+      },
+      steps: {
+        es: ["Confirmar MFA/2SV obligatorio.", "Bloquear protocolos legacy.", "Rate-limit en endpoints de autenticación."],
+        en: ["Confirm mandatory MFA/2SV.", "Block legacy protocols.", "Rate-limit authentication endpoints."],
+      },
+    },
+    {
+      re: /anuncia .+ prefijo|hyperscaler\/CDN|pertenece a AS\d/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1590.002", name: "Gather Victim Network Information: DNS", tactic: "Reconnaissance" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "RIPEstat lista el ASN y, si no es hyperscaler/CDN, prefijos hermanos. Inventario: no se escanea ningún rango extra. La guardia de hyperscaler evita atribuir bloques de AWS/GCP/Azure al cliente.",
+        en: "RIPEstat lists the ASN and, if not a hyperscaler/CDN, sibling prefixes. Inventory only: no extra ranges are scanned. The hyperscaler guard prevents attributing AWS/GCP/Azure blocks to the client.",
+      },
+      exec: {
+        es: "Superficie de red hermana. No ampliar el alcance sin autorización firmada.",
+        en: "Sibling network surface. Do not expand scope without signed authorization.",
+      },
+      steps: {
+        es: ["Presentar prefijos al cliente.", "No port-scanear rangos hermanos sin ROE.", "Si es hyperscaler, tratar solo la IP en scope."],
+        en: ["Present prefixes to the client.", "Do not port-scan sibling ranges without ROE.", "If hyperscaler, treat only the in-scope IP."],
+      },
+    },
+    {
+      re: /Índice de exposición OSINT/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1592", name: "Gather Victim Host Information", tactic: "Reconnaissance" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.7 Inteligencia sobre amenazas"],
+      ens: "Informativo",
+      nis2: "N/A",
+      nist: ["ID.RA-01 Identificación de vulnerabilidades", "GV.RM-02 Apetito de riesgo", "ID.RA-04 Impacto de riesgos"],
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Esto no es un CVE ni un fallo que se parchee. Es el termómetro de ESTA auditoría: resume en un grado A–F (y un 0–100) la superficie que el motor ya confirmó, sin lanzar tráfico extra. Tres factores: exposición (cuánta superficie abierta hay), amenaza (qué tan creíble es explotarla ahora) e impacto (qué tan grave sería el peor caso de esta lista). El riesgo no es una suma: combina E y T y luego multiplica por I. Un crítico de secreto vivo, bucket listable o SSRF eleva el suelo de exposición a 50. El número no se compara entre clientes: cambia el alcance, el playbook y lo que había abierto.",
+        en: "This is not a CVE and not something you patch. It is THIS audit's thermometer: an A–F grade (and 0–100) over findings the engine already confirmed, with no extra traffic. Three factors: exposure (how much open surface), threat (how credible exploitation is now) and impact (how bad the worst case in this list would be). Risk is not a sum: it combines E and T, then multiplies by I. A confirmed critical (live secret / listable bucket / SSRF) raises the exposure floor to 50. Do not compare the number across clients.",
+      },
+      exec: {
+        es: "Nota de riesgo de esta auditoría, no un ticket de vulnerabilidad. El grado dice a dirección si la superficie merece alarma y en qué orden atacar el resto de fichas. No compares el número con el de otro cliente.",
+        en: "Risk grade for this audit, not a vulnerability ticket. The grade tells leadership whether the surface warrants alarm and in what order to attack the other dossiers. Do not compare the number across clients.",
+      },
+      steps: {
+        es: [
+          "No abras un ticket «arreglar el índice»: el índice es el termómetro; los tickets son las otras fichas (SQLi, DMARC, secretos…).",
+          "Identifica el motor dominante (exposición, amenaza o impacto) y cierra primero esos hallazgos.",
+          "Explica el grado a dirección en una frase (A = higiene, F = actuar en horas).",
+          "Tras cerrar críticos y altos, relanza el análisis: el grado debe bajar. Si no baja, el hallazgo sigue abierto o el playbook no cubrió la causa.",
+          "Nunca uses el número para ranking entre organizaciones ni para primas de seguro.",
+        ],
+        en: [
+          "Do not open a ticket to «fix the index»: the index is the thermometer; the tickets are the other dossiers (SQLi, DMARC, secrets…).",
+          "Identify the dominant driver (exposure, threat or impact) and close those findings first.",
+          "Explain the grade to leadership in one sentence (A = hygiene, F = act in hours).",
+          "After closing criticals and highs, re-scan: the grade should drop. If it does not, the finding is still open or the playbook missed the cause.",
+          "Never use the number to rank organizations or to price insurance.",
+        ],
+      },
+    },
+    {
+      re: /Nuevo desde última auditoría|no reaparecen/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1592", name: "Gather Victim Host Information", tactic: "Reconnaissance" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.8.16"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Comparación del engagement actual contra el último scan completado del mismo alcance: títulos nuevos o que ya no reaparecen (posible remediación).",
+        en: "Comparison of the current engagement against the last completed scan of the same scope: new titles or ones that no longer reappear (possible remediation).",
+      },
+      exec: {
+        es: "Delta de exposición continua. Revisar lo nuevo y confirmar lo que desapareció.",
+        en: "Continuous exposure delta. Review what is new and confirm what disappeared.",
+      },
+      steps: {
+        es: ["Triar cada hallazgo nuevo.", "Confirmar remediación de los que no reaparecen.", "No asumir que el resto sigue igual."],
+        en: ["Triage each new finding.", "Confirm remediation of those that vanished.", "Do not assume the rest is unchanged."],
+      },
+    },
+    {
       re: /SSRF confirmado hacia metadata AWS|Posible SSRF hacia metadata AWS/i,
       cwe: ["CWE-918"],
       owasp: "A10:2021 Server-Side Request Forgery",
@@ -1816,7 +2053,7 @@
       },
     },
     {
-      re: /listado de directorio|Index of/i,
+      re: /listado de directorio|Index of|listable sin autenticaci[oó]n/i,
       cwe: ["CWE-548"],
       owasp: "A01:2021 Broken Access Control",
       mitre: [{ id: "T1083", name: "File and Directory Discovery", tactic: "Discovery" }],
@@ -2092,32 +2329,162 @@
       iso: ["A.8.8 Gestión de vulnerabilidades técnicas"],
       ens: L("Según criticidad del activo", "Per asset classification"),
       nis2: "Art. 21 — medidas técnicas y organizativas",
+      nist: ["ID.RA-01 Identificación de vulnerabilidades", "PR.PS-01 Configuración segura"],
       kill: "Exploitation",
       impact: { confidentiality: "medium", integrity: "medium", availability: "low" },
       narrative: {
-        es: "El motor registró «" + title + "». La evidencia bruta del playbook es: " + (desc || "sin cuerpo") + ". Este dossier amplía el hallazgo a lenguaje de gobierno: qué significa para confidencialidad/integridad/disponibilidad, qué normas toca y qué hay que hacer. No sustituye la validación manual: hay que atar cada afirmación a un código HTTP, una cookie o un volcado de herramienta.",
-        en: "The engine recorded «" + title + "». Raw evidence: " + (desc || "none") + ". This dossier maps it to governance language. Bind every claim to HTTP status, cookies or tool output.",
+        es: "El motor no tiene aún una ficha de clase para «" + title + "», así que este dossier se construye con la evidencia de la sonda y el lenguaje de gobierno (CIA, normas, plan). No inventa un PoC. Evidencia bruta: " + (desc || "el motor no dejó cuerpo adicional.") + " Validar a mano (código HTTP, cookie, registro DNS o salida de herramienta) antes de tratarlo como explotable.",
+        en: "The engine has no class card yet for «" + title + "», so this dossier is built from probe evidence and governance language (CIA, controls, plan). It does not invent a PoC. Raw evidence: " + (desc || "the engine left no extra body.") + " Validate by hand (HTTP status, cookie, DNS record or tool output) before treating it as exploitable.",
       },
       exec: {
-        es: (desc || title) + (rem ? " Remediación inicial: " + rem : ""),
-        en: (desc || title) + (rem ? " Initial remediation: " + rem : ""),
+        es: "Hallazgo sin plantilla de clase: «" + title + "». Dirección debe tratarlo según la severidad marcada y la evidencia de la sonda, no como un título suelto. " + (rem ? "Primera decisión: " + rem : "Asignar owner técnico para clasificar CWE/OWASP con la evidencia."),
+        en: "Finding without a class template: «" + title + "». Leadership should treat it by the marked severity and the probe evidence, not as a loose title. " + (rem ? "First decision: " + rem : "Assign a technical owner to classify CWE/OWASP from the evidence."),
       },
       steps: {
         es: [
-          rem || "Aplicar la remediación indicada por el motor.",
-          "Reproducir la evidencia (misma URL, mismos headers).",
-          "Asignar owner y fecha SLA según criticidad.",
-          "Verificar el cierre y adjuntar prueba (código HTTP / captura).",
+          rem || "Clasificar el hallazgo (CWE/OWASP) con la evidencia de la sonda, no solo con el título.",
+          "Reproducir la evidencia (misma URL, mismos headers o el mismo registro DNS) y adjuntarla al ticket.",
+          "Asignar owner y fecha SLA según la criticidad marcada.",
+          "Verificar el cierre con la misma sonda: no se da por cerrado hasta que la evidencia desaparezca.",
         ],
         en: [
-          rem || "Apply the engine remediation.",
-          "Reproduce evidence (same URL and headers).",
-          "Assign owner and SLA by severity.",
-          "Verify closure with proof.",
+          rem || "Classify the finding (CWE/OWASP) from probe evidence, not from the title alone.",
+          "Reproduce the evidence (same URL, headers or DNS record) and attach it to the ticket.",
+          "Assign owner and SLA by the marked severity.",
+          "Verify closure with the same probe: it is not closed until the evidence is gone.",
         ],
       },
       refs: [{ label: "HackTricks", href: "https://hacktricks.wiki/en/index.html" }],
     };
+  }
+
+  function parseFairLite(f) {
+    var title = String((f && f.title) || "");
+    var desc = String((f && f.description) || "");
+    var m = title.match(/(\d+(?:\.\d+)?)\/100\s*\(grado\s*([A-F])\)/i);
+    if (!m) return null;
+    var em = desc.match(/exposici[oó]n\s+(\d+(?:\.\d+)?)/i);
+    var tm = desc.match(/amenaza\s+(\d+(?:\.\d+)?)/i);
+    var im = desc.match(/impacto\s+(\d+(?:\.\d+)?)/i);
+    var dm = desc.match(/motor dominante:\s*([a-z\-]+)/i);
+    return {
+      risk: parseFloat(m[1]),
+      grade: String(m[2] || "").toUpperCase(),
+      exposure: em ? parseFloat(em[1]) : null,
+      threat: tm ? parseFloat(tm[1]) : null,
+      impact: im ? parseFloat(im[1]) : null,
+      dominant: dm ? dm[1] : "",
+    };
+  }
+
+  function gradePlain(g) {
+    if (g === "A") return L("A (muy bajo): la superficie observada no justifica alarma de dirección. Prioriza higiene y el plan a 90 días.", "A (very low): the observed surface does not warrant a leadership alarm. Prioritize hygiene and the 90-day plan.");
+    if (g === "B") return L("B (bajo): hay exposición útil para un atacante oportunista, pero sin compromiso inmediato. Cierra medios y revisa correo/SPF/DMARC.", "B (low): there is useful exposure for an opportunistic attacker, but no immediate compromise. Close mediums and review mail/SPF/DMARC.");
+    if (g === "C") return L("C (moderado): hay suficientes hallazgos para que un atacante con tiempo encuentre una ruta. Dirección debe asignar owner y fecha.", "C (moderate): there are enough findings for a patient attacker to find a path. Leadership must assign an owner and a date.");
+    if (g === "D") return L("D (alto): la combinación de superficie y amenaza es grave. Trata los críticos y altos como incidente, no como backlog.", "D (high): surface plus threat is serious. Treat criticals and highs as an incident, not a backlog.");
+    if (g === "F") return L("F (crítico): hay al menos una vía de compromiso de alto impacto (secreto vivo, bucket listable o SSRF). Actúa en horas, no en sprints.", "F (critical): there is at least one high-impact compromise path (live secret, listable bucket or SSRF). Act in hours, not sprints.");
+    return "";
+  }
+
+  function dominantPlain(dom) {
+    if (dom === "exposure") return L("El número lo empuja la cantidad de hallazgos abiertos (superficie), no un único exploit.", "The number is driven by how many findings are open (surface), not by a single exploit.");
+    if (dom === "breach-likelihood") return L("El número lo empuja la amenidad de explotación (secreto vivo, bucket listable o SSRF confirmado).", "The number is driven by exploitation likelihood (live secret, listable bucket or confirmed SSRF).");
+    if (dom === "business-impact") return L("El número lo empuja el impacto de negocio supuesto. Un crítico de secreto, bucket o SSRF pone el impacto en 90; no significa que ya hubo incidente.", "The number is driven by assumed business impact. A secret/bucket/SSRF critical sets impact to 90; it does not mean an incident already happened.");
+    return "";
+  }
+
+  function sevDecision(sk) {
+    if (sk === "critical") return L("Severidad crítica: dirección debe tratarlo como incidente (horas, no sprints).", "Critical severity: leadership must treat it as an incident (hours, not sprints).");
+    if (sk === "high") return L("Severidad alta: entra en el plan de la semana y bloquea certificación / go-live si aplica.", "High severity: it belongs on this week's plan and can block certification / go-live.");
+    if (sk === "medium") return L("Severidad media: no es urgente de madrugada, pero sí tiene dueño y fecha (SLA 30 días).", "Medium severity: not a midnight fire, but it needs an owner and a date (30-day SLA).");
+    if (sk === "low") return L("Severidad baja: higiene. Agrúpalo con otros lows del mismo control para no abrir un ticket por cada header.", "Low severity: hygiene. Bundle it with other lows on the same control so you do not open one ticket per header.");
+    return L("Informativo: no abre ticket de vulnerabilidad. Sirve de contexto para leer el resto de fichas.", "Informational: it does not open a vulnerability ticket. It is context for reading the other dossiers.");
+  }
+
+  function attackerPlain(cat, f) {
+    var mitre = (cat && cat.mitre && cat.mitre[0]) || null;
+    var kill = (cat && cat.kill) || "Exploitation";
+    var title = String((f && f.title) || "").toLowerCase();
+    if (/dmarc|spf|spoof/i.test(title)) {
+      return L("Un tercero puede enviar correo que aparenta venir de este dominio. Sin DMARC/SPF en hard fail, el destinatario no tiene una señal clara para descartarlo: phishing, fraude a proveedores o abuso de marca.", "A third party can send mail that appears to come from this domain. Without DMARC/SPF hard fail, the recipient has no clear signal to drop it: phishing, vendor fraud or brand abuse.");
+    }
+    if (/sql|inyecci[oó]n|injection/i.test(title)) {
+      return L("Quien controle el parámetro inyectado lee o escribe en la base detrás del login. El siguiente paso habitual es extraer usuarios o saltarse la autenticación.", "Whoever controls the injected parameter reads or writes the database behind login. The usual next step is dumping users or bypassing authentication.");
+    }
+    if (/secret|credencial|token|access key|hardcodead/i.test(title)) {
+      return L("La credencial ya está en manos de quien descargue el bundle o el endpoint. No hace falta explotar nada más: rotarla y asumir compromiso de esa identidad.", "The credential is already in the hands of anyone who downloads the bundle or hits the endpoint. Nothing else needs exploiting: rotate it and assume that identity is compromised.");
+    }
+    if (mitre) {
+      return L("En ATT&CK esto encaja en " + mitre.id + " (" + mitre.name + "), fase " + kill + ". Un atacante usaría este hallazgo como escalón, no como objetivo final: encadenarlo con el resto de fichas del mismo análisis.", "In ATT&CK this maps to " + mitre.id + " (" + mitre.name + "), stage " + kill + ". An attacker would use this finding as a rung, not as the end goal: chain it with the other dossiers from the same scan.");
+    }
+    return L("Un atacante usaría este hallazgo como escalón de la fase " + kill + ", no como un título aislado. Léelo junto al resto de fichas del mismo análisis.", "An attacker would use this finding as a rung in the " + kill + " stage, not as an isolated title. Read it with the other dossiers from the same scan.");
+  }
+
+  function expandDossierCopy(cat, f, fair, sk) {
+    var asset = String((f && f.asset) || "").trim() || L("el activo analizado", "the analyzed asset");
+    var title = String((f && f.title) || "").trim();
+    var desc = String((f && f.description) || "").trim();
+    var rem = String((f && f.remediation) || "").trim();
+    var lg = lang();
+    var baseExec = lg === "en" ? cat.exec.en : cat.exec.es;
+    var baseNar = lg === "en" ? cat.narrative.en : cat.narrative.es;
+    var baseSteps = ((lg === "en" ? cat.steps.en : cat.steps.es) || []).slice();
+    var exec;
+    var narrative;
+    var steps;
+    if (fair) {
+      var e = fair.exposure == null ? "—" : String(fair.exposure);
+      var t = fair.threat == null ? "—" : String(fair.threat);
+      var i = fair.impact == null ? "—" : String(fair.impact);
+      exec = L(
+        "En " + asset + " el motor no encontró un CVE nuevo: calculó la nota de riesgo de ESTA auditoría. Grado " +
+          fair.grade + " (" + fair.risk + "/100). " + gradePlain(fair.grade) +
+          " No abras un ticket sobre el índice; úsalo para ordenar las otras fichas. No compares este número con el de otro cliente.",
+        "On " + asset + " the engine did not find a new CVE: it scored THIS audit. Grade " +
+          fair.grade + " (" + fair.risk + "/100). " + gradePlain(fair.grade) +
+          " Do not open a ticket on the index; use it to order the other dossiers. Do not compare this number across clients."
+      );
+      narrative = L(
+        "FAIR-lite descompone el riesgo en tres factores que un pentester ya reconoce, en escala 0–100.\n\n" +
+          "Exposición (E=" + e + "): cuánta superficie abierta hay. Cada crítico suma mucho; un info casi nada. Un crítico de secreto vivo, bucket listable o SSRF eleva el suelo a 50 aunque el resto sea higiene.\n\n" +
+          "Amenaza (T=" + t + "): qué tan creíble es que alguien lo explote ahora. Sin secreto vivo ni bucket/SSRF confirmado el motor usa 5 (amenaza de fondo). Con esos hallazgos, salta.\n\n" +
+          "Impacto (I=" + i + "): qué tan grave sería el peor caso de ESTA lista. 90 si hay crítico de compromiso; 40 si el peor caso es correo/SPF/DMARC/IdP; 20 si solo hay contexto.\n\n" +
+          "El riesgo " + fair.risk + "/100 no es una suma: combina E y T y luego multiplica por I. Motor dominante: " +
+          (fair.dominant || "—") + ". " + dominantPlain(fair.dominant) + "\n\n" +
+          "Cómo usarlo: cierra primero los hallazgos que alimentan el factor dominante. El índice no se remedia solo; baja cuando esos tickets se cierran y se repite el análisis.\n\n" +
+          (desc ? ("Cifras que dejó el motor:\n" + desc) : ""),
+        "FAIR-lite splits risk into three factors a tester already knows, on a 0–100 scale.\n\n" +
+          "Exposure (E=" + e + "): how much open surface there is. Each critical adds a lot; an info almost nothing. A live-secret / listable-bucket / SSRF critical raises the floor to 50 even if the rest is hygiene.\n\n" +
+          "Threat (T=" + t + "): how credible exploitation is now. Without a live secret or confirmed bucket/SSRF the engine uses 5 (background threat). Those findings make it jump.\n\n" +
+          "Impact (I=" + i + "): how bad the worst case in THIS list would be. 90 if there is a compromise critical; 40 if the worst case is mail/SPF/DMARC/IdP; 20 if there is only context.\n\n" +
+          "The " + fair.risk + "/100 risk is not a sum: it combines E and T, then multiplies by I. Dominant driver: " +
+          (fair.dominant || "—") + ". " + dominantPlain(fair.dominant) + "\n\n" +
+          "How to use it: close the findings that feed the dominant factor first. The index is not remediated by itself; it drops when those tickets close and you re-scan.\n\n" +
+          (desc ? ("Numbers the engine left:\n" + desc) : "")
+      );
+      steps = baseSteps;
+    } else {
+      exec = L(
+        "En " + asset + " el análisis confirmó «" + title + "». " + baseExec + " " + sevDecision(sk),
+        "On " + asset + " the scan confirmed «" + title + "». " + baseExec + " " + sevDecision(sk)
+      );
+      narrative = baseNar +
+        "\n\n" + L("Qué observó este análisis en el activo", "What this scan saw on the asset") + "\n" +
+        (desc || L("El motor no dejó un volcado adicional; el título y la clase del hallazgo son la evidencia.", "The engine left no extra dump; the title and the finding class are the evidence.")) +
+        "\n\n" + L("Qué haría un atacante con esto", "What an attacker would do with this") + "\n" +
+        attackerPlain(cat, f) +
+        "\n\n" + L("Qué no es este hallazgo", "What this finding is not") + "\n" +
+        L("No es un PoC entregable ni una explotación fuera de alcance. Es la evidencia de sonda de este engagement, argumentada para que dirección y el equipo técnico compartan el mismo hecho.", "It is not a deliverable PoC and not out-of-scope exploitation. It is this engagement's probe evidence, argued so leadership and the technical team share the same fact.");
+      steps = [
+        L("Reproducir la evidencia en " + asset + " (misma URL, mismo registro DNS o mismos headers) y adjuntar captura o código HTTP al ticket.", "Reproduce the evidence on " + asset + " (same URL, DNS record or headers) and attach a capture or HTTP status to the ticket."),
+      ].concat(baseSteps);
+      if (rem && steps.indexOf(rem) === -1) {
+        steps.splice(1, 0, rem);
+      }
+      steps.push(L("Verificar el cierre con la misma sonda: el hallazgo no se da por cerrado hasta que la evidencia deje de aparecer.", "Verify closure with the same probe: the finding is not closed until the evidence is gone."));
+      steps.push(L("Si el activo trata datos personales, anotar el ticket en la evaluación Art. 32 (y Art. 33 si hubo secreto o cuenta comprometida).", "If the asset processes personal data, record the ticket in the Art. 32 assessment (and Art. 33 if a secret or account was compromised)."));
+    }
+    return { exec: exec, narrative: narrative, steps: steps };
   }
 
   function enrich(f) {
@@ -2126,10 +2493,13 @@
     var vector = cat.cvssVector || (CVSS[sk] && CVSS[sk].vector) || CVSS.info.vector;
     var cv = cvssFromVector(vector);
     var hours = SLA[sk];
-    var lg = lang();
+    var gov = pickGov(cat);
+    var fair = parseFairLite(f);
+    var copy = expandDossierCopy(cat, f, fair, sk);
     return {
       finding: f,
       severity: sk,
+      fair: fair,
       cvss: cv,
       slaHours: hours,
       slaLabel: hours <= 24 ? L("24 horas", "24 hours") : hours <= 168 ? L("7 días", "7 days") : hours <= 720 ? L("30 días", "30 days") : L("90 días", "90 days"),
@@ -2140,15 +2510,16 @@
       iso: cat.iso,
       ens: cat.ens,
       nis2: cat.nis2,
+      nist: (cat.nist && cat.nist.length) ? cat.nist : (gov.nist || []),
       kill: cat.kill,
       impact: cv.impact,
-      narrative: lg === "en" ? cat.narrative.en : cat.narrative.es,
-      exec: lg === "en" ? cat.exec.en : cat.exec.es,
-      steps: lg === "en" ? cat.steps.en : cat.steps.es,
+      narrative: copy.narrative,
+      exec: copy.exec,
+      steps: copy.steps,
       engineDescription: (f && f.description) || "",
       engineRemediation: (f && f.remediation) || "",
       refs: cat.refs || [{ label: "HackTricks", href: "https://hacktricks.wiki/en/index.html" }],
-      gov: pickGov(cat),
+      gov: gov,
     };
   }
 
@@ -2205,6 +2576,10 @@
     var qScan = opts.scanId ? ("&scan=" + encodeURIComponent(opts.scanId)) : "";
     var qScanOnly = opts.scanId ? ("?scan=" + encodeURIComponent(opts.scanId)) : "";
     var id = encodeURIComponent(f.id || "");
+    var pid = String(opts.idPrefix || "ds-");
+    if (pid.slice(-1) !== "-") pid += "-";
+    function sid(name) { return pid + name; }
+    var embedded = !!opts.embedded;
     var metrics = [
       { label: L("Confidencialidad", "Confidentiality"), v: d.impact.confidentiality },
       { label: L("Integridad", "Integrity"), v: d.impact.integrity },
@@ -2257,12 +2632,65 @@
     var cweHtml = d.cwe.map(function (g) { return chip(g); }).join("");
     var matScore = d.severity === "critical" ? 22 : d.severity === "high" ? 38 : d.severity === "medium" ? 55 : 72;
     var matLabel = matScore < 40 ? L("Inicial", "Initial") : matScore < 60 ? L("Gestionado", "Managed") : L("Definido", "Defined");
+    var fair = d.fair;
+    var fairTone = !fair ? ""
+      : (fair.grade === "A" || fair.grade === "B") ? "text-tertiary"
+        : fair.grade === "C" ? "text-on-surface" : "text-error";
+    var fairChip = !fair ? ""
+      : (fair.grade === "A" || fair.grade === "B") ? "bg-tertiary/10 text-tertiary"
+        : fair.grade === "C" ? "bg-surface-container-high text-on-surface" : "bg-error/10 text-error";
+    var scoreChip = fair
+      ? '<span class="px-2 py-0.5 rounded-full font-label-md ' + fairChip + '">FAIR ' + fair.risk + "/100 · " + esc(fair.grade) + "</span>"
+      : '<span class="px-2 py-0.5 rounded-full font-label-md bg-error/10 text-error">CVSS ' + d.cvss.score.toFixed(1) + "</span>";
+    var execSla = fair
+      ? L("Esto no abre ticket de vulnerabilidad: el grado ordena el resto de fichas ante dirección y no se compara entre clientes.", "This does not open a vulnerability ticket: the grade orders the other dossiers for leadership and is not comparable across clients.")
+      : L("SLA de remediación recomendado: ", "Recommended remediation SLA: ") +
+        "<strong>" + d.slaLabel + "</strong>. " +
+        L("Este hallazgo degrada la madurez del control hacia «", "This finding pulls control maturity toward «") +
+        esc(matLabel) +
+        L("». Debe figurar en el plan de remediación y, si hay datos personales, en la evaluación Art. 32 RGPD.", "». It belongs on the remediation plan and, if personal data is in scope, in the Art. 32 GDPR assessment.");
+    var fairFactorHelp = {
+      E: L("Cuánta superficie abierta hay en este análisis. Un crítico de secreto/bucket/SSRF eleva el suelo a 50.", "How much open surface this scan has. A secret/bucket/SSRF critical raises the floor to 50."),
+      T: L("Qué tan creíble es explotarlo ahora. 5 es amenaza de fondo; salta con secreto vivo o bucket/SSRF.", "How credible exploitation is now. 5 is background threat; it jumps with a live secret or bucket/SSRF."),
+      I: L("Qué tan grave sería el peor caso de esta lista. 90 = compromiso; 40 = correo/IdP; 20 = solo contexto.", "How bad the worst case in this list would be. 90 = compromise; 40 = mail/IdP; 20 = context only."),
+    };
+    var criticidadInner = fair
+      ? (
+        '<p class="font-headline-xl text-headline-xl ' + fairTone + '">' + fair.risk +
+        ' <span class="font-body-sm text-on-surface-variant">/100 · ' + L("grado", "grade") + " " + esc(fair.grade) + "</span></p>" +
+        '<p class="font-body-sm text-on-surface-variant mt-xs mb-md">' +
+        L("No es CVSS 3.1: es FAIR-lite de esta auditoría (exposición × amenaza × impacto).", "This is not CVSS 3.1: it is FAIR-lite for this audit (exposure × threat × impact).") +
+        (fair.dominant ? " " + L("Motor dominante:", "Dominant driver:") + " " + esc(fair.dominant) + ". " + dominantPlain(fair.dominant) : "") +
+        "</p>" +
+        [
+          { label: L("Exposición (E)", "Exposure (E)"), text: fair.exposure == null ? "—" : String(fair.exposure), v: (fair.exposure || 0) / 100, help: fairFactorHelp.E },
+          { label: L("Amenaza (T)", "Threat (T)"), text: fair.threat == null ? "—" : String(fair.threat), v: (fair.threat || 0) / 100, help: fairFactorHelp.T },
+          { label: L("Impacto (I)", "Impact (I)"), text: fair.impact == null ? "—" : String(fair.impact), v: (fair.impact || 0) / 100, help: fairFactorHelp.I },
+        ].map(function (x) {
+          return '<div class="mb-sm"><div class="flex justify-between font-label-md text-on-surface-variant mb-xs"><span>' + esc(x.label) + "</span><span>" + esc(x.text) + "</span></div>" + bar(x.v, x.v > 0.4 ? "error" : "tertiary") +
+            '<p class="font-body-sm text-on-surface-variant mt-xs">' + esc(x.help) + "</p></div>";
+        }).join("")
+      )
+      : (
+        '<p class="font-headline-xl text-headline-xl text-error">' + d.cvss.score.toFixed(1) + ' <span class="font-body-sm text-on-surface-variant">CVSS 3.1</span></p>' +
+        '<p class="font-mono-md text-[11px] text-on-surface-variant break-all mt-xs mb-md">' + esc(d.cvss.vector) + "</p>" +
+        cvssDims.map(function (x) {
+          return '<div class="mb-sm"><div class="flex justify-between font-label-md text-on-surface-variant mb-xs"><span>' + esc(x.label) + "</span><span>" + esc(x.text) + "</span></div>" + bar(x.v, x.v > 0.7 ? "error" : "primary") + "</div>";
+        }).join("") +
+        '<div class="mt-md pt-md border-t border-outline-variant/30">' +
+        metrics.map(function (m) {
+          return '<div class="mb-sm"><div class="flex justify-between font-label-md mb-xs"><span>' + esc(m.label) + "</span><span class=\"uppercase\">" + esc(m.v) + "</span></div>" + bar(impactPct(m.v), m.v === "high" ? "error" : "tertiary") + "</div>";
+        }).join("") +
+        "</div>"
+      );
 
     root.innerHTML =
-      '<nav class="flex items-center font-body-sm text-on-surface-variant gap-xs mb-md flex-wrap">' +
-      '<a class="hover:text-primary" href="index.html">Dashboard</a><i data-lucide="chevron-right" class="icon-sm"></i>' +
-      '<a class="hover:text-primary" href="reporting.html">' + L("Informes", "Reporting") + "</a><i data-lucide=\"chevron-right\" class=\"icon-sm\"></i>" +
-      '<span class="text-on-surface font-semibold font-mono-md">' + esc(f.id || "—") + "</span></nav>" +
+      (embedded
+        ? '<p class="font-label-md text-secondary mb-sm px-md pt-md">' + L("Ficha de hallazgo", "Finding dossier") + " · " + esc(f.id || "—") + "</p>"
+        : '<nav class="flex items-center font-body-sm text-on-surface-variant gap-xs mb-md flex-wrap">' +
+          '<a class="hover:text-primary" href="index.html">Dashboard</a><i data-lucide="chevron-right" class="icon-sm"></i>' +
+          '<a class="hover:text-primary" href="reporting.html">' + L("Informes", "Reporting") + "</a><i data-lucide=\"chevron-right\" class=\"icon-sm\"></i>" +
+          '<span class="text-on-surface font-semibold font-mono-md">' + esc(f.id || "—") + "</span></nav>") +
       '<header class="glass-panel rounded-xl p-lg flex flex-col gap-md mb-md">' +
       '<div class="flex flex-col md:flex-row justify-between items-start gap-md">' +
       "<div><div class=\"flex items-center gap-sm mb-sm flex-wrap\">" +
@@ -2270,9 +2698,9 @@
       '<span class="px-2 py-0.5 rounded-full font-label-md text-label-md border ' + (opts.sevBadgeClass ? opts.sevBadgeClass(d.severity) : "") + '">' +
       esc(String(f.severity || "").toUpperCase()) +
       "</span>" +
-      '<span class="px-2 py-0.5 rounded-full font-label-md bg-error/10 text-error">CVSS ' + d.cvss.score.toFixed(1) + "</span>" +
+      scoreChip +
       '<span class="px-2 py-0.5 rounded-full font-label-md bg-surface-container-high">' + esc(d.kill) + "</span></div>" +
-      '<h1 class="font-headline-xl text-headline-xl text-on-surface">' + esc(f.title || L("Hallazgo", "Finding")) + "</h1>" +
+      '<' + (embedded ? "h2" : "h1") + ' class="' + (embedded ? "font-headline-lg text-headline-lg" : "font-headline-xl text-headline-xl") + ' text-on-surface">' + esc(f.title || L("Hallazgo", "Finding")) + "</" + (embedded ? "h2" : "h1") + ">" +
       '<p class="font-mono-md text-on-surface-variant mt-xs">' + esc(f.asset || "—") + " · " + esc(f.status || "proposed") + " · " + esc(rel(f.created_at)) + "</p></div>" +
       '<div class="flex flex-wrap gap-sm">' +
       '<a href="remediation-detail.html?finding=' + id + '" class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-primary font-label-md flex items-center gap-xs"><i data-lucide="wrench" class="icon-sm"></i> ' + L("Remediar", "Remediate") + "</a>" +
@@ -2280,37 +2708,25 @@
       '<a href="graph-evidence.html' + qScanOnly + (qScanOnly ? "&" : "?") + "finding=" + id + '" class="px-md py-sm rounded-lg border border-outline-variant font-label-md flex items-center gap-xs"><i data-lucide="waypoints" class="icon-sm"></i> ' + L("Evidencia grafo", "Graph evidence") + "</a>" +
       "</div></div>" +
       '<nav class="flex flex-wrap gap-xs pt-sm border-t border-outline-variant/30">' +
-      [["#ds-exec", L("Ejecutivo", "Executive")], ["#ds-cvss", L("Criticidad", "Criticality")], ["#ds-tech", L("Técnico", "Technical")], ["#ds-mitre", "MITRE"], ["#ds-gov", L("Gobernanza", "Governance")], ["#ds-graph", L("Grafo", "Graph")], ["#ds-plan", L("Plan", "Plan")], ["#ds-metrics", L("Métricas", "Metrics")]].map(function (a) {
+      [["#" + sid("exec"), L("Ejecutivo", "Executive")], ["#" + sid("cvss"), L("Criticidad", "Criticality")], ["#" + sid("tech"), L("Técnico", "Technical")], ["#" + sid("mitre"), "MITRE"], ["#" + sid("gov"), L("Gobernanza", "Governance")], ["#" + sid("graph"), L("Grafo", "Graph")], ["#" + sid("plan"), L("Plan", "Plan")], ["#" + sid("metrics"), L("Métricas", "Metrics")]].map(function (a) {
         return '<a href="' + a[0] + '" class="px-sm py-xs rounded font-label-md text-primary hover:bg-primary-container/10">' + a[1] + "</a>";
       }).join("") +
       "</nav></header>" +
-      '<section id="ds-exec" class="glass-panel rounded-xl p-lg mb-md">' +
+      '<section id="' + sid("exec") + '" class="glass-panel rounded-xl p-lg mb-md">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="briefcase" class="text-primary"></i> ' + L("Resumen ejecutivo", "Executive summary") + "</h2>" +
       '<p class="font-body-lg text-on-surface leading-relaxed">' + esc(d.exec) + "</p>" +
       '<p class="font-body-md text-on-surface-variant mt-md leading-relaxed">' +
-      L("SLA de remediación recomendado: ", "Recommended remediation SLA: ") +
-      "<strong>" + d.slaLabel + "</strong>. " +
-      L("Este hallazgo degrada la madurez del control hacia «", "This finding pulls control maturity toward «") +
-      esc(matLabel) +
-      L("». Debe figurar en el plan de remediación y, si hay datos personales, en la evaluación Art. 32 RGPD.", "». It belongs on the remediation plan and, if personal data is in scope, in the Art. 32 GDPR assessment.") +
+      execSla +
       "</p></section>" +
       '<div class="grid grid-cols-1 lg:grid-cols-3 gap-md mb-md">' +
-      '<section id="ds-cvss" class="glass-panel rounded-xl p-lg lg:col-span-1">' +
-      '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="gauge" class="text-error"></i> ' + L("Criticidad", "Criticality") + "</h2>" +
-      '<p class="font-headline-xl text-headline-xl text-error">' + d.cvss.score.toFixed(1) + ' <span class="font-body-sm text-on-surface-variant">CVSS 3.1</span></p>' +
-      '<p class="font-mono-md text-[11px] text-on-surface-variant break-all mt-xs mb-md">' + esc(d.cvss.vector) + "</p>" +
-      cvssDims.map(function (x) {
-        return '<div class="mb-sm"><div class="flex justify-between font-label-md text-on-surface-variant mb-xs"><span>' + esc(x.label) + "</span><span>" + esc(x.text) + "</span></div>" + bar(x.v, x.v > 0.7 ? "error" : "primary") + "</div>";
-      }).join("") +
-      '<div class="mt-md pt-md border-t border-outline-variant/30">' +
-      metrics.map(function (m) {
-        return '<div class="mb-sm"><div class="flex justify-between font-label-md mb-xs"><span>' + esc(m.label) + "</span><span class=\"uppercase\">" + esc(m.v) + "</span></div>" + bar(impactPct(m.v), m.v === "high" ? "error" : "tertiary") + "</div>";
-      }).join("") +
-      "</div></section>" +
-      '<section id="ds-tech" class="glass-panel rounded-xl p-lg lg:col-span-2">' +
+      '<section id="' + sid("cvss") + '" class="glass-panel rounded-xl p-lg lg:col-span-1">' +
+      '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="gauge" class="' + (fair ? "text-tertiary" : "text-error") + '"></i> ' + L("Criticidad", "Criticality") + "</h2>" +
+      criticidadInner +
+      "</section>" +
+      '<section id="' + sid("tech") + '" class="glass-panel rounded-xl p-lg lg:col-span-2">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="file-text" class="text-primary"></i> ' + L("Análisis técnico argumentado", "Technical analysis") + "</h2>" +
       '<p class="font-body-md text-on-surface leading-relaxed whitespace-pre-wrap">' + esc(d.narrative) + "</p>" +
-      (d.engineDescription
+      (d.engineDescription && !fair
         ? '<div class="mt-md p-md rounded-lg bg-surface-container-low"><p class="font-label-md text-secondary uppercase mb-xs">' + L("Evidencia del motor", "Engine evidence") + "</p><p class=\"font-body-sm text-on-surface-variant whitespace-pre-wrap\">" + esc(d.engineDescription) + "</p></div>"
         : "") +
       '<div class="flex flex-wrap gap-xs mt-md">' + cweHtml + chip(d.owasp) + "</div>" +
@@ -2323,19 +2739,21 @@
         : "") +
       "</section></div>" +
       '<div class="grid grid-cols-1 lg:grid-cols-2 gap-md mb-md">' +
-      '<section id="ds-mitre" class="glass-panel rounded-xl p-lg">' +
+      '<section id="' + sid("mitre") + '" class="glass-panel rounded-xl p-lg">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="swords" class="text-primary"></i> MITRE ATT&CK</h2>' +
       '<p class="font-body-sm text-on-surface-variant mb-md">' + L("Técnicas observadas o plausibles a partir de este hallazgo. La matriz completa está en MITRE ATT&CK.", "Techniques observed or plausible from this finding. Full matrix is under MITRE ATT&CK.") + "</p>" +
       '<div class="flex flex-wrap gap-xs">' + mitreHtml + "</div>" +
       '<p class="font-body-sm text-on-surface-variant mt-md">' + L("Fase de kill chain: ", "Kill-chain stage: ") + "<strong>" + esc(d.kill) + "</strong></p>" +
       '<a class="inline-flex items-center gap-xs font-label-md text-primary mt-sm hover:underline" href="kill-chain.html' + qScanOnly + '"><i data-lucide="link" class="icon-sm"></i> ' + L("Ver cadena de ataque del análisis", "View scan kill chain") + "</a></section>" +
-      '<section id="ds-gov" class="glass-panel rounded-xl p-lg">' +
+      '<section id="' + sid("gov") + '" class="glass-panel rounded-xl p-lg">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="scale" class="text-primary"></i> ' + L("Gobernanza y cumplimiento", "Governance & compliance") + "</h2>" +
       '<p class="font-body-sm text-on-surface-variant mb-md">' + L("Molde de ficha GRC: obligación, hueco, riesgo AEPD, impacto de negocio y plan 30/60/90. Los techos 83.4/83.5 son el máximo de la norma, no una multa calculada para este activo.", "GRC card: duty, gap, DPA risk, business impact and 30/60/90 plan. 83.4/83.5 ceilings are the legal maximum, not a calculated fine for this asset.") + "</p>" +
       '<p class="font-label-md text-secondary uppercase mb-xs">' + L("Categoría", "Category") + "</p>" +
       '<p class="font-body-md text-on-surface mb-md">' + esc(loc(d.gov.category)) + "</p>" +
       '<p class="font-label-md text-secondary uppercase mb-xs">RGPD</p><div class="flex flex-wrap gap-xs mb-md">' + gdprHtml + "</div>" +
       '<p class="font-label-md text-secondary uppercase mb-xs">ISO 27001:2022</p><div class="flex flex-wrap gap-xs mb-md">' + isoHtml + d.gov.iso.map(function (g) { return chip(g); }).join("") + "</div>" +
+      '<p class="font-label-md text-secondary uppercase mb-xs">NIST CSF 2.0</p><div class="flex flex-wrap gap-xs mb-md">' +
+      ((d.nist && d.nist.length) ? d.nist : (d.gov.nist || [])).map(function (g) { return chip(g); }).join("") + "</div>" +
       '<dl class="font-body-sm space-y-sm mb-md">' +
       "<div><dt class=\"text-on-surface-variant\">" + L("Base legal", "Legal basis") + "</dt><dd class=\"text-on-surface\">" + esc(loc(d.gov.legalBase)) + "</dd></div>" +
       "<div><dt class=\"text-on-surface-variant\">" + L("Tramo sancionador", "Sanction tier") + "</dt><dd class=\"text-on-surface\"><strong>" + esc(d.gov.sanction.art) + "</strong> — " + esc(loc(d.gov.sanction)) + "</dd></div>" +
@@ -2365,20 +2783,25 @@
       '<a class="font-label-md text-primary hover:underline" href="gdpr-alignment.html' + qScanOnly + '">RGPD</a>' +
       '<a class="font-label-md text-primary hover:underline" href="maturity-index.html' + qScanOnly + '">' + L("Matriz de riesgos", "Risk matrix") + "</a>" +
       '<a class="font-label-md text-primary hover:underline" href="executive-summary.html' + qScanOnly + '">' + L("Resumen ejecutivo del análisis", "Scan executive summary") + "</a></div></section></div>" +
-      '<section id="ds-graph" class="glass-panel rounded-xl p-lg mb-md">' +
+      '<section id="' + sid("graph") + '" class="glass-panel rounded-xl p-lg mb-md">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="share-2" class="text-primary"></i> ' + L("Evidencia de grafo de esta vulnerabilidad", "Graph evidence for this vulnerability") + "</h2>" +
       '<p class="font-body-sm text-on-surface-variant mb-md">' + L("Camino de abuso resumido: red → activo → hallazgo → impacto. Ábrelo en Attack Graph para el mapa del engagement.", "Abuse path: network → asset → finding → impact. Open Attack Graph for the full engagement map.") + "</p>" +
       graphSvg(d, esc) +
       '<a class="inline-flex items-center gap-xs font-label-md text-primary mt-sm hover:underline" href="attack-graph.html' + qScanOnly + '"><i data-lucide="arrow-up-right" class="icon-sm"></i> Attack Graph</a></section>' +
       '<div class="grid grid-cols-1 lg:grid-cols-3 gap-md mb-md">' +
-      '<section id="ds-plan" class="glass-panel rounded-xl p-lg lg:col-span-2 border-l-4 border-l-tertiary">' +
+      '<section id="' + sid("plan") + '" class="glass-panel rounded-xl p-lg lg:col-span-2 border-l-4 border-l-tertiary">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="list-checks" class="text-tertiary"></i> ' + L("Plan de remediación explicado", "Remediation plan") + "</h2>" +
-      (d.engineRemediation
+      '<p class="font-body-md text-on-surface-variant mb-md leading-relaxed">' +
+      (fair
+        ? L("Este plan no parchea el índice: ordena el trabajo que sí baja el grado. Cada paso es una decisión (qué no ticketear, qué cerrar primero, cómo comprobar que el termómetro se movió).", "This plan does not patch the index: it orders the work that actually drops the grade. Each step is a decision (what not to ticket, what to close first, how to check the thermometer moved).")
+        : L("El orden no es cosmética: primero reproducir (para no remediar un falso positivo), luego el control que cierra la causa, después la verificación con la misma sonda. Si hay datos personales, el ticket entra en Art. 32.", "The order is not cosmetic: first reproduce (so you do not remediate a false positive), then the control that closes the cause, then verify with the same probe. If personal data is in play, the ticket goes into Art. 32.")) +
+      "</p>" +
+      (d.engineRemediation && !fair
         ? '<p class="font-body-md text-on-surface-variant mb-md">' + L("Indicación del motor: ", "Engine hint: ") + esc(d.engineRemediation) + "</p>"
         : "") +
       "<ol class=\"space-y-sm\">" + stepsHtml + "</ol>" +
       '<a class="inline-flex items-center gap-xs font-label-md text-primary mt-md hover:underline" href="remediation-plan.html' + qScanOnly + '"><i data-lucide="list-checks" class="icon-sm"></i> ' + L("Plan del análisis completo", "Full scan remediation plan") + "</a></section>" +
-      '<section id="ds-metrics" class="glass-panel rounded-xl p-lg">' +
+      '<section id="' + sid("metrics") + '" class="glass-panel rounded-xl p-lg">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="timer" class="text-primary"></i> ' + L("Métricas de remediación", "Remediation metrics") + "</h2>" +
       '<dl class="space-y-md font-body-sm">' +
       "<div><dt class=\"text-on-surface-variant\">SLA</dt><dd class=\"font-headline-md text-on-surface\">" + d.slaLabel + "</dd></div>" +
@@ -2387,7 +2810,7 @@
       "<div><dt class=\"text-on-surface-variant\">" + L("Owner sugerido", "Suggested owner") + "</dt><dd class=\"text-on-surface\">" + L("AppSec / plataforma web", "AppSec / web platform") + "</dd></div></dl>" +
       '<a class="inline-flex items-center gap-xs font-label-md text-primary mt-md hover:underline" href="remediation-metrics.html' + qScanOnly + '"><i data-lucide="gauge" class="icon-sm"></i> ' + L("Métricas del programa", "Program metrics") + "</a>" +
       '<a href="remediation-detail.html?finding=' + id + qScan + '" class="mt-md block text-center py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md">' + L("Abrir ticket de remediación", "Open remediation ticket") + "</a></section></div>" +
-      '<p class="text-center pb-lg"><a href="critical-findings.html' + qScanOnly + '" class="font-label-md text-primary hover:underline">← ' + L("Volver a hallazgos críticos", "Back to critical findings") + "</a></p>";
+      (embedded ? "" : '<p class="text-center pb-lg"><a href="critical-findings.html' + qScanOnly + '" class="font-label-md text-primary hover:underline">← ' + L("Volver a hallazgos críticos", "Back to critical findings") + "</a></p>");
 
     if (global.lucide) global.lucide.createIcons();
   }
