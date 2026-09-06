@@ -64,6 +64,10 @@ import {
   netexecWinrmFindings,
   lookupsidFindings,
   samrdumpFindings,
+  netexecUsersFindings,
+  netexecGroupsFindings,
+  netexecPassPolFindings,
+  bloodhoundFindings,
   domainControllerFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
@@ -161,6 +165,10 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p3-ad-netexec-winrm") push("ad-winrm", text);
     if (r.id === "p2-ad-lookupsid-null" || r.id === "p2-ad-lookupsid-auth") push("ad-lookupsid", text);
     if (r.id === "p2-ad-samrdump-null" || r.id === "p2-ad-samrdump-auth") push("ad-samrdump", text);
+    if (r.id === "p2-ad-nxc-users") push("ad-nxc-users", text);
+    if (r.id === "p2-ad-nxc-groups") push("ad-nxc-groups", text);
+    if (r.id === "p2-ad-nxc-passpol") push("ad-nxc-passpol", text);
+    if (r.id === "p2-ad-bloodhound-dconly") push("ad-bloodhound", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -733,6 +741,26 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adSamrdump = probeIdx["ad-samrdump"];
   if (adSamrdump) {
     samrdumpFindings(adSamrdump).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adNxcUsers = probeIdx["ad-nxc-users"];
+  if (adNxcUsers) {
+    netexecUsersFindings(adNxcUsers).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adNxcGroups = probeIdx["ad-nxc-groups"];
+  if (adNxcGroups) {
+    netexecGroupsFindings(adNxcGroups).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adNxcPasspol = probeIdx["ad-nxc-passpol"];
+  if (adNxcPasspol) {
+    netexecPassPolFindings(adNxcPasspol).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adBloodhound = probeIdx["ad-bloodhound"];
+  if (adBloodhound) {
+    bloodhoundFindings(adBloodhound).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

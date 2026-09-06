@@ -357,7 +357,7 @@ async function runPlaybookSteps({
       let result;
       if (spec.id === "p1-login-post") {
         result = await execDvwaLoginPost(target, cookieFile);
-      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra"].includes(spec.tool)) {
+      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python"].includes(spec.tool)) {
         onStep(normalizeStep(null, engagementId, {
           tool: "(agent)", args: [spec.id],
           stderr: `${spec.tool} en curso (puede tardar 1–2 min)…`,

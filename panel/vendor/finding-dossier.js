@@ -1885,6 +1885,32 @@
       },
     },
     {
+      re: /^AD:\s*BloodHound DCOnly/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1087.002", name: "Account Discovery: Domain Account", tactic: "Discovery" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:L/I:N/A:N",
+      impact: { confidentiality: "low", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Ingestor BloodHound en modo DCOnly: solo LDAP (usuarios/grupos/ordenadores/trusts vía DC), sin LoggedOn en estaciones. El zip queda en evidence; Dark Spear no abre la UI ni ejecuta paths de ataque.",
+        en: "BloodHound ingestor in DCOnly mode: LDAP only (users/groups/computers/trusts via the DC), no LoggedOn on workstations. The zip stays in evidence; Dark Spear does not open the UI or run attack paths.",
+      },
+      exec: {
+        es: "Grafo AD recolectado. Importar en BloodHound CE offline y priorizar paths a Domain Admins.",
+        en: "AD graph collected. Import into BloodHound CE offline and prioritize paths to Domain Admins.",
+      },
+      steps: {
+        es: ["Abrir el zip de evidence/bloodhound.", "Marcar Owned la cuenta de assessment.", "Remediar ACLs Dangerous antes de abuso."],
+        en: ["Open the evidence/bloodhound zip.", "Mark the assessment account as Owned.", "Remediate Dangerous ACLs before abuse."],
+      },
+    },
+    {
       re: /^AD:\s*(?:WinRM autenticado|autenticación WinRM válida)/i,
       cwe: ["CWE-287"],
       owasp: "A07:2021 Identification and Authentication Failures",

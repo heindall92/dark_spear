@@ -1181,7 +1181,12 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             cmd = [resolved] + [str(a) for a in args]
-            timeout_s = 300 if tool == "nikto" else 120
+            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan") else 120
+            run_cwd = None
+            if tool == "bloodhound-python" and CURRENT_ENGAGEMENT_DIR is not None:
+                # JSON/zip del ingestor → evidence del engagement (no cwd del bridge).
+                run_cwd = str(CURRENT_ENGAGEMENT_DIR / "evidence" / "bloodhound")
+                Path(run_cwd).mkdir(parents=True, exist_ok=True)
             try:
                 proc = subprocess.run(
                     cmd,
@@ -1190,10 +1195,13 @@ class Handler(BaseHTTPRequestHandler):
                     encoding="utf-8",
                     errors="replace",
                     timeout=timeout_s,
+                    cwd=run_cwd,
                 )
                 result = {"stdout": _truncate_output(proc.stdout),
                           "stderr": _truncate_output(proc.stderr),
                           "exit_code": proc.returncode, "verdict": "ok"}
+                if run_cwd:
+                    result["cwd"] = run_cwd
             except subprocess.TimeoutExpired:
                 result = {"stdout": "", "stderr": f"timeout after {timeout_s}s",
                           "exit_code": -1, "verdict": "timeout"}
@@ -1205,6 +1213,7 @@ class Handler(BaseHTTPRequestHandler):
                           "exit_code": -1, "verdict": "error"}
             audit_log({"event": "exec", "tool": tool, "resolved_path": resolved,
                        "args": args, "target": target,
+                       "cwd": run_cwd,
                        "exit_code": result["exit_code"], "verdict": result["verdict"]})
             EXEC_STEP_COUNT += 1
             arg_preview = " ".join(str(a) for a in args[:4])

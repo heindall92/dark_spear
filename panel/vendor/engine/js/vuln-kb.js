@@ -3139,6 +3139,64 @@ export function adAuthCollectionSteps(step, host) {
       desc: "ADCS templates vulnerables (certipy find -vulnerable -stdout)",
       skipIf: skipCreds,
     }),
+    step("p2-ad-nxc-users", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--users");
+      return args;
+    }, null, {
+      desc: "Enumerar usuarios de dominio (netexec smb --users)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-groups", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--groups");
+      return args;
+    }, null, {
+      desc: "Enumerar grupos de dominio (netexec smb --groups)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-passpol", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--pass-pol");
+      return args;
+    }, null, {
+      desc: "Política de contraseñas del dominio (netexec --pass-pol)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-bloodhound-dconly", "bloodhound-python", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      return [
+        "-c", "DCOnly",
+        "-d", d,
+        "-u", user,
+        "-p", pass,
+        "-dc", h,
+        "--zip",
+        "-op", "ds",
+        "--auth-method", "ntlm",
+      ];
+    }, null, {
+      desc: "BloodHound DCOnly (LDAP, sin sesiones en hosts) → zip en evidence",
+      skipIf: skipCreds,
+    }),
   );
   return steps;
 }
@@ -3601,6 +3659,145 @@ export function samrdumpFindings(stdout) {
   return out.slice(0, 4);
 }
 
+/** netexec smb --users (autenticado). */
+export function netexecUsersFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED|\[\-\].*SMB/i.test(text)
+    && !/--users|Username|rid:/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/\b([A-Za-z0-9._$-]{2,64})\s+rid:\s*(\d+)/gi)) {
+    const u = m[1];
+    if (seen.has(u.toLowerCase())) continue;
+    if (/^(SMB|[*]|Username|Domain)$/i.test(u)) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 30) break;
+  }
+  if (!users.length) {
+    for (const m of text.matchAll(/SMB\s+\S+\s+\d+\s+\S+\s+([A-Za-z0-9._$-]+)\s+/g)) {
+      const u = m[1];
+      if (/^(STATUS|Error|[*])/i.test(u)) continue;
+      if (seen.has(u.toLowerCase())) continue;
+      seen.add(u.toLowerCase());
+      users.push(u);
+      if (users.length >= 30) break;
+    }
+  }
+  if (!users.length && !/Enumerat(?:e|ing) domain users|--users/i.test(text)) return [];
+  if (!users.length) {
+    return [{
+      title: "AD: enumeración de usuarios de dominio (netexec --users)",
+      severity: "Info",
+      description: "netexec smb --users devolvió salida de enumeración autenticada sin lista parseable línea a línea. Revisar evidencia cruda del paso.",
+      remediation: "Confirmar privilegios de la cuenta usada; restringir SAMR/LDAP a admin nets.",
+    }];
+  }
+  return [{
+    title: `AD: ${users.length} usuario(s) de dominio (netexec --users)`,
+    severity: "Info",
+    description: `netexec smb --users (autenticado) listó: ${users.slice(0, 12).join(", ")}${users.length > 12 ? "…" : ""}. Inventario con creds válidas; no password spray.`,
+    remediation: "Auditar cuentas privilegiadas y de servicio. Limitar quién puede enumerar el directorio.",
+  }];
+}
+
+/** netexec smb --groups. */
+export function netexecGroupsFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED/i.test(text) && !/membercount|Group:|rid:/i.test(text)) {
+    return [];
+  }
+  const groups = [];
+  const seen = new Set();
+  const privileged = [];
+  for (const line of text.split("\n")) {
+    const m = line.match(/([A-Za-z][A-Za-z0-9._\s-]{1,64}?)\s+membercount:\s*(\d+)/i)
+      || line.match(/SMB\s+\S+\s+\d+\s+\S+\s+([A-Za-z][A-Za-z0-9._\s-]{1,64}?)\s+(\d+)\s*$/);
+    if (!m) continue;
+    const g = m[1].trim().replace(/\s+/g, " ");
+    if (/^(SMB|Domain|Group)$/i.test(g)) continue;
+    if (seen.has(g.toLowerCase())) continue;
+    seen.add(g.toLowerCase());
+    groups.push(g);
+    if (/Domain Admins|Enterprise Admins|Schema Admins|Administrators|Account Operators|Backup Operators/i.test(g)) {
+      privileged.push(g);
+    }
+    if (groups.length >= 25) break;
+  }
+  if (!groups.length && !/membercount|--groups/i.test(text)) return [];
+  const sev = privileged.length ? "Medium" : "Info";
+  return [{
+    title: privileged.length
+      ? `AD: grupos privilegiados visibles (${privileged.slice(0, 3).join(", ")})`
+      : `AD: ${groups.length || "N"} grupo(s) de dominio (netexec --groups)`,
+    severity: sev,
+    description: `netexec smb --groups listó grupos${groups.length ? `: ${groups.slice(0, 10).join(", ")}${groups.length > 10 ? "…" : ""}` : ""}${privileged.length ? `. Privilegiados: ${privileged.join(", ")}` : ""}. Inventario; no se modificó membresía.`,
+    remediation: "Revisar Nested groups y cuentas en Domain Admins. Principio de mínimo privilegio.",
+  }];
+}
+
+/** netexec smb --pass-pol. */
+export function netexecPassPolFindings(stdout) {
+  const text = String(stdout || "");
+  if (!/Minimum password length|Password Complexity|Account Lockout|pass-pol|PASSWORD/i.test(text)) {
+    return [];
+  }
+  const minLen = (text.match(/Minimum password length:\s*(\d+)/i) || [])[1];
+  const complexity = (text.match(/Password (?:Properties|Complexity)[^\n]*:\s*([^\n]+)/i) || [])[1];
+  const lockout = (text.match(/Account Lockout Threshold:\s*(\d+|None)/i) || [])[1];
+  const out = [];
+  if (minLen != null && Number(minLen) < 12) {
+    out.push({
+      title: `AD: longitud mínima de contraseña ${minLen} (política de dominio)`,
+      severity: Number(minLen) < 8 ? "High" : "Medium",
+      description: `netexec --pass-pol: Minimum password length = ${minLen}${complexity ? `; complexity/properties: ${complexity.trim()}` : ""}${lockout != null ? `; lockout threshold: ${lockout}` : ""}. Facilita spray/brute (CWE-521).`,
+      remediation: "Subir a ≥ 14 (o passphrase) + fine-grained PSO; lockout sensato sin DoS fácil.",
+    });
+  } else if (minLen != null || complexity || lockout != null) {
+    out.push({
+      title: "AD: política de contraseñas del dominio (netexec --pass-pol)",
+      severity: "Info",
+      description: `Política leída${minLen != null ? `: min length ${minLen}` : ""}${complexity ? `; ${complexity.trim()}` : ""}${lockout != null ? `; lockout ${lockout}` : ""}.`,
+      remediation: "Mantener política alineada con ENS/NIS2; revisar PSO por OU crítica.",
+    });
+  }
+  if (/Password Complexity:\s*(?:False|Disabled|None|0)\b/i.test(text)) {
+    out.push({
+      title: "AD: complejidad de contraseña deshabilitada",
+      severity: "Medium",
+      description: "netexec --pass-pol indica Password Complexity desactivada.",
+      remediation: "Habilitar complejidad o, mejor, longitud alta + denylist de passwords comunes.",
+    });
+  }
+  return out.slice(0, 4);
+}
+
+/** bloodhound-python -c DCOnly stdout/stderr. */
+export function bloodhoundFindings(stdout) {
+  const text = String(stdout || "");
+  if (/Login failure|Invalid credentials|AUTHENTICATION_ERROR|LDAP.*failed/i.test(text)
+    && !/Found \d+|Done in|users\.json|zip/i.test(text)) {
+    return [];
+  }
+  const users = (text.match(/Found\s+(\d+)\s+users/i) || [])[1];
+  const computers = (text.match(/Found\s+(\d+)\s+computers/i) || [])[1];
+  const groups = (text.match(/Found\s+(\d+)\s+groups/i) || [])[1];
+  const done = /Done in\s+[\d:]+/i.test(text) || /\.zip/i.test(text) || /Compressing/i.test(text);
+  if (!users && !computers && !groups && !done) return [];
+  const bits = [];
+  if (users) bits.push(`${users} users`);
+  if (computers) bits.push(`${computers} computers`);
+  if (groups) bits.push(`${groups} groups`);
+  return [{
+    title: `AD: BloodHound DCOnly${bits.length ? ` (${bits.join(", ")})` : " completado"}`,
+    severity: "Info",
+    description: `bloodhound-python -c DCOnly recolectó metadatos LDAP (sin LoggedOn/sesiones en hosts)${bits.length ? `: ${bits.join(", ")}` : ""}. Zip/JSON en evidence/bloodhound del engagement. No se abrió BloodHound UI ni se explotó ACL.`,
+    remediation: "Importar el zip en BloodHound CE offline. Revisar paths Domain Users → Domain Admins; remediar ACLs peligrosas antes de abuso.",
+  }];
+}
+
 /** Consolida parsers AD sobre el texto de cada sonda. */
 export function adCollectionFindings(kind, stdout) {
   if (kind === "netexec") return netexecSmbFindings(stdout);
@@ -3614,5 +3811,9 @@ export function adCollectionFindings(kind, stdout) {
   if (kind === "certipy") return certipyFindFindings(stdout);
   if (kind === "lookupsid") return lookupsidFindings(stdout);
   if (kind === "samrdump") return samrdumpFindings(stdout);
+  if (kind === "nxc-users") return netexecUsersFindings(stdout);
+  if (kind === "nxc-groups") return netexecGroupsFindings(stdout);
+  if (kind === "nxc-passpol") return netexecPassPolFindings(stdout);
+  if (kind === "bloodhound") return bloodhoundFindings(stdout);
   return [];
 }
