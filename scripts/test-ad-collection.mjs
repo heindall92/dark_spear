@@ -16,6 +16,10 @@ import {
   extractAdDomain,
   lookupsidFindings,
   samrdumpFindings,
+  netexecUsersFindings,
+  netexecGroupsFindings,
+  netexecPassPolFindings,
+  bloodhoundFindings,
   PERIMETER_PORTS,
   AD_SURFACE_PORTS,
 } from "../backend/js/vuln-kb.js";
@@ -82,6 +86,8 @@ check("GetUserSPNs", ids2.includes("p2-ad-getuserspns"));
 check("certipy find", ids2.includes("p2-ad-certipy-find"));
 check("lookupsid null", ids2.includes("p2-ad-lookupsid-null"));
 check("samrdump null", ids2.includes("p2-ad-samrdump-null"));
+check("nxc users", ids2.includes("p2-ad-nxc-users"));
+check("bloodhound DCOnly", ids2.includes("p2-ad-bloodhound-dconly"));
 const asrepSpec = stepsP2.find((s) => s.id === "p2-ad-asrep-1");
 const asrepArgs = typeof asrepSpec.args === "function"
   ? asrepSpec.args({ adDomain: "CORP.LOCAL", adUsers: ["alice"], isAdTarget: true })
@@ -129,6 +135,15 @@ const samrOut = "Found domain: CORP\nUser : bob\nUser : alice\n";
 check("samrdump users", samrdumpFindings(samrOut).some((f) => /SAMR/.test(f.title)));
 check("extract users lookupsid", extractAdUsersFromBlob(sidOut).includes("alice"));
 
+const nxcUsersOut = "SMB  10.10.10.10  445  DC01  alice  rid: 1105\nSMB  10.10.10.10  445  DC01  bob  rid: 1106\n";
+check("nxc users Info", netexecUsersFindings(nxcUsersOut).some((f) => /netexec --users/.test(f.title)));
+const nxcGroupsOut = "Domain Admins  membercount: 3\nDomain Users  membercount: 40\n";
+check("nxc groups privileged", netexecGroupsFindings(nxcGroupsOut).some((f) => /grupos privilegiados/.test(f.title)));
+const passpolOut = "Minimum password length: 7\nPassword Complexity: False\nAccount Lockout Threshold: None\n";
+check("passpol weak", netexecPassPolFindings(passpolOut).some((f) => /longitud mínima/.test(f.title)));
+const bhOut = "Found 120 users\nFound 45 computers\nFound 80 groups\nDone in 00:00:42\nCompressing output into ds_bloodhound.zip\n";
+check("bloodhound Info", bloodhoundFindings(bhOut).some((f) => /BloodHound DCOnly/.test(f.title) && f.severity === "Info"));
+
 const heur = collectHeuristicFindings(
   dcNmap + nxc + asrepOut,
   "http://dc.corp.local",
@@ -144,6 +159,10 @@ const heur = collectHeuristicFindings(
     { id: "p3-ad-netexec-winrm", text: winrmOut },
     { id: "p2-ad-lookupsid-null", text: sidOut },
     { id: "p2-ad-samrdump-null", text: samrOut },
+    { id: "p2-ad-nxc-users", text: nxcUsersOut },
+    { id: "p2-ad-nxc-groups", text: nxcGroupsOut },
+    { id: "p2-ad-nxc-passpol", text: passpolOut },
+    { id: "p2-ad-bloodhound-dconly", text: bhOut },
   ],
 );
 check("heurística DC", heur.some((f) => /Domain Controller probable/.test(f.title)));
@@ -155,6 +174,8 @@ check("heurística Certipy", heur.some((f) => /ADCS/.test(f.title)));
 check("heurística WinRM", heur.some((f) => /WinRM/.test(f.title)));
 check("heurística lookupsid", heur.some((f) => /RID cycling/.test(f.title)));
 check("heurística samrdump", heur.some((f) => /SAMR/.test(f.title)));
+check("heurística nxc users", heur.some((f) => /netexec --users/.test(f.title)));
+check("heurística bloodhound", heur.some((f) => /BloodHound DCOnly/.test(f.title)));
 
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
