@@ -27,6 +27,7 @@ import {
   JS_BUNDLE_PROBE_PATHS,
   jsSecretFindings,
   wafFindings,
+  wafw00fFindings,
   cloudProviderFindings,
   S3_LISTING_RE,
   SSRF_IMDS_PARAMS,
@@ -35,12 +36,21 @@ import {
   perimeterFirewallFindings,
   wafTriggerFindings,
   missingWafFinding,
+  dropContradictoryWafFindings,
   hostFirewallFindings,
   domainSecurityFindings,
   orgAttackSurfaceFindings,
   idpDiscoveryFindings,
   AZURE_BLOB_LISTING_RE,
   GCS_LISTING_RE,
+  secretValidateFindings,
+  cloudIdentityFindings,
+  orgAsnSiblingFindings,
+  extractAsnFromBlob,
+  extractAsnHolderFromBlob,
+  HYPERSCALER_HOLDER_RE,
+  exposureScoreFindings,
+  exposureDeltaFindings,
 } from "./vuln-kb.js";
 
 /**
@@ -95,10 +105,20 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-osint-dig-txt") push("osint-txt", text);
     if (r.id === "p1-osint-dig-dmarc") push("osint-dmarc", text);
     if (r.id === "p1-osint-rdap-ip") push("osint-rdap-ip", text);
+    if (r.id === "p1-osint-ripe-asn") push("osint-ripe-asn", text);
+    if (r.id === "p1-osint-ripe-whois") push("osint-ripe-whois", text);
+    if (r.id === "p1-osint-ripe-prefixes") push("osint-ripe-prefixes", text);
+    if (r.id === "p1-osint-dig-mx") push("osint-mx", text);
     if (r.id === "p1-idp-m365-realm") push("idp-m365", text);
+    if (r.id === "p1-idp-entra-oidc") push("idp-entra-oidc", text);
     if (r.id === "p1-idp-okta-wellknown") push("idp-oidc", text);
+    if (r.id === "p1-idp-saml-fedmeta") push("idp-saml", text);
+    if (r.id === "p1-idp-saml-wellknown") push("idp-saml-wk", text);
+    m = /^p1-secretval-(\d+)$/.exec(r.id);
+    if (m) push(`secretval:${m[1]}`, text);
     if (r.id === "p1-nmap-perimeter") push("nmap-perimeter", text);
     if (r.id === "p1-waf-trigger") push("waf-trigger", text);
+    if (r.id === "p1-wafw00f") push("wafw00f", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -316,10 +336,12 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     wafFindings(headText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
     cloudProviderFindings(headText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
     const triggerText = probeIdx["waf-trigger"] || "";
+    const wafw00fText = probeIdx["wafw00f"] || "";
     wafTriggerFindings(triggerText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+    wafw00fFindings(wafw00fText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
     const hostName = ctx.host || "";
     const publicDomain = Boolean(hostName) && !isIpHost(hostName) && !isLoopbackHost(hostName) && hostName.includes(".");
-    missingWafFinding(headText, triggerText, publicDomain).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+    missingWafFinding(headText, triggerText, publicDomain, wafw00fText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
   }
 
   const periText = probeIdx["nmap-perimeter"];
@@ -538,6 +560,18 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     jsSecretFindings(text, path).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
   });
 
+  // Identidad cloud observada (AKIA→account ID offline, ARNs, tenant Azure).
+  cloudIdentityFindings(b).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+
+  // Validadores read-only: GET de identidad tras confirmar el secreto.
+  const captured = ctx.capturedSecrets || [];
+  captured.forEach(function (hit, i) {
+    const text = probeIdx[`secretval:${i + 1}`];
+    if (!text) return;
+    secretValidateFindings(text, hit.kind, hit.label).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  });
+
   // SSRF genérico → metadata AWS (IMDS): señal fuerte (credencial IAM real
   // en la respuesta) vs. señal débil (solo el listado de categorías IMDS,
   // a confirmar a mano — podría ser un eco del parámetro sin fetch real).
@@ -605,23 +639,47 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     }
   }
 
-  // Org attack surface — ASN/organización de la IP en scope (RDAP pasivo).
+  // Org attack surface — ASN/organización de la IP en scope (RDAP pasivo)
+  // + prefijos hermanos RIPEstat (con guardia hyperscaler).
   {
     const rdapIpText = probeIdx["osint-rdap-ip"];
     if (rdapIpText) {
       orgAttackSurfaceFindings(rdapIpText, ctx.host, ctx.host).forEach((f) =>
         add(f.title, f.severity, f.description, f.remediation));
     }
+    const ripeAsnText = probeIdx["osint-ripe-asn"];
+    const ripeWhois = probeIdx["osint-ripe-whois"];
+    const ripePfx = probeIdx["osint-ripe-prefixes"];
+    if (ripeAsnText || ripeWhois || ripePfx) {
+      const asn = ctx.extractedAsn || extractAsnFromBlob(ripeAsnText || "");
+      const holder = ctx.asnHolder || extractAsnHolderFromBlob(ripeWhois || "");
+      const hyper = ctx.asnIsHyperscaler === true || HYPERSCALER_HOLDER_RE.test(holder);
+      if (asn || ripePfx || ripeWhois) {
+        orgAsnSiblingFindings(ripeWhois, ripePfx, asn, ctx.host, hyper).forEach((f) =>
+          add(f.title, f.severity, f.description, f.remediation));
+      }
+    }
   }
 
-  // Identity Provider recon — discovery pasivo de tenant (M365/OIDC propio).
+  // Identity Provider recon — discovery pasivo de tenant (M365/OIDC/SAML/GWS).
   {
     const root = scopeRoot(ctx.host || "", ctx.scope);
     const m365Text = probeIdx["idp-m365"];
     const oidcCode = probeIdx["idp-oidc"];
-    if ((m365Text !== undefined || oidcCode !== undefined) && root && root.includes(".") && !isIpHost(root)) {
-      idpDiscoveryFindings(m365Text, oidcCode, root).forEach((f) =>
-        add(f.title, f.severity, f.description, f.remediation));
+    const entraText = probeIdx["idp-entra-oidc"];
+    const mxText = probeIdx["osint-mx"];
+    const samlA = probeIdx["idp-saml"];
+    const samlB = probeIdx["idp-saml-wk"];
+    if ((m365Text !== undefined || oidcCode !== undefined || entraText !== undefined
+        || mxText !== undefined || samlA !== undefined || samlB !== undefined)
+        && root && root.includes(".") && !isIpHost(root)) {
+      const samlCode = (String(samlA || "").trim() === "200" || String(samlB || "").trim() === "200")
+        ? "200" : (samlA || samlB || "");
+      idpDiscoveryFindings(m365Text, oidcCode, root, {
+        entraOidcText: entraText,
+        mxText,
+        samlHttpCode: samlCode,
+      }).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
     }
   }
 
@@ -738,7 +796,15 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     );
   }
 
-  return findings;
+  if (ctx.emitScanDelta === true) {
+    exposureScoreFindings(findings).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+    exposureDeltaFindings(
+      findings.map((f) => f.title),
+      ctx.previousFindingTitles || [],
+    ).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  return dropContradictoryWafFindings(findings);
 }
 
 export function heuristicAssetFromTarget(target) {

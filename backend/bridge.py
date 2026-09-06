@@ -62,7 +62,7 @@ CORS_ORIGINS = {
 }
 
 ALLOWED_TOOLS = {
-    "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "hydra", "sqlmap",
+    "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "hydra", "sqlmap",
     "wpscan",
     "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
@@ -88,7 +88,7 @@ PHASE_NAMES = {
 # are cumulative (see cumulative_phase_tools) — this dict holds only each
 # phase's OWN additions, not the running total.
 PHASE_TOOLS = {
-    1: {"nmap", "whatweb", "dig", "nslookup", "dnsrecon", "ldapsearch",
+    1: {"nmap", "whatweb", "wafw00f", "dig", "nslookup", "dnsrecon", "ldapsearch",
         "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"},
     2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "smbclient", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",

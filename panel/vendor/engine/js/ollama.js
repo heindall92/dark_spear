@@ -3,7 +3,7 @@ import { llmChat, QuotaExhaustedError } from "./bridge_client.js";
 const DEFAULT_URL = "https://ollama.com/v1/chat/completions";
 
 const ALLOWED_TOOLS_HINT = [
-  "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wpscan", "hydra", "sqlmap",
+  "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "wpscan", "hydra", "sqlmap",
   "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
   "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
   "psexec.py", "certipy", "bloodhound-python", "ldapsearch", "enum4linux",
@@ -12,6 +12,7 @@ const ALLOWED_TOOLS_HINT = [
   "samrdump.py", "mssqlclient.py", "ticketer.py", "getST.py",
   "raiseChild.py", "dcomexec.py", "adscan",
   "dnsrecon", "searchsploit",
+  "ufw", "iptables", "nft",
 ];
 
 const SHELL_WRAPPERS = new Set(["bash", "sh", "zsh", "cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh"]);

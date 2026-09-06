@@ -264,7 +264,11 @@
 
 <style>
 #critical-list-view[hidden],
-#critical-detail-view[hidden] { display: none !important; }
+#critical-detail-view[hidden],
+#panel-findings-list-empty[hidden],
+#panel-findings-none[hidden],
+#panel-findings-list[hidden],
+#panel-measures[hidden] { display: none !important; }
 </style>
 <main id="main-content" class="flex-1 mt-16 overflow-hidden flex flex-col max-w-container-max mx-auto w-full min-h-0 h-[calc(100vh-4rem)] p-md md:p-lg">
 <section id="critical-list-view" class="flex-1 flex flex-col gap-md min-h-0 overflow-y-auto">
@@ -304,7 +308,24 @@
 <p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
 <p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="critical.noCrit">Este análisis no tiene hallazgos críticos ni altos.</p>
 </div>
+<div id="panel-findings-none" class="glass-panel rounded-xl p-md flex gap-sm items-start" hidden>
+<i data-lucide="circle-check" class="text-tertiary shrink-0"></i>
+<div>
+<p class="font-headline-md text-on-surface" data-i18n="critical.noneTitle">Sin hallazgos críticos ni altos</p>
+<p class="font-body-sm text-on-surface-variant mt-xs" data-i18n="critical.noneLead">El análisis no abrió superficie explotable de severidad alta. Abajo, las medidas técnicas que el motor sí observó activas.</p>
+</div>
+</div>
 <div id="panel-findings-list" class="flex flex-col gap-md"></div>
+<section id="panel-measures" class="flex flex-col gap-md mt-md" hidden>
+<div>
+<h3 class="font-headline-md text-on-surface flex items-center gap-xs">
+<i data-lucide="shield-check" class="text-tertiary"></i>
+<span data-i18n="critical.measuresTitle">Medidas técnicas observadas</span>
+</h3>
+<p class="font-body-sm text-on-surface-variant mt-xs" data-i18n="critical.measuresLead">Controles Art. 32 / compensatorios que el motor vio en el perímetro (WAF, filtrado, headers). No son vulnerabilidades: documentan lo que ya está activo.</p>
+</div>
+<div id="panel-measures-list" class="flex flex-col gap-md"></div>
+</section>
 </section>
 </main>
 </div>

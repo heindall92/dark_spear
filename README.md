@@ -27,7 +27,7 @@ Tres piezas que se integran en un solo producto, no proyectos separados:
 |---|---|
 | **`backend/js/`** — el motor | `playbook.js` orquesta las 4 fases PTES y las sondas (`curl`, `nmap`, `whatweb`, `gobuster`, `hydra`). `vuln-kb.js` es el catálogo de payloads: inyección SQL/NoSQL, XSS reflejado, open redirect, IDOR, JWT (crackeo offline HS256 y bypass `alg=none`), secretos en bundles JS, fingerprint de WAF/CDN y de proveedor cloud, SSRF hacia metadata AWS, bucket S3 público, OSINT vía Wayback Machine. `finding-heuristics.js` evalúa cada sonda contra su propio paso. Todo corre en el navegador y habla con `bridge.py` solo para ejecutar el binario permitido. |
 | **`backend/`** — el servidor | `bridge.py` (stdlib + `cryptography`) es el único punto de confianza: whitelist de herramientas, *scope-lock*, gate de 4 fases PTES, keystore cifrado del pool de Ollama Cloud, persistencia de hallazgos con evidencia hasheada. Arranca también el panel embebido en un hilo: un proceso, un puerto que abrir. |
-| **`panel/`** — la consola | 30 pantallas: dashboard, engagement activo, aprobación de herramientas, hallazgos críticos, Attack Graph, MITRE ATT&CK (35 técnicas con detección propia, mapeadas por hallazgo real), OSINT, gobernanza (RGPD, matriz de madurez/riesgo, plan de remediación, Kill Chain) y reporting (JSON/HTML/PDF, informe completo de 25 capítulos). `panel/vendor/engine/js/` es una copia sincronizada de `backend/js/` vía `scripts/sync-engine-js.py`, para ejecutar el mismo motor sin bundler. |
+| **`panel/`** — la consola | 30 pantallas: dashboard, engagement activo, aprobación de herramientas, hallazgos críticos, Attack Graph, MITRE ATT&CK (36 técnicas con detección propia, mapeadas por hallazgo real), OSINT, gobernanza (RGPD, matriz de madurez/riesgo, plan de remediación, Kill Chain) y reporting (JSON/HTML/PDF, informe completo de 25 capítulos). `panel/vendor/engine/js/` es una copia sincronizada de `backend/js/` vía `scripts/sync-engine-js.py`, para ejecutar el mismo motor sin bundler. |
 
 El historial de diseño técnico del motor (spec + plan de implementación por pieza, con revisión de código en cada paso) vive en `backend/docs/superpowers/`.
 
@@ -41,13 +41,15 @@ Sin escribir un prompt ni gastar un token, contra cualquier stack (PHP clásico,
 - **Reconocimiento activo** — sigue de verdad los hallazgos de `gobuster`/`ffuf` (no una lista fija de adivinanzas) y las rutas `Disallow` de `robots.txt`; huella de tecnología (`whatweb`), CORS mal configurado, método `TRACE` habilitado. Nikto/gobuster/ffuf se omiten solo en DVWA (ya cubierto por sondas de módulo); contra el resto de objetivos, incluida una IP de laboratorio, sí se ejecutan.
 - **Exposición de código y config** — `.git`/`.env`/backups accesibles, phpMyAdmin, Swagger/OpenAPI y Actuator sin proteger, source maps y métricas Prometheus, secretos (claves AWS/Google/Stripe/Slack/GitHub, claves privadas) hardcodeados en bundles JS ya servidos.
 - **Superficie cloud** — fingerprint pasivo de WAF/CDN e infraestructura AWS por cabeceras, bucket S3 público referenciado por la app, SSRF genérico hacia el Instance Metadata Service (`169.254.169.254`) con detección de credenciales IAM filtradas.
+- **Cortafuegos (caja negra)** — nmap de perímetro: puertos de gestión/BD *open* vs *filtered*, servicios que no deberían estar en 0.0.0.0/0 (SSH, RDP, SMB, MySQL, Redis, Mongo…), WAF que bloquea una sonda inofensiva, o ausencia de WAF observable en un dominio público. Cada hallazgo de puerto abierto incluye la regla ufw/iptables/Security Group para cerrarlo.
+- **Cortafuegos (caja gris)** — solo si el objetivo es el propio host (`127.0.0.1` / localhost): lectura de `ufw status`, `iptables -L` y `nft list ruleset`. Ahí sí se auditan las reglas activas del sistema. Contra un target remoto esos pasos no corren: serían el firewall de Kali, no el del cliente.
 - **OSINT** — DNS (A/AAAA/MX/NS/TXT), RDAP/WHOIS, Certificate Transparency (crt.sh), subdominios comunes, y rutas históricas indexadas en Wayback Machine.
 
 Cada hallazgo llega con ficha propia: CVSS v3.1 (vector completo), CWE, OWASP Top 10, técnica(s) MITRE ATT&CK, ISO 27001/ENS/NIS2/RGPD y narrativa + pasos de remediación en ES/EN. No hay CVSS ni MITRE «por severidad»: cada tipo tiene su catálogo.
 
 ## MITRE ATT&CK
 
-El panel de Attack Graph / MITRE mapea cada hallazgo a su técnica real (regex contra título y descripción, no una tabla estática) y muestra la cobertura efectiva sobre las 13 tácticas de Enterprise ATT&CK relevantes para una auditoría web no destructiva: **35 técnicas con detección propia**, desde `T1190` (Exploit Public-Facing Application) y `T1110` (Brute Force) hasta técnicas cloud como `T1552.005` (Cloud Instance Metadata API) y `T1530` (Data from Cloud Storage). Las tácticas de post-explotación destructiva (Impact, gran parte de Lateral Movement/Exfiltration) quedan deliberadamente fuera de alcance: es una auditoría autorizada, no un ejercicio de Red Team con daño real.
+El panel de Attack Graph / MITRE mapea cada hallazgo a su técnica real (regex contra título y descripción, no una tabla estática) y muestra la cobertura efectiva sobre las 13 tácticas de Enterprise ATT&CK relevantes para una auditoría web no destructiva: **36 técnicas con detección propia**, desde `T1190` (Exploit Public-Facing Application) y `T1110` (Brute Force) hasta técnicas cloud como `T1552.005` (Cloud Instance Metadata API) y `T1530` (Data from Cloud Storage). Las tácticas de post-explotación destructiva (Impact, gran parte de Lateral Movement/Exfiltration) quedan deliberadamente fuera de alcance: es una auditoría autorizada, no un ejercicio de Red Team con daño real.
 
 ## Arranque rápido
 
@@ -126,7 +128,7 @@ Los scripts reevalúan heurísticas tras cada sonda (igual que el motor en produ
 - Playbook determinista (60+ sondas, sin LLM) + agente ReAct con LLM, seleccionables por engagement
 - Reporting (JSON / HTML / PDF) e informe completo de 25 capítulos con índice navegable
 - Gobernanza: alineación RGPD, matriz de madurez/riesgo, plan de remediación, Kill Chain
-- Attack Graph, evidencia de grafo, MITRE ATT&CK (35 técnicas mapeadas a hallazgos reales), OSINT (DNS, WHOIS, crt.sh, Wayback Machine), activos
+- Attack Graph, evidencia de grafo, MITRE ATT&CK (36 técnicas mapeadas a hallazgos reales), OSINT (DNS, WHOIS, crt.sh, Wayback Machine), activos
 - Perfil de usuario, centro de notificaciones, ajustes (tema e idioma)
 - Motor: *scope-lock*, gate de 4 fases PTES, pool de API keys con rotación, hallazgos con evidencia hasheada a disco, catálogo propio de CVSS/CWE/MITRE por tipo de hallazgo
 

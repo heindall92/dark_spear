@@ -1,5 +1,5 @@
 import { askAgent } from "./ollama.js";
-import { execTool, QuotaExhaustedError, proposeFinding, advancePhase } from "./bridge_client.js";
+import { execTool, QuotaExhaustedError, proposeFinding, advancePhase, getStatus } from "./bridge_client.js";
 import { checkAndRecordAxis, peekAxisAgent } from "./axis.js";
 import { stepsForPhase, buildPlaybookContext, isMeaningfulToolOutput, parseTarget, scopeRoot, isIpHost } from "./playbook.js";
 import { collectHeuristicFindings, heuristicAssetFromTarget } from "./finding-heuristics.js";
@@ -37,8 +37,8 @@ export const PHASE_NAMES = {
 };
 
 const PHASE_TOOLS = {
-  1: ["nmap", "whatweb", "dig", "nslookup", "dnsrecon", "ldapsearch",
-      "enum4linux", "rpcclient", "echo", "curl"],
+  1: ["nmap", "whatweb", "wafw00f", "dig", "nslookup", "dnsrecon", "ldapsearch",
+      "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"],
   2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "smbclient", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
       "searchsploit", "adscan", "certipy"],
@@ -292,6 +292,18 @@ async function runPlaybookSteps({
     scope: (sharedState?.ctx?.scope) || ctx.scope || target,
     isIpTarget: isIpHost(scopeRoot(host, (sharedState?.ctx?.scope) || ctx.scope || target)),
   });
+  if (!Array.isArray(playbookCtx.previousFindingTitles) || playbookCtx.previousFindingTitles.length === 0) {
+    try {
+      const st = await getStatus();
+      const rows = st && st.previous_scan && Array.isArray(st.previous_scan.findings)
+        ? st.previous_scan.findings
+        : [];
+      playbookCtx.previousFindingTitles = rows.map((f) => f && f.title).filter(Boolean);
+      playbookCtx.previousScanDir = (st && st.previous_scan && st.previous_scan.engagement_dir) || null;
+    } catch {
+      playbookCtx.previousFindingTitles = playbookCtx.previousFindingTitles || [];
+    }
+  }
 
   async function execSpec(spec) {
     if (doneIds.has(spec.id)) return null;
@@ -399,6 +411,12 @@ async function runPlaybookSteps({
     await execSpec(spec);
   }
 
+  await runHeuristicFindings(
+    db, engagementId, target, outputs, playbookCtx,
+    seenFindings, reportedTitles, onFindingProposed, onStep, phase, stepRecords,
+  );
+
+  playbookCtx = buildPlaybookContext(outputs, { ...playbookCtx, emitScanDelta: true });
   await runHeuristicFindings(
     db, engagementId, target, outputs, playbookCtx,
     seenFindings, reportedTitles, onFindingProposed, onStep, phase, stepRecords,

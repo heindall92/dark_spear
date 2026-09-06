@@ -1106,28 +1106,69 @@ export function jsBundleCurlSteps(step, prefix, baseUrl, maxTime = "12") {
 }
 
 const JS_SECRET_SIGNATURES = [
-  { label: "AWS Access Key ID", re: /AKIA[0-9A-Z]{16}/, cwe: "CWE-798" },
-  { label: "AWS Secret Access Key", re: /aws(.{0,20})?(secret|access)?[_-]?key['"]?\s*[:=]\s*['"][0-9a-zA-Z/+]{40}['"]/i, cwe: "CWE-798" },
-  { label: "Google API Key", re: /AIza[0-9A-Za-z\-_]{35}/, cwe: "CWE-798" },
-  { label: "Google/GCP Service Account JSON", re: /"type":\s*"service_account"/i, cwe: "CWE-798" },
-  { label: "Stripe Secret Key (live)", re: /sk_live_[0-9a-zA-Z]{20,}/, cwe: "CWE-798" },
-  { label: "Stripe Restricted Key (live)", re: /rk_live_[0-9a-zA-Z]{20,}/, cwe: "CWE-798" },
-  { label: "Slack Token", re: /xox[baprs]-[0-9a-zA-Z-]{10,}/, cwe: "CWE-798" },
-  { label: "Slack Webhook URL", re: /hooks\.slack\.com\/services\/T[0-9A-Z]{8,}\/B[0-9A-Z]{8,}\/[0-9a-zA-Z]{24}/, cwe: "CWE-798" },
-  { label: "GitHub Personal Access Token", re: /gh[pousr]_[A-Za-z0-9]{36}/, cwe: "CWE-798" },
-  { label: "GitHub Fine-Grained Token", re: /github_pat_[0-9A-Za-z_]{22,}/, cwe: "CWE-798" },
-  { label: "Clave privada embebida", re: /-----BEGIN (RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----/, cwe: "CWE-321" },
-  { label: "Twilio Account SID/Auth Token", re: /AC[0-9a-f]{32}/, cwe: "CWE-798" },
-  { label: "SendGrid API Key", re: /SG\.[0-9A-Za-z_-]{22}\.[0-9A-Za-z_-]{43}/, cwe: "CWE-798" },
-  { label: "Mailgun API Key", re: /key-[0-9a-f]{32}/, cwe: "CWE-798" },
-  { label: "Heroku API Key", re: /heroku['"]?\s*[:=]\s*['"][0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}['"]/i, cwe: "CWE-798" },
-  { label: "npm Access Token", re: /npm_[0-9A-Za-z]{36}/, cwe: "CWE-798" },
-  { label: "PyPI API Token", re: /pypi-AgEIcHlwaS5vcmc[0-9A-Za-z_-]{50,}/, cwe: "CWE-798" },
-  { label: "Discord Webhook URL", re: /discord(app)?\.com\/api\/webhooks\/\d{17,20}\/[0-9A-Za-z_-]{60,}/, cwe: "CWE-798" },
-  { label: "Firebase Cloud Messaging/Server Key", re: /AAAA[0-9A-Za-z_-]{7}:[0-9A-Za-z_-]{140,}/, cwe: "CWE-798" },
-  { label: "DigitalOcean Personal Access Token", re: /dop_v1_[0-9a-f]{64}/, cwe: "CWE-798" },
-  { label: "Shopify Access Token", re: /shp(at|ca|pa|ss)_[0-9a-f]{32}/, cwe: "CWE-798" },
-  { label: "JSON Web Token con secreto en URL", re: /[?&](token|jwt|access_token)=eyJ[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}/, cwe: "CWE-598" },
+  { label: "AWS Access Key ID", re: /\b(AKIA|ASIA)[0-9A-Z]{16}\b/, cwe: "CWE-798", severity: "Critical", validator: null },
+  { label: "AWS Secret Access Key", re: /aws(.{0,20})?(secret|access)?[_-]?key['"]?\s*[:=]\s*['"][0-9a-zA-Z/+]{40}['"]/i, cwe: "CWE-798", severity: "Critical" },
+  { label: "Google API Key", re: /\bAIza[0-9A-Za-z\-_]{35}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Google/GCP Service Account JSON", re: /"type":\s*"service_account"/i, cwe: "CWE-798", severity: "Critical" },
+  { label: "GCP OAuth client secret", re: /\bGOCSPX-[A-Za-z0-9_\-]{28}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Google OAuth access token", re: /\bya29\.[0-9A-Za-z_\-]{20,}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Stripe Secret Key (live)", re: /\bsk_live_[0-9a-zA-Z]{24,}\b/, cwe: "CWE-798", severity: "Critical", validator: "stripe" },
+  { label: "Stripe Restricted Key (live)", re: /\brk_live_[0-9a-zA-Z]{24,}\b/, cwe: "CWE-798", severity: "High", validator: "stripe" },
+  { label: "Stripe Secret Key (test)", re: /\bsk_test_[0-9a-zA-Z]{24,}\b/, cwe: "CWE-798", severity: "Low" },
+  { label: "Slack Token", re: /\bxox[abpors]-[0-9A-Za-z\-]{10,48}\b/, cwe: "CWE-798", severity: "High", validator: "slack" },
+  { label: "Slack App-level Token", re: /\bxapp-1-[A-Za-z0-9\-]{20,}\b/, cwe: "CWE-798", severity: "High", validator: "slack" },
+  { label: "Slack Webhook URL", re: /https:\/\/hooks\.slack\.com\/services\/T[A-Z0-9]+\/B[A-Z0-9]+\/[A-Za-z0-9]+/, cwe: "CWE-798", severity: "Medium" },
+  { label: "GitHub Personal Access Token", re: /\bgh[pousr]_[A-Za-z0-9]{36}\b/, cwe: "CWE-798", severity: "Critical", validator: "github" },
+  { label: "GitHub Fine-Grained Token", re: /\bgithub_pat_[A-Za-z0-9_]{82}\b/, cwe: "CWE-798", severity: "Critical", validator: "github" },
+  { label: "GitHub App/installation token", re: /\bgh[usr]_[A-Za-z0-9]{36,}\b/, cwe: "CWE-798", severity: "High", validator: "github" },
+  { label: "GitLab Personal Access Token", re: /\bglpat-[A-Za-z0-9_\-]{20}\b/, cwe: "CWE-798", severity: "High", validator: "gitlab" },
+  { label: "Clave privada embebida", re: /-----BEGIN (RSA |EC |OPENSSH |DSA |PGP )?PRIVATE KEY-----/, cwe: "CWE-321", severity: "Critical" },
+  { label: "Twilio Account SID", re: /\bAC[a-f0-9]{32}\b/, cwe: "CWE-798", severity: "Medium" },
+  { label: "Twilio API Key SID", re: /\bSK[0-9a-fA-F]{32}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "SendGrid API Key", re: /\bSG\.[A-Za-z0-9_\-]{22}\.[A-Za-z0-9_\-]{43}\b/, cwe: "CWE-798", severity: "High", validator: "sendgrid" },
+  { label: "Mailgun API Key", re: /(?:mailgun|api[_-]?key)['"\s:=]{1,16}(key-[0-9a-zA-Z]{32})\b/i, cwe: "CWE-798", severity: "High" },
+  { label: "Mailchimp API Key", re: /\b[0-9a-f]{32}-us[0-9]{1,2}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Heroku API Key", re: /heroku(.{0,20})?api['"\s:=]+([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i, cwe: "CWE-798", severity: "Medium" },
+  { label: "npm Access Token", re: /\bnpm_[A-Za-z0-9]{36}\b/, cwe: "CWE-798", severity: "High", validator: "npm" },
+  { label: "PyPI API Token", re: /\bpypi-AgEN[A-Za-z0-9_\-]{20,}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "RubyGems API Key", re: /\brubygems_[a-f0-9]{48}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Docker Hub PAT", re: /\bdckr_pat_[A-Za-z0-9_\-]{27,}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Discord Webhook URL", re: /discord(?:app)?\.com\/api\/webhooks\/\d{17,20}\/[0-9A-Za-z_-]{60,}/, cwe: "CWE-798", severity: "High" },
+  { label: "Firebase Cloud Messaging/Server Key", re: /\bAAAA[A-Za-z0-9_\-]{7}:[A-Za-z0-9_\-]{140,}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "DigitalOcean Personal Access Token", re: /\bdop_v1_[a-f0-9]{64}\b/, cwe: "CWE-798", severity: "High", validator: "digitalocean" },
+  { label: "Shopify Access Token", re: /\bshp(?:at|ca|pa|ss)_[a-fA-F0-9]{32}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "JSON Web Token con secreto en URL", re: /[?&](?:token|jwt|access_token)=eyJ[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}\.[0-9A-Za-z_-]{10,}/, cwe: "CWE-598", severity: "High" },
+  { label: "Anthropic API Key", re: /\bsk-ant-(?:api03|admin01)-[A-Za-z0-9_\-]{93,}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "OpenAI API Key (legacy)", re: /\bsk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "OpenAI Project API Key", re: /\bsk-proj-[A-Za-z0-9_\-]{40,}T3BlbkFJ[A-Za-z0-9_\-]{40,}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "OpenAI Session Key", re: /\bsess-[A-Za-z0-9]{40}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Hugging Face Token", re: /\bhf_[A-Za-z0-9]{30,}\b/, cwe: "CWE-798", severity: "High", validator: "huggingface" },
+  { label: "Cloudflare API Token", re: /(?:cloudflare|x-auth-key)['"\s:=]{1,20}([A-Za-z0-9_\-]{40})\b/i, cwe: "CWE-798", severity: "High" },
+  { label: "Cloudflare Global API Key", re: /cf[_-]?api[_-]?key['"\s:=]+([a-f0-9]{37})/i, cwe: "CWE-798", severity: "Critical" },
+  { label: "Postman API Key", re: /\bPMAK-[A-Za-z0-9]{24,64}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "Square Access Token", re: /\bsq0atp-[0-9A-Za-z\-_]{22}\b/, cwe: "CWE-798", severity: "Critical", validator: "square" },
+  { label: "Square OAuth Secret", re: /\bsq0csp-[0-9A-Za-z\-_]{43}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Atlassian API Token", re: /\bATATT3xFfGF0[A-Za-z0-9_\-]{180,}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Linear API Key", re: /\blin_api_[A-Za-z0-9]{40}\b/, cwe: "CWE-798", severity: "Medium" },
+  { label: "New Relic License/API Key", re: /\b(?:NRAA|NRAK|NRBR)-[A-F0-9]{27}\b/, cwe: "CWE-798", severity: "Medium" },
+  { label: "Datadog API Key", re: /dd[_-]?api[_-]?key['"\s:=]+([a-f0-9]{32})/i, cwe: "CWE-798", severity: "High" },
+  { label: "Sentry DSN", re: /https:\/\/[a-f0-9]+@o[0-9]+\.ingest\.sentry\.io\/[0-9]+/, cwe: "CWE-798", severity: "Low" },
+  { label: "Databricks PAT", re: /\bdapi[0-9a-f]{32}(?:-\d)?\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Grafana Cloud Token", re: /\bglc_[A-Za-z0-9+/]{32,}={0,2}\b/, cwe: "CWE-798", severity: "Medium" },
+  { label: "Terraform Cloud Token", re: /\b[A-Za-z0-9]{14}\.atlasv1\.[A-Za-z0-9_\-=]{60,70}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "Fastly API Token", re: /fastly(.{0,20})?(api|token)['"\s:=]+([A-Za-z0-9_\-]{32})/i, cwe: "CWE-798", severity: "High" },
+  { label: "Algolia Admin Key", re: /algolia(.{0,20})?(admin|api)[_-]?key['"\s:=]+([A-Za-z0-9]{32})/i, cwe: "CWE-798", severity: "High" },
+  { label: "Airtable PAT", re: /\bpat[A-Za-z0-9]{14}\.[a-f0-9]{64}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Airtable legacy API Key", re: /airtable(.{0,20})?(api)?[_-]?key['"\s:=]+(key[A-Za-z0-9]{14})/i, cwe: "CWE-798", severity: "Medium" },
+  { label: "Azure/Entra client secret", re: /(?:azure|entra)[_-]?(?:client|app)[_-]?secret['"\s:=]+([A-Za-z0-9_~.\-]{34,40})/i, cwe: "CWE-798", severity: "High" },
+  { label: "Facebook Access Token", re: /\bEAA[A-Za-z0-9]{90,}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "JFrog/Artifactory API Key", re: /\bAKCp[A-Za-z0-9]{50,70}\b/, cwe: "CWE-798", severity: "High" },
+  { label: "Okta SSWS Token", re: /\bSSWS\s+[0-9a-zA-Z_\-]{40}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "Okta API Token", re: /okta(.{0,20})?(api)?[_-]?token['"\s:=]+([0-9a-zA-Z_\-]{40})/i, cwe: "CWE-798", severity: "High" },
+  { label: "Doppler Service Token", re: /\bdp\.pt\.[A-Za-z0-9]{40,44}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "HashiCorp Vault Token", re: /\bhvs\.[A-Za-z0-9_\-]{90,100}\b/, cwe: "CWE-798", severity: "Critical" },
+  { label: "PagerDuty API Key", re: /pagerduty(.{0,20})?(api|token|key)['"\s:=]+([A-Za-z0-9+_\-]{20,32})/i, cwe: "CWE-798", severity: "Medium" },
+  { label: "Asana PAT", re: /asana(.{0,20})?(token|pat)['"\s:=]+([0-9]{1,10}\/[0-9]{10,20}:[a-f0-9]{32})/i, cwe: "CWE-798", severity: "Medium" },
 ];
 
 const JS_SECRET_PLACEHOLDER_RE = /^(x+|0+|1+|dummy|example|test|changeme|xxxx+|yyyy+|your[-_]?\w*|placeholder|undefined|null|redacted|\*+)$/i;
@@ -1146,7 +1187,7 @@ export function jsSecretFindings(jsText, path) {
     if (!m) continue;
     out.push({
       title: `${sig.label} hardcodeada en bundle JS (${path})`,
-      severity: "Critical",
+      severity: sig.severity || "Critical",
       description: `El bundle JavaScript servido en ${path} contiene un valor con el formato de ${sig.label} (empieza «${m[0].slice(0, 10)}…») embebido en texto plano (${sig.cwe}): cualquiera que descargue el bundle público obtiene la credencial. Es un error habitual en SPAs que ponen claves de backend/servicios en el código cliente.`,
       remediation: "Retirar la clave del bundle cliente; moverla a un backend/proxy que la use server-side; rotar la credencial expuesta de inmediato (puede llevar tiempo cacheada en CDN/buscadores).",
     });
@@ -1259,6 +1300,237 @@ export function codeDangerProbeSteps(step, hits, baseUrl = "") {
       codeDangerSeverity: hit.severity,
     });
   }).filter(Boolean);
+}
+
+export function jsSecretSignatureCount() {
+  return JS_SECRET_SIGNATURES.length;
+}
+
+function secretMatchToken(m) {
+  if (!m) return "";
+  for (let i = m.length - 1; i >= 1; i -= 1) {
+    if (m[i] && String(m[i]).length >= 8) return String(m[i]);
+  }
+  return String(m[0] || "");
+}
+
+/**
+ * Extrae tokens con validador read-only conocido del blob acumulado
+ * (bundles JS, HTML, etc.). Tope 5: cada uno dispara un GET de identidad.
+ */
+export function extractCapturedSecrets(blob) {
+  const text = String(blob || "");
+  const hits = [];
+  const seen = new Set();
+  for (const sig of JS_SECRET_SIGNATURES) {
+    if (!sig.validator) continue;
+    const flags = sig.re.flags.includes("g") ? sig.re.flags : `${sig.re.flags}g`;
+    const re = new RegExp(sig.re.source, flags);
+    let m;
+    while ((m = re.exec(text))) {
+      const token = secretMatchToken(m).slice(0, 240);
+      if (!token || JS_SECRET_PLACEHOLDER_RE.test(token)) continue;
+      const key = `${sig.validator}:${token.slice(0, 28)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      hits.push({ kind: sig.validator, token, label: sig.label });
+      if (hits.length >= 5) return hits;
+    }
+  }
+  return hits;
+}
+
+/**
+ * 9 validadores read-only (identidad GET, nunca escritura ni webhook POST).
+ * AWS STS GetCallerIdentity se omite a propósito: exige SigV4; el account ID
+ * se decodifica offline desde AKIA/ASIA (accountIdFromAccessKey).
+ */
+const SECRET_VALIDATORS = {
+  github: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`, "-H", "User-Agent: DarkSpear-OSINT",
+    "https://api.github.com/user"],
+  gitlab: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `PRIVATE-TOKEN: ${token}`,
+    "https://gitlab.com/api/v4/user"],
+  slack: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`,
+    "https://slack.com/api/auth.test"],
+  stripe: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-u", `${token}:`,
+    "https://api.stripe.com/v1/balance"],
+  sendgrid: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`,
+    "https://api.sendgrid.com/v3/scopes"],
+  npm: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`,
+    "https://registry.npmjs.org/-/whoami"],
+  digitalocean: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`,
+    "https://api.digitalocean.com/v2/account"],
+  huggingface: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`,
+    "https://huggingface.co/api/whoami-v2"],
+  square: (token) => ["-s", "-L", "--max-time", "10", "-w", "\nDS_HTTP:%{http_code}\n",
+    "-H", `Authorization: Bearer ${token}`, "-H", "Square-Version: 2024-01-18",
+    "https://connect.squareup.com/v2/locations"],
+};
+
+export function secretValidateCurlSteps(step, secrets) {
+  const list = Array.isArray(secrets) ? secrets.slice(0, 5) : [];
+  return list.map((hit, i) => {
+    const builder = SECRET_VALIDATORS[hit.kind];
+    if (!builder) return null;
+    return step(`p1-secretval-${i + 1}`, "curl", builder(hit.token), null, {
+      desc: `Validador read-only: ¿sigue viva la credencial ${hit.label}?`,
+      secretKind: hit.kind,
+      secretLabel: hit.label,
+    });
+  }).filter(Boolean);
+}
+
+function parseDsHttp(text) {
+  const m = String(text || "").match(/DS_HTTP:(\d{3})/);
+  return m ? m[1] : "";
+}
+
+const SECRET_LIVE_BODY = {
+  github: /"login"\s*:/,
+  gitlab: /"username"\s*:/,
+  slack: /"ok"\s*:\s*true/,
+  stripe: /"object"\s*:\s*"balance"|"available"\s*:/,
+  sendgrid: /"scopes"\s*:/,
+  npm: /"username"\s*:/,
+  digitalocean: /"account"\s*:/,
+  huggingface: /"name"\s*:|"fullname"\s*:/,
+  square: /"locations"\s*:/,
+};
+
+export function secretValidateFindings(probeText, kind, label) {
+  const text = String(probeText || "");
+  const code = parseDsHttp(text);
+  const name = label || kind || "credencial";
+  if (code === "401" || code === "403") {
+    return [{
+      title: `Credencial ${name} presente en el activo pero revocada o inválida`,
+      severity: "Medium",
+      description: `El validador read-only (${kind}) respondió HTTP ${code}: el formato coincide con una credencial real pero el proveedor ya no la acepta. Sigue siendo un secreto que no debería estar en código cliente (puede reactivarse, o filtrar el prefijo/cuenta).`,
+      remediation: "Retirar el valor del bundle aunque esté revocado; rotar por si acaso; añadir scanner de secretos al CI.",
+    }];
+  }
+  if (code !== "200") return [];
+  const liveRe = SECRET_LIVE_BODY[kind];
+  if (liveRe && !liveRe.test(text)) return [];
+  return [{
+    title: `Credencial ${name} viva confirmada (validador read-only)`,
+    severity: "Critical",
+    description: `Una petición GET de identidad al API del proveedor (${kind}) con la credencial hallada en el bundle devolvió HTTP 200 y un cuerpo de cuenta/identidad. No se ha usado la credencial para escribir, listar recursos ajenos ni enviar mensajes: solo se confirmó que sigue activa. Quien tenga el bundle público tiene acceso vivo al servicio.`,
+    remediation: "Revocar/rotar de inmediato en el panel del proveedor; auditar logs de uso no autorizado; sacar el secreto del cliente (BFF).",
+  }];
+}
+
+/* ------------------------------------------------------------------------ *
+ * Identidad cloud (AWS account ID offline desde AKIA/ASIA, ARNs en el
+ * cuerpo ya descargado). Cero tráfico extra. Los buckets listables ya se
+ * tratan como observed (referenciados por la propia app) — ownership
+ * verificado; no se permutan nombres genéricos (evita el flood de FP).
+ * ------------------------------------------------------------------------ */
+const AWS_KEY_PREFIXES = new Set([
+  "AKIA", "ASIA", "AROA", "AIDA", "AGPA", "AIPA", "ANPA", "ANVA", "ABIA", "ACCA",
+]);
+const AWS_EXAMPLE_ACCOUNT_IDS = new Set([
+  "123456789012", "111122223333", "222233334444", "333344445555",
+  "444455556666", "555566667777", "666677778888", "777788889999",
+  "888899990000", "999900001111", "012345678901", "000000000000",
+  "123412341234", "101010101010",
+]);
+export const AWS_ARN_RE = /arn:aws:[a-z0-9-]+:[a-z0-9-]*:(\d{12}):[^\s"'<>\\]+/gi;
+export const AZURE_TENANT_GUID_RE = /login\.microsoftonline\.com\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+export const GCP_PROJECT_RE = /"project_id"\s*:\s*"([a-z][a-z0-9-]{4,28}[a-z0-9])"/i;
+
+function b32decodeBytes(s) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = 0;
+  let value = 0;
+  const bytes = [];
+  const str = String(s || "").toUpperCase().replace(/=+$/, "");
+  for (let i = 0; i < str.length; i += 1) {
+    const idx = alphabet.indexOf(str[i]);
+    if (idx < 0) return null;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((value >>> bits) & 0xff);
+    }
+  }
+  return bytes;
+}
+
+/** Test vector: ASIAY34FZKBOKMUTVV7A → 609629065308 (Steele/Tenable). */
+export function accountIdFromAccessKey(key) {
+  const k = String(key || "").trim().toUpperCase().slice(0, 20);
+  if (k.length !== 20 || !AWS_KEY_PREFIXES.has(k.slice(0, 4))) return null;
+  const body = k.slice(4);
+  if (!/^[A-Z2-7]{16}$/.test(body)) return null;
+  const decoded = b32decodeBytes(body);
+  if (!decoded || decoded.length < 6) return null;
+  let z = 0n;
+  for (let i = 0; i < 6; i += 1) z = (z << 8n) | BigInt(decoded[i]);
+  const account = Number((z & 0x7FFFFFFFFF80n) >> 7n);
+  if (!Number.isFinite(account) || account > 999999999999) return null;
+  return String(account).padStart(12, "0");
+}
+
+export function cloudIdentityFindings(blob) {
+  const text = String(blob || "");
+  const out = [];
+  const seenAcct = new Set();
+  const keyRe = /\b((?:AKIA|ASIA)[A-Z0-9]{16})\b/g;
+  let km;
+  while ((km = keyRe.exec(text))) {
+    const acct = accountIdFromAccessKey(km[1]);
+    if (!acct || AWS_EXAMPLE_ACCOUNT_IDS.has(acct) || seenAcct.has(acct)) continue;
+    seenAcct.add(acct);
+    out.push({
+      title: `AWS Access Key ID decodifica a account ${acct}`,
+      severity: "Info",
+      description: `El Access Key ID ${km[1].slice(0, 8)}… (prefijo ${km[1].slice(0, 4)}) decodifica offline al AWS account ID ${acct} (algoritmo público Steele/Tenable, sin llamar a STS). Contexto de superficie cloud: confirma la cuenta AWS vinculada al secreto hallado. No se ha invocado GetCallerIdentity.`,
+      remediation: `Ninguna por el ID en sí. Si la clave está viva, rotarla y revisar IAM de esa cuenta. Confirmar con el cliente que ${acct} es suya y no de un tercero/ejemplo.`,
+    });
+  }
+  const arnRe = new RegExp(AWS_ARN_RE.source, "gi");
+  let am;
+  const seenArn = new Set();
+  while ((am = arnRe.exec(text))) {
+    const acct = am[1];
+    if (AWS_EXAMPLE_ACCOUNT_IDS.has(acct) || seenArn.has(acct)) continue;
+    seenArn.add(acct);
+    out.push({
+      title: `ARN AWS en el activo referencia account ${acct}`,
+      severity: "Info",
+      description: `El cuerpo público contiene un ARN (${String(am[0]).slice(0, 48)}…) con account ID ${acct}. Identidad cloud observada en el propio activo (ownership: observed), no adivinada por permutación.`,
+      remediation: "Confirmar con el cliente que la cuenta es propia. Inventariar el recurso ARN y aplicar mínimo privilegio.",
+    });
+  }
+  const az = text.match(AZURE_TENANT_GUID_RE);
+  if (az) {
+    out.push({
+      title: `Tenant Azure/Entra ID ${az[1]} referenciado por la app`,
+      severity: "Info",
+      description: `Una URL pública apunta a login.microsoftonline.com/${az[1]}: el GUID de tenant Entra queda expuesto. Discovery pasivo; no se enumeran usuarios.`,
+      remediation: "Ninguna: el tenant GUID no es secreto. Documentar en inventario de IdP.",
+    });
+  }
+  const gcp = text.match(GCP_PROJECT_RE);
+  if (gcp) {
+    out.push({
+      title: `Proyecto GCP "${gcp[1]}" referenciado por la app`,
+      severity: "Info",
+      description: `El cuerpo público nombra el proyecto GCP «${gcp[1]}». Identidad cloud observada (ownership: observed).`,
+      remediation: "Confirmar que el proyecto es del cliente; revisar IAM y APIs habilitadas.",
+    });
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -1527,9 +1799,64 @@ export function wafTriggerFindings(probeText) {
   }];
 }
 
-export function missingWafFinding(headText, triggerText, isPublicDomain) {
+export function dropContradictoryWafFindings(findings) {
+  const list = Array.isArray(findings) ? findings : [];
+  const hasWaf = list.some((f) => /WAF activo:|WAF\/CDN identificado:/i.test((f && f.title) || ""));
+  if (!hasWaf) return list;
+  return list.filter((f) => !/Sin WAF\/CDN identificable/i.test((f && f.title) || ""));
+}
+
+/**
+ * Parsea stdout de wafw00f (JSON con -f json -o -, o el texto clásico).
+ * Solo emite hallazgo cuando el binario nombra un producto; "No WAF
+ * detected" no inventa ausencia (eso lo decide missingWafFinding).
+ */
+export function wafw00fFindings(text) {
+  const t = String(text || "").trim();
+  if (!t) return [];
+  const names = [];
+  const seen = new Set();
+  function add(name) {
+    const n = String(name || "").replace(/\s+/g, " ").trim();
+    if (!n || /^none$/i.test(n)) return;
+    const key = n.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    names.push(n);
+  }
+  const jsonBlob = t.match(/\[[\s\S]*\]/) || t.match(/\{[\s\S]*\}/);
+  if (jsonBlob) {
+    try {
+      const parsed = JSON.parse(jsonBlob[0]);
+      const rows = Array.isArray(parsed) ? parsed : [parsed];
+      rows.forEach((row) => {
+        if (!row || row.detected === false) return;
+        add(row.firewall || row.waf || row.name);
+      });
+    } catch {
+      /* cae al parser de texto */
+    }
+  }
+  if (!names.length) {
+    const re = /is behind\s+(.+?)\s+WAF/gi;
+    let m;
+    while ((m = re.exec(t)) !== null) add(m[1]);
+  }
+  return names.map((name) => ({
+    title: `WAF/CDN identificado: ${name}`,
+    severity: "Info",
+    description: `wafw00f identificó ${name} delante de la aplicación (huella activa de producto, no solo cabeceras). No es una vulnerabilidad: es contexto de gobierno — explica por qué ciertas sondas pueden llegar bloqueadas y documenta la capa de defensa perimetral.`,
+    remediation: "Ninguna: es información de contexto. Verificar que las reglas cubren OWASP CRS y que no hay un origen/API publicado sin el mismo WAF.",
+  }));
+}
+
+export function missingWafFinding(headText, triggerText, isPublicDomain, wafw00fText) {
   if (!isPublicDomain) return [];
-  const alreadyWaf = wafFindings(headText).length > 0;
+  const alreadyWaf = wafFindings(headText).length > 0 || wafw00fFindings(wafw00fText).length > 0;
+  // Sin salida de p1-waf-trigger aún no se puede concluir ausencia: las
+  // heurísticas se reevalúan tras cada paso y HEAD va antes que la sonda.
+  const triggerRan = String(triggerText || "").trim().length > 0;
+  if (!triggerRan) return [];
   const blocked = wafTriggerFindings(triggerText).length > 0;
   if (alreadyWaf || blocked) return [];
   return [{
@@ -1727,6 +2054,98 @@ export function orgAttackSurfaceFindings(rdapIpText, host, ip) {
   return out;
 }
 
+export const HYPERSCALER_HOLDER_RE = /amazon|aws\b|google|microsoft|azure|cloudflare|akamai|fastly|digitalocean|hetzner|ovh|linode|oracle|alibaba|tencent|leaseweb|choopa|vultr/i;
+
+export function extractAsnFromBlob(rawBlob) {
+  const text = String(rawBlob || "");
+  const ripe = text.match(/"asns"\s*:\s*\[\s*"?(\d{1,10})"?/);
+  if (ripe) return ripe[1];
+  const origin = text.match(/originautnums"\s*:\s*\[\s*(\d{1,10})/);
+  if (origin) return origin[1];
+  const handle = text.match(/"handle"\s*:\s*"AS(\d{1,10})"/i);
+  if (handle) return handle[1];
+  const asMatch = text.match(/\bAS(\d{1,10})\b/);
+  return asMatch ? asMatch[1] : null;
+}
+
+export function extractAsnHolderFromBlob(rawBlob) {
+  const text = String(rawBlob || "");
+  try {
+    const json = JSON.parse(text);
+    const recs = json && json.data && json.data.records;
+    if (Array.isArray(recs)) {
+      for (const group of recs) {
+        if (!Array.isArray(group)) continue;
+        for (const row of group) {
+          const key = String(row.key || row.type || "").toLowerCase();
+          if (key === "org-name" || key === "orgname" || key === "descr" || key === "owner") {
+            const v = String(row.value || row.values || "").trim();
+            if (v) return v.slice(0, 120);
+          }
+        }
+      }
+    }
+    if (json && json.name) return String(json.name).slice(0, 120);
+  } catch { /* no JSON */ }
+  const m = text.match(/"value"\s*:\s*"([^"]{3,80})"/);
+  return m ? m[1] : "";
+}
+
+export function ripeAsnCurlSteps(step, ip, maxTime = "15") {
+  if (!ip) return [];
+  return [
+    step("p1-osint-ripe-asn", "curl", [
+      "-s", "--max-time", maxTime,
+      `https://stat.ripe.net/data/network-info/data.json?resource=${encodeURIComponent(ip)}`,
+    ], null, {
+      desc: `RIPEstat: ASN que anuncia ${ip}`,
+    }),
+  ];
+}
+
+export function orgAsnSiblingFindings(whoisText, prefixesText, asn, host, hyperscaler) {
+  const out = [];
+  const asnLabel = asn ? `AS${asn}` : "ASN";
+  const holder = extractAsnHolderFromBlob(whoisText) || "";
+  if (hyperscaler) {
+    out.push({
+      title: `${asnLabel} es de un hyperscaler/CDN (${holder || "proveedor compartido"}) — sin expansión de prefijos`,
+      severity: "Info",
+      description: `La IP de ${host || "el target"} cae en ${asnLabel}${holder ? ` (${holder})` : ""}. El ASN es de un proveedor cloud/CDN: sus prefijos anunciados NO se tratan como superficie del cliente (guardia de scope). Solo se documenta el bloque de la IP en alcance.`,
+      remediation: "Ninguna. No ampliar el alcance autorizado a rangos del proveedor. Confirmar con el cliente si el activo es tenant propio o SaaS de tercero.",
+    });
+    return out;
+  }
+  const prefixes = [];
+  try {
+    const json = JSON.parse(String(prefixesText || ""));
+    const list = json && json.data && json.data.prefixes;
+    if (Array.isArray(list)) {
+      for (const row of list) {
+        const p = row && (row.prefix || row);
+        if (typeof p === "string" && p.includes("/")) prefixes.push(p);
+        if (prefixes.length >= 12) break;
+      }
+    }
+  } catch { /* no JSON */ }
+  if (prefixes.length) {
+    out.push({
+      title: `${asnLabel}${holder ? ` (${holder})` : ""} anuncia ${prefixes.length}+ prefijo(s) hermano(s)`,
+      severity: "Info",
+      description: `RIPEstat lista prefijos anunciados por ${asnLabel} además de la IP en scope (muestra: ${prefixes.slice(0, 6).join(", ")}). Inventario: infraestructura hermana bajo el mismo ASN. NO se ha escaneado ninguno — ampliar el alcance requiere autorización explícita del cliente.`,
+      remediation: "Ninguna acción de ataque. Presentar al cliente la lista de prefijos y decidir si se firma un alcance ampliado. No port-scanear rangos hermanos sin ROE.",
+    });
+  } else if (asn) {
+    out.push({
+      title: `IP de ${host || "el target"} pertenece a ${asnLabel}${holder ? ` (${holder})` : ""}`,
+      severity: "Info",
+      description: `RIPEstat asocia la IP en scope a ${asnLabel}. No se listaron prefijos hermanos (rate-limit, ASN vacío o guardia de hyperscaler).`,
+      remediation: "Ninguna: contexto de inventario.",
+    });
+  }
+  return out;
+}
+
 /* ------------------------------------------------------------------------ *
  * Identity Provider recon — SOLO descubrimiento pasivo de tenant (una
  * petición GET a un endpoint público de metadata/realm, sin probar
@@ -1749,22 +2168,46 @@ export function idpDiscoveryCurlSteps(step, root, maxTime = "12") {
     ], null, {
       desc: `Descubrimiento pasivo de tenant M365/Entra ID para ${root}`,
     }),
+    step("p1-idp-entra-oidc", "curl", [
+      "-s", "--max-time", maxTime,
+      `https://login.microsoftonline.com/${encodeURIComponent(root)}/.well-known/openid-configuration`,
+    ], null, {
+      desc: `Metadata OIDC Entra ID (GUID de tenant) para ${root}`,
+    }),
     step("p1-idp-okta-wellknown", "curl", [
       "-s", "--max-time", maxTime, "-o", "/dev/null", "-w", "%{http_code}",
       `https://${root}/.well-known/openid-configuration`,
     ], null, {
       desc: `¿${root} expone metadata OIDC propia (Okta/Auth0/IdP self-hosted)?`,
     }),
+    step("p1-idp-saml-fedmeta", "curl", [
+      "-s", "--max-time", maxTime, "-o", "/dev/null", "-w", "%{http_code}",
+      `https://${root}/FederationMetadata/2007-06/FederationMetadata.xml`,
+    ], null, {
+      desc: `¿${root} expone metadata SAML/ADFS?`,
+    }),
+    step("p1-idp-saml-wellknown", "curl", [
+      "-s", "--max-time", maxTime, "-o", "/dev/null", "-w", "%{http_code}",
+      `https://${root}/.well-known/federationmetadata/2007-06/federationmetadata.xml`,
+    ], null, {
+      desc: `¿${root} expone metadata SAML en .well-known?`,
+    }),
   ];
 }
 
 export const M365_NAMESPACE_RE = /NameSpaceType>\s*(Managed|Federated)\s*</i;
 export const M365_FEDERATION_BRAND_RE = /FederationBrandName>([^<]+)</i;
+export const ENTRA_ISSUER_GUID_RE = /login\.microsoftonline\.com\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+export const GWS_MX_RE = /aspmx\.l\.google\.com|googlemail\.com/i;
+export const M365_MX_RE = /mail\.protection\.outlook\.com|\.mail\.eo\.outlook\.com/i;
 
-export function idpDiscoveryFindings(m365Text, oidcHttpCode, root) {
+export function idpDiscoveryFindings(m365Text, oidcHttpCode, root, extra = {}) {
   const out = [];
   const m365 = String(m365Text || "");
   const domain = root || "el dominio";
+  const entraText = String(extra.entraOidcText || "");
+  const mxText = String(extra.mxText || "");
+  const samlCode = String(extra.samlHttpCode || "").trim();
 
   const nsMatch = m365.match(M365_NAMESPACE_RE);
   if (nsMatch) {
@@ -1778,6 +2221,32 @@ export function idpDiscoveryFindings(m365Text, oidcHttpCode, root) {
     });
   }
 
+  const guidMatch = entraText.match(ENTRA_ISSUER_GUID_RE);
+  if (guidMatch) {
+    out.push({
+      title: `${domain} resuelve a tenant Entra ID ${guidMatch[1]}`,
+      severity: "Info",
+      description: `login.microsoftonline.com/${domain}/.well-known/openid-configuration publica issuer con GUID ${guidMatch[1]}. Discovery pasivo de tenant (una GET a metadata de Microsoft); no se enumeran usuarios ni se prueban credenciales.`,
+      remediation: "Ninguna: el GUID de tenant no es secreto. Usar Conditional Access y MFA obligatorio en ese tenant.",
+    });
+  }
+
+  if (GWS_MX_RE.test(mxText)) {
+    out.push({
+      title: `${domain} usa Google Workspace (MX Google)`,
+      severity: "Info",
+      description: `Los MX de ${domain} apuntan a aspmx.l.google.com / googlemail.com: el correo (y habitualmente el IdP) es Google Workspace. Workspace no tiene OIDC por-tenant público; el MX es la correlación pasiva estándar. No se enumeran usuarios.`,
+      remediation: "Recomendar 2SV obligatorio, alertas de inicio de sesión y bloqueo de apps menos seguras.",
+    });
+  } else if (M365_MX_RE.test(mxText) && !nsMatch) {
+    out.push({
+      title: `${domain} usa Microsoft 365 (MX Outlook)`,
+      severity: "Info",
+      description: `Los MX de ${domain} apuntan a mail.protection.outlook.com: el correo pasa por Exchange Online aunque getuserrealm no haya confirmado el tenant en esta corrida.`,
+      remediation: "Confirmar tenant Entra y aplicar MFA/Conditional Access.",
+    });
+  }
+
   if (String(oidcHttpCode || "").trim() === "200") {
     out.push({
       title: `${domain} expone metadata OIDC propia (/.well-known/openid-configuration)`,
@@ -1787,5 +2256,113 @@ export function idpDiscoveryFindings(m365Text, oidcHttpCode, root) {
     });
   }
 
+  if (samlCode === "200") {
+    out.push({
+      title: `${domain} expone metadata SAML/ADFS (FederationMetadata.xml)`,
+      severity: "Info",
+      description: `${domain} sirve FederationMetadata.xml (HTTP 200): hay un STS SAML/ADFS en el apex. Discovery pasivo; no se ha negociado autenticación ni enumerado usuarios.`,
+      remediation: "Revisar que el metadata no liste endpoints internos de más; endurecer ADFS (extranet lockout, MFA).",
+    });
+  }
+
+  return out;
+}
+
+const EXPOSURE_DELTA_SKIP_RE = /índice de exposición|nuevo desde última auditoría|no reaparecen/i;
+const SEV_EXPOSURE_W = { critical: 1, high: 0.4, medium: 0.1, low: 0.02, info: 0 };
+
+function combineWeights(weights) {
+  if (!weights.length) return 0;
+  return 1 - weights.reduce((p, w) => p * (1 - Math.max(0, Math.min(1, w))), 1);
+}
+
+/**
+ * FAIR-lite 0–100 + A–F sobre hallazgos ya recolectados (sin red).
+ * E saturado con K=25; T combina señales de secreto vivo / bucket / SSRF;
+ * I por peor caso (secreto/cloud vs contexto).
+ */
+export function computeExposureRisk(findings) {
+  const list = (findings || []).filter((f) => f && !EXPOSURE_DELTA_SKIP_RE.test(f.title || ""));
+  let S = 0;
+  let hasCriticalSecret = false;
+  const blobOf = (f) => `${f.title || ""} ${f.description || ""}`.toLowerCase();
+  for (const f of list) {
+    const s = String(f.severity || "").toLowerCase();
+    S += SEV_EXPOSURE_W[s] || 0;
+    if (s === "critical" && /secret|credencial|hardcodeada|bucket|listable|ssrf|viva confirmada/i.test(blobOf(f))) {
+      hasCriticalSecret = true;
+    }
+  }
+  let E = Math.min(1 - Math.exp(-S / 25), 1 - 1e-15);
+  if (hasCriticalSecret) E = Math.max(E, 0.5);
+  const threatW = [];
+  if (list.some((f) => /viva confirmada|hardcodeada en bundle|access key/i.test(f.title || ""))) threatW.push(0.8);
+  if (list.some((f) => /ssrf confirmado|listable públicamente/i.test(f.title || ""))) threatW.push(0.9);
+  const T = threatW.length ? combineWeights(threatW) : 0.05;
+  const I = hasCriticalSecret ? 0.9
+    : list.some((f) => /spf|dmarc|tenant|workspace/i.test((f.title || "").toLowerCase())) ? 0.4
+      : 0.2;
+  const likelihood = combineWeights([E, T]);
+  const risk = Math.round(likelihood * I * 1000) / 10;
+  const grade = risk >= 80 ? "F" : risk >= 60 ? "D" : risk >= 40 ? "C" : risk >= 20 ? "B" : "A";
+  const dominant = E >= T && E >= I ? "exposure" : T >= I ? "breach-likelihood" : "business-impact";
+  return {
+    risk,
+    grade,
+    exposure: Math.round(E * 1000) / 10,
+    threat: Math.round(T * 1000) / 10,
+    impact: Math.round(I * 1000) / 10,
+    dominant,
+  };
+}
+
+export function exposureScoreFindings(findings) {
+  const score = computeExposureRisk(findings);
+  const list = (findings || []).filter((f) => f && !EXPOSURE_DELTA_SKIP_RE.test(f.title || ""));
+  const bySev = { critical: 0, high: 0, medium: 0, low: 0, info: 0 };
+  list.forEach((f) => {
+    const k = String(f.severity || "info").toLowerCase();
+    if (bySev[k] != null) bySev[k] += 1;
+    else bySev.info += 1;
+  });
+  const worst = list
+    .filter((f) => /^(critical|high)$/i.test(String(f.severity || "")))
+    .map((f) => f.title)
+    .filter(Boolean)
+    .slice(0, 5);
+  const drivers = worst.length
+    ? `Hallazgos que más empujan el índice: ${worst.join("; ")}.`
+    : "No hay críticos ni altos: el índice lo marca la higiene (SPF/DMARC/cabeceras) y el recuento de infos.";
+  return [{
+    title: `Índice de exposición OSINT: ${score.risk}/100 (grado ${score.grade})`,
+    severity: "Info",
+    description: `Cuantificación FAIR-lite sobre los hallazgos de esta auditoría (sin tráfico extra): exposición ${score.exposure}, amenaza ${score.threat}, impacto ${score.impact}. Motor dominante: ${score.dominant}. Recuento que alimenta el índice: ${bySev.critical} críticos, ${bySev.high} altos, ${bySev.medium} medios, ${bySev.low} bajos, ${bySev.info} infos. ${drivers} Un crítico confirmado (secreto vivo / bucket listable / SSRF) eleva el suelo de exposición a 50. El grado no es comparable entre clientes.`,
+    remediation: "No abras ticket sobre el índice. Cierra primero los hallazgos que alimentan el motor dominante; relanza el análisis para ver si el grado baja. No compares el número entre clientes.",
+  }];
+}
+
+export function exposureDeltaFindings(currentTitles, previousTitles) {
+  const prev = new Set((previousTitles || []).map((t) => String(t).toLowerCase()).filter(Boolean));
+  const curr = new Set((currentTitles || []).map((t) => String(t).toLowerCase()).filter(Boolean));
+  if (!prev.size) return [];
+  const added = [...curr].filter((t) => !prev.has(t) && !EXPOSURE_DELTA_SKIP_RE.test(t));
+  const gone = [...prev].filter((t) => !curr.has(t) && !EXPOSURE_DELTA_SKIP_RE.test(t));
+  const out = [];
+  if (added.length) {
+    out.push({
+      title: `Nuevo desde última auditoría: ${added.length} hallazgo(s)`,
+      severity: "Info",
+      description: `Respecto al último engagement del mismo alcance, aparecen ${added.length} título(s) que no estaban: ${added.slice(0, 8).join("; ")}${added.length > 8 ? "…" : ""}. Continuous exposure monitoring: superficie que creció o que el playbook cubre ahora.`,
+      remediation: "Revisar cada hallazgo nuevo; no asumir que el resto sigue igual — revalidar los críticos anteriores.",
+    });
+  }
+  if (gone.length) {
+    out.push({
+      title: `${gone.length} hallazgo(s) de la auditoría anterior no reaparecen`,
+      severity: "Info",
+      description: `Títulos presentes en el scan anterior y ausentes ahora (posible remediación, o sonda que no corrió): ${gone.slice(0, 8).join("; ")}${gone.length > 8 ? "…" : ""}.`,
+      remediation: "Confirmar con el cliente si se remediaron; si no, repetir la sonda concreta.",
+    });
+  }
   return out;
 }

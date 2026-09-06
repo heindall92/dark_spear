@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
 <script src="vendor/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
@@ -14,6 +15,7 @@
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/findings-inbox.js" defer></script>
+<script src="vendor/finding-dossier.js" defer></script>
 <script src="vendor/export.js" defer></script>
 <script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
@@ -140,6 +142,30 @@
         .pdf-doc th { background: #f1f4f8; font-weight: 600; color: #404752; }
         .pdf-doc code { font-family: "JetBrains Mono", monospace; font-size: 10px; background: #f1f4f8; padding: 1px 4px; border-radius: 3px; }
         .pdf-doc pre { font-family: "JetBrains Mono", monospace; font-size: 10px; line-height: 1.45; background: #2d3134; color: #eef1f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+        .report-finding-card + .report-finding-card { margin-top: 28px; padding-top: 28px; border-top: 1px solid #e0e3e7; }
+        .pdf-doc .report-finding-card { font-size: 14px; line-height: 1.5; color: #181c1f; }
+        .pdf-doc .report-finding-card .glass-panel {
+            background-color: #ffffff !important;
+            border: 1px solid #D8E3F0 !important;
+            border-radius: 12px;
+        }
+        .pdf-doc .report-finding-card h2 {
+            font-size: 20px !important;
+            line-height: 28px !important;
+            font-weight: 600 !important;
+            color: #181c1f !important;
+            border-bottom: none !important;
+            margin: 0 0 16px !important;
+            padding-bottom: 0 !important;
+        }
+        .pdf-doc .report-finding-card .font-headline-xl {
+            font-size: 32px !important;
+            line-height: 40px !important;
+        }
+        @media print {
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          .report-finding-card + .report-finding-card { break-before: page; border-top: 0; }
+        }
         .pdf-badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
         .pdf-badge.crit { background: rgba(186,26,26,0.12); color: #ba1a1a; }
         .pdf-badge.high { background: rgba(186,26,26,0.08); color: #ba1a1a; }
@@ -299,21 +325,21 @@
 </header>
 
 <div class="flex-1 mt-16 mb-16 flex overflow-hidden">
-<aside class="w-80 shrink-0 border-r border-outline-variant/30 bg-white overflow-y-auto p-md flex flex-col gap-lg">
+<aside id="preview-config" hidden class="w-80 shrink-0 border-r border-outline-variant/30 bg-white overflow-y-auto p-md flex flex-col gap-lg">
 <div>
 <nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant mb-sm flex-wrap" aria-label="Breadcrumb">
-<a class="hover:text-primary" href="reporting.html">Reporting</a>
+<a class="hover:text-primary" href="reporting.html" data-i18n="nav.reporting">Informes</a>
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
-<a class="hover:text-primary" href="engagement.html">—</a>
+<a class="hover:text-primary" href="comprehensive-report.html" data-i18n="comp.title">Informe integral</a>
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
-<span class="font-semibold text-primary">Preview</span>
+<span class="font-semibold text-primary" data-i18n="preview.title">Vista previa PDF</span>
 </nav>
-<h2 class="font-headline-md text-headline-md text-on-surface">Report Configuration</h2>
-<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs">Índice del informe profesional. Activa o oculta bloques en la vista previa.</p>
+<h2 class="font-headline-md text-headline-md text-on-surface" data-i18n="preview.config">Configuración del informe</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="preview.configLead">Índice del informe profesional. Activa o oculta bloques en la vista previa.</p>
 </div>
 
 <div>
-<p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Report Sections</p>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm" data-i18n="preview.sections">Secciones</p>
 <div class="flex flex-col gap-xs">
 <label class="flex items-start gap-sm py-xs cursor-pointer"><input class="mt-0.5 accent-primary-container" data-toggle="sec-00" type="checkbox" checked/><span class="font-body-sm text-body-sm">00. Control del documento</span></label>
 <label class="flex items-start gap-sm py-xs cursor-pointer"><input class="mt-0.5 accent-primary-container" data-toggle="sec-00b" type="checkbox" checked/><span class="font-body-sm text-body-sm">00b. Índice</span></label>
@@ -339,19 +365,19 @@
 </div>
 
 <div>
-<p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Branding</p>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm" data-i18n="preview.branding">Marca</p>
 <button class="w-full flex items-center justify-between py-sm" id="btn-logo" type="button">
-<span class="font-body-sm text-body-sm">Include Client Logo</span>
+<span class="font-body-sm text-body-sm" data-i18n="preview.clientLogoToggle">Incluir logo de cliente</span>
 <span class="toggle on" id="toggle-logo"></span>
 </button>
 <button class="w-full flex items-center justify-between py-sm" id="btn-watermark" type="button">
-<span class="font-body-sm text-body-sm">Dark Spear Watermark</span>
+<span class="font-body-sm text-body-sm" data-i18n="preview.watermarkToggle">Marca de agua Dark Spear</span>
 <span class="toggle" id="toggle-watermark"></span>
 </button>
 </div>
 
 <div>
-<p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm">Format</p>
+<p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm" data-i18n="preview.format">Formato</p>
 <div class="relative">
 <select class="w-full appearance-none bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm pr-xl font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4]" id="fmt">
 <option>PDF - Professional</option>
@@ -363,7 +389,7 @@
 </div>
 </aside>
 
-<style>#preview-list-view[hidden],#preview-detail-view[hidden]{display:none!important}</style>
+<style>#preview-list-view[hidden],#preview-detail-view[hidden],#preview-config[hidden],#preview-actionbar[hidden]{display:none!important}</style>
 <main id="main-content" class="flex-1 overflow-y-auto bg-surface-container p-lg">
 <div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <section id="preview-list-view" class="flex flex-col gap-md">
@@ -383,26 +409,26 @@
 </div>
 <div id="preview-scans-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-lg"></div>
 </section>
-<section id="preview-detail-view" class="flex flex-col gap-md" hidden>
+<section id="preview-detail-view" class="flex flex-col gap-md pb-28" hidden>
 <div>
 <a href="report-preview.html" class="inline-flex items-center gap-xs font-body-sm text-primary hover:underline mb-xs"><i data-lucide="arrow-left" class="icon-sm"></i><span data-i18n="scan.back">Volver a análisis</span></a>
 <h2 id="preview-detail-title" class="font-headline-lg text-headline-lg text-on-surface tracking-tight truncate">Preview</h2>
 <p id="preview-detail-subtitle" class="font-body-md text-on-surface-variant mt-xs">—</p>
 </div>
-<div id="preview-stats" class="grid grid-cols-2 md:grid-cols-5 gap-md"></div>
-<h3 class="font-headline-md text-headline-md text-on-surface" data-i18n="report.findings">Hallazgos del análisis</h3>
-<div id="preview-findings" class="flex flex-col gap-md"></div>
+<div class="flex justify-center">
+<div id="preview-paper" class="pdf-doc bg-white w-full max-w-[850px] min-h-[1100px] paper-shadow rounded-sm p-[48px] border border-outline-variant relative"></div>
+</div>
 </section>
 </div>
 </main>
 </div>
 
-<div class="absolute bottom-0 right-0 left-0 bg-white border-t border-outline-variant p-md flex justify-end gap-md z-20">
-<a href="reporting.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors">Cancel</a>
+<div id="preview-actionbar" hidden class="absolute bottom-0 right-0 left-0 bg-white border-t border-outline-variant p-md flex justify-end gap-md z-20">
+<a href="reporting.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors" data-i18n="preview.cancel">Cancelar</a>
 <button id="btn-generate-fmt" class="px-lg py-sm rounded-lg font-label-md font-semibold bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-xs shadow-sm" type="button">
 <i data-lucide="download" class="icon-md"></i>
-                Generate Report
-            </button>
+<span data-i18n="preview.generate">Generar informe</span>
+</button>
 </div>
 </div>
 <script>
@@ -415,15 +441,19 @@
                 });
             });
         }
-        document.getElementById("btn-logo").addEventListener("click", function () {
+        var btnLogo = document.getElementById("btn-logo");
+        if (btnLogo) btnLogo.addEventListener("click", function () {
             var t = document.getElementById("toggle-logo");
-            t.classList.toggle("on");
-            document.getElementById("client-logo").classList.toggle("hidden", !t.classList.contains("on"));
+            if (t) t.classList.toggle("on");
+            var logo = document.getElementById("client-logo");
+            if (logo) logo.classList.toggle("hidden", !(t && t.classList.contains("on")));
         });
-        document.getElementById("btn-watermark").addEventListener("click", function () {
+        var btnMark = document.getElementById("btn-watermark");
+        if (btnMark) btnMark.addEventListener("click", function () {
             var t = document.getElementById("toggle-watermark");
-            t.classList.toggle("on");
-            document.getElementById("watermark").classList.toggle("visible", t.classList.contains("on"));
+            if (t) t.classList.toggle("on");
+            var mark = document.getElementById("watermark");
+            if (mark) mark.classList.toggle("visible", t && t.classList.contains("on"));
         });
         bindToggles();
         lucide.createIcons();

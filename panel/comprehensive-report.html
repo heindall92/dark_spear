@@ -7,6 +7,7 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
 <script src="vendor/lucide.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
 <link href="vendor/tokens.css" rel="stylesheet"/>
@@ -14,6 +15,7 @@
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/findings-inbox.js" defer></script>
+<script src="vendor/finding-dossier.js" defer></script>
 <script src="vendor/export.js" defer></script>
 <script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
@@ -126,6 +128,7 @@
         .toc-sub { width: 100%; text-align: left; padding: 4px 8px; border-radius: 4px; color: #404752; }
         .toc-sub:hover { background: #f1f4f8; }
         .toc-sub.active { color: #005faa; font-weight: 600; }
+        #comp-toc[hidden] { display: none !important; }
         .chap-nav { background: #ebeef2; border: 1px solid rgba(192,199,212,0.55); border-radius: 10px; padding: 4px; }
         .chap-nav a { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #181c1f; }
         .chap-nav a.active { background: #0078d4; color: #ffffff; box-shadow: 0 1px 3px rgba(27,42,65,0.12); }
@@ -137,6 +140,10 @@
           background-size: 18px 18px;
         }
         .dot-grid > svg { pointer-events: none; }
+        .report-finding-card + .report-finding-card { margin-top: 32px; padding-top: 32px; border-top: 1px solid rgba(192, 199, 212, 0.45); }
+        @media print {
+          .report-finding-card + .report-finding-card { break-before: page; border-top: 0; }
+        }
         .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
         .skip-link:focus { left: 8px; top: 8px; }
         @media (prefers-reduced-motion: reduce) {
@@ -273,7 +280,7 @@
 </header>
 
 <div class="flex flex-1 mt-16 overflow-hidden">
-<aside class="w-64 shrink-0 bg-surface-container-lowest border-r border-outline-variant/30 h-full overflow-y-auto flex flex-col">
+<aside id="comp-toc" hidden class="w-64 shrink-0 bg-surface-container-lowest border-r border-outline-variant/30 h-full overflow-y-auto flex flex-col">
 <div class="p-md border-b border-outline-variant/30 bg-surface-container-low/30">
 <h2 id="comp-doc-title" class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.docTitle">Informe integral</h2>
 <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-xs">
@@ -283,34 +290,41 @@
 </div>
 <nav class="flex-1 p-sm overflow-y-auto font-body-sm text-body-sm" aria-label="Report sections">
 <ul class="space-y-xs">
-<li><button class="toc-btn" data-go="sec-00" type="button"><i data-lucide="history" class="icon-md text-outline"></i>00. Document Control &amp; History</button></li>
-<li><a class="toc-btn" id="toc-01" href="executive-summary.html"><i data-lucide="chart-column" class="icon-md text-outline"></i>01. Executive Summary</a></li>
-<li><a class="toc-btn" id="toc-02" href="findings-summary.html"><i data-lucide="key" class="icon-md text-outline"></i>02. Finding Summary</a></li>
-<li><button class="toc-btn" data-go="sec-03" type="button"><i data-lucide="git-branch" class="icon-md text-outline"></i>03. Root Cause</button></li>
-<li><button class="toc-btn" data-go="sec-04" type="button"><i data-lucide="file-search" class="icon-md text-outline"></i>04. Detailed Findings</button></li>
-<li><button class="toc-btn" data-go="sec-05" type="button"><i data-lucide="shield-check" class="icon-md text-outline"></i>05. Controls in Place</button></li>
-<li><a class="toc-btn" id="toc-06" href="remediation-plan.html"><i data-lucide="list-ordered" class="icon-md text-outline"></i>06. Prioritized Remediation</a></li>
-<li><button class="toc-btn" data-go="sec-07" type="button"><i data-lucide="file-code" class="icon-md text-outline"></i>07. Technical Appendix</button></li>
+<li><button class="toc-btn" data-go="sec-00" type="button"><i data-lucide="history" class="icon-md text-outline"></i><span data-i18n="comp.sec00Title">00. Control documental e historial</span></button></li>
+<li><button class="toc-btn" data-go="sec-01" type="button"><i data-lucide="chart-column" class="icon-md text-outline"></i><span data-i18n="comp.sec01Title">01. Resumen ejecutivo</span></button></li>
+<li><button class="toc-btn" data-go="sec-02" type="button"><i data-lucide="key" class="icon-md text-outline"></i><span data-i18n="comp.sec02Title">02. Resumen de hallazgos</span></button></li>
+<li><button class="toc-btn" data-go="sec-03" type="button"><i data-lucide="git-branch" class="icon-md text-outline"></i><span data-i18n="comp.sec03Title">03. Causa raíz</span></button></li>
 <li>
-<a class="toc-btn" id="toc-08" href="gdpr-alignment.html"><i data-lucide="gavel" class="icon-md"></i>08. Governance &amp; Compliance</a>
+<button class="toc-btn" data-go="sec-04" type="button"><i data-lucide="file-search" class="icon-md text-outline"></i><span data-i18n="comp.sec04Title">04. Hallazgos detallados</span></button>
+<ul id="comp-toc-findings" class="pl-xl mt-xs space-y-xs"></ul>
+</li>
+<li><button class="toc-btn" data-go="sec-05" type="button"><i data-lucide="shield-check" class="icon-md text-outline"></i><span data-i18n="comp.sec05Title">05. Controles vigentes</span></button></li>
+<li><button class="toc-btn" data-go="sec-06" type="button"><i data-lucide="list-ordered" class="icon-md text-outline"></i><span data-i18n="comp.sec06Title">06. Remediación priorizada</span></button></li>
+<li><button class="toc-btn" data-go="sec-07" type="button"><i data-lucide="file-code" class="icon-md text-outline"></i><span data-i18n="comp.sec07Title">07. Apéndice técnico</span></button></li>
+<li>
+<button class="toc-btn" data-go="sec-08" type="button"><i data-lucide="gavel" class="icon-md"></i><span data-i18n="comp.sec08Title">08. Gobernanza y cumplimiento</span></button>
 <ul class="pl-xl mt-xs space-y-xs">
-<li><a class="toc-sub" id="toc-08-rgpd" href="gdpr-alignment.html">RGPD &amp; Risk Matrix</a></li>
-<li><a class="toc-sub" id="toc-08-maturity" href="maturity-index.html">Maturity Index</a></li>
+<li><button class="toc-sub" data-go="sec-08-rgpd" type="button" data-i18n="comp.tocRgpd">RGPD y matriz de riesgo</button></li>
+<li><button class="toc-sub" data-go="sec-08e" type="button" data-i18n="maturity.detailTitle">Índice de Madurez de Seguridad</button></li>
 </ul>
 </li>
-<li><a class="toc-btn" id="toc-08f" href="kill-chain.html"><i data-lucide="share-2" class="icon-md text-outline"></i>08f. Kill Chain &amp; MITRE</a></li>
-<li><button class="toc-btn" data-go="sec-09" type="button"><i data-lucide="check-check" class="icon-md text-outline"></i>09. Conclusions</button></li>
+<li><button class="toc-btn" data-go="sec-08f" type="button"><i data-lucide="share-2" class="icon-md text-outline"></i><span data-i18n="comp.sec08fTitle">08f. Kill Chain y MITRE</span></button></li>
+<li><button class="toc-btn" data-go="sec-09" type="button"><i data-lucide="check-check" class="icon-md text-outline"></i><span data-i18n="comp.sec09Title">09. Conclusiones</span></button></li>
 </ul>
 </nav>
-<div class="p-md border-t border-outline-variant/30">
-<button class="w-full py-sm px-md border border-outline-variant rounded-lg font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors flex items-center justify-center gap-sm" id="btn-export" type="button" data-export="pdf">
+<div class="p-md border-t border-outline-variant/30 flex flex-col gap-sm">
+<a id="comp-link-preview" href="report-preview.html" class="w-full py-sm px-md border border-outline-variant rounded-lg font-label-md text-label-md text-secondary hover:bg-surface-container-low transition-colors flex items-center justify-center gap-sm">
+<i data-lucide="file-search" class="icon-md"></i>
+<span data-i18n="preview.open">Configurar preview</span>
+</a>
+<button class="w-full py-sm px-md bg-primary-container text-on-primary-container rounded-lg font-label-md text-label-md hover:bg-primary transition-colors flex items-center justify-center gap-sm" id="btn-export" type="button">
 <i data-lucide="download" class="icon-md"></i>
-                    Export PDF
-                </button>
+<span data-i18n="comp.exportPdf">Exportar PDF</span>
+</button>
 </div>
 </aside>
 
-<style>#comp-list-view[hidden],#comp-detail-view[hidden]{display:none!important}</style>
+<style>#comp-list-view[hidden],#comp-detail-view[hidden],#comp-toc[hidden]{display:none!important}</style>
 <main id="main-content" class="flex-1 bg-surface-container overflow-y-auto p-md lg:p-xl">
 <div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <section id="comp-list-view" class="flex flex-col gap-md">
@@ -331,15 +345,23 @@
 <div id="comp-scans-cards" class="grid grid-cols-1 lg:grid-cols-2 gap-lg pb-lg"></div>
 </section>
 <section id="comp-detail-view" class="flex flex-col gap-md" hidden>
+<nav class="flex items-center gap-xs font-body-sm text-body-sm text-on-surface-variant flex-wrap" aria-label="Breadcrumb">
+<a class="hover:text-primary" href="reporting.html" data-i18n="nav.reporting">Informes</a>
+<i data-lucide="chevron-right" class="icon-sm text-outline"></i>
+<span id="comp-crumb-scan">—</span>
+<i data-lucide="chevron-right" class="icon-sm text-outline"></i>
+<span class="text-on-surface font-semibold" data-i18n="comp.title">Informe integral</span>
+</nav>
 <div>
 <a href="comprehensive-report.html" class="inline-flex items-center gap-xs font-body-sm text-primary hover:underline mb-xs"><i data-lucide="arrow-left" class="icon-sm"></i><span data-i18n="scan.back">Volver a análisis</span></a>
 <h2 id="comp-detail-title" class="font-headline-lg text-headline-lg text-on-surface tracking-tight truncate">Informe</h2>
 <p id="comp-detail-subtitle" class="font-body-md text-on-surface-variant mt-xs">—</p>
 </div>
 <div id="comp-stats" class="grid grid-cols-2 md:grid-cols-5 gap-md"></div>
-<div id="comp-chapters" class="flex flex-wrap gap-sm"></div>
 
-<div id="sec-00" class="glass-panel rounded-xl p-lg">
+<article id="comp-paper" class="max-w-4xl mx-auto w-full bg-white/80 border border-outline-variant/50 rounded-xl shadow-[0_8px_32px_rgba(27,42,65,0.08)] p-lg lg:p-xl flex flex-col gap-xl">
+
+<div id="sec-00" class="scroll-mt-4">
 <header class="flex justify-between items-start border-b border-outline-variant/30 pb-sm mb-md">
 <div>
 <h3 class="font-headline-md text-headline-md text-on-surface" data-i18n="comp.sec00Title">00. Control documental e historial</h3>
@@ -350,49 +372,90 @@
 <dl id="sec-00-table" class="grid grid-cols-1 sm:grid-cols-2 gap-sm font-body-sm text-body-sm"></dl>
 </div>
 
-<div id="sec-03" class="glass-panel rounded-xl p-lg">
+<div id="sec-01" class="scroll-mt-4">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec01Title">01. Resumen ejecutivo</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec01Lead">Postura del engagement y hallazgos que requieren decisión.</p>
+<div id="sec-01-body" class="flex flex-col gap-md"></div>
+</div>
+
+<div id="sec-02" class="scroll-mt-4">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec02Title">02. Resumen de hallazgos</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec02Lead">Distribución por severidad de todo lo confirmado en este análisis.</p>
+<div id="sec-02-body" class="overflow-x-auto"></div>
+</div>
+
+<div id="sec-03" class="scroll-mt-4">
 <h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec03Title">03. Causa raíz</h3>
 <p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec03Lead">Patrones comunes detrás de los hallazgos de este análisis.</p>
 <ul id="sec-03-list" class="list-disc pl-lg space-y-xs font-body-sm text-body-sm text-on-surface"></ul>
 </div>
 
-<div id="sec-04" class="flex flex-col gap-md">
-<h3 class="font-headline-md text-headline-md text-on-surface" data-i18n="report.findings">Hallazgos del análisis</h3>
+<div id="sec-04" class="scroll-mt-4 flex flex-col gap-md">
+<h3 class="font-headline-md text-headline-md text-on-surface" data-i18n="comp.sec04Title">04. Hallazgos detallados</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="comp.sec04Lead">Ficha completa de cada hallazgo del escaneo: ejecutivo, criticidad, técnico, MITRE, gobernanza, grafo, plan y métricas.</p>
 <div id="comp-findings" class="flex flex-col gap-md"></div>
 </div>
 
-<div id="sec-05" class="glass-panel rounded-xl p-lg">
+<div id="sec-05" class="scroll-mt-4">
 <h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec05Title">05. Controles vigentes</h3>
 <p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec05Lead">Qué medidas de seguridad estaban activas en el momento del análisis, aunque resultaran insuficientes.</p>
 <ul id="sec-05-list" class="list-disc pl-lg space-y-xs font-body-sm text-body-sm text-on-surface"></ul>
 </div>
 
-<div id="sec-07" class="glass-panel rounded-xl p-lg">
+<div id="sec-06" class="scroll-mt-4">
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec06Title">06. Remediación priorizada</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec06Lead">Orden de cierre según severidad y estado abierto.</p>
+<div id="sec-06-body" class="flex flex-col gap-md"></div>
+</div>
+
+<div id="sec-07" class="scroll-mt-4">
 <h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec07Title">07. Apéndice técnico</h3>
 <p class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="comp.sec07Body">Metodología PTES (Reconocimiento, Escaneo, Explotación, Post-explotación). Cada sonda queda registrada como paso individual y las heurísticas solo confirman un hallazgo si la respuesta real de esa sonda contiene la evidencia esperada. Referencia de explotación y remediación por técnica:</p>
+<p id="sec-07-meta" class="font-body-sm text-on-surface-variant mt-sm"></p>
 <a class="inline-flex items-center gap-xs font-body-sm text-primary hover:underline mt-sm" href="https://hacktricks.wiki/en/index.html" target="_blank" rel="noopener"><i data-lucide="external-link" class="icon-sm"></i>HackTricks — hacktricks.wiki</a>
 </div>
 
-<div id="sec-09" class="glass-panel rounded-xl p-lg">
+<div id="sec-08" class="scroll-mt-4 flex flex-col gap-lg">
+<header class="flex justify-between items-end border-b border-outline-variant/30 pb-sm">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface" data-i18n="comp.sec08Title">08. Gobernanza y cumplimiento</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="comp.sec08Lead">Postura de riesgo organizativo y alineación normativa a partir de este análisis.</p>
+</div>
+<span class="px-sm py-[2px] bg-secondary-container/50 text-on-secondary-container rounded-sm font-mono-md text-mono-md text-[11px] border border-secondary-container shrink-0" data-i18n="comp.confidential">CONFIDENCIAL</span>
+</header>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+<div id="sec-08-matrix" class="border border-outline-variant/50 rounded-lg p-md bg-surface-container-lowest"></div>
+<div id="sec-08-rgpd" class="border border-outline-variant/50 rounded-lg p-md bg-surface-container-lowest scroll-mt-4"></div>
+</div>
+<div id="sec-08e" class="border border-outline-variant/50 rounded-lg p-md bg-surface-container-lowest scroll-mt-4"></div>
+<div id="sec-08-connected" class="border border-outline-variant/50 rounded-lg p-md bg-surface-container-lowest"></div>
+</div>
+
+<div id="sec-08f" class="scroll-mt-4 flex flex-col gap-lg">
+<div id="sec-08f-killchain" class="border border-outline-variant/50 rounded-lg p-md bg-surface-container-lowest"></div>
+<div id="sec-08-impact" class="border border-outline-variant/50 rounded-lg p-md bg-surface-container-lowest"></div>
+</div>
+
+<div id="sec-09" class="scroll-mt-4">
 <h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec09Title">09. Conclusiones</h3>
 <p id="sec-09-body" class="font-body-sm text-body-sm text-on-surface"></p>
 </div>
 
-<footer class="flex flex-wrap items-center justify-between gap-sm border-t border-outline-variant/30 pt-md mt-sm font-body-sm text-body-sm text-on-surface-variant">
+<footer class="flex flex-wrap items-center justify-between gap-sm border-t border-outline-variant/30 pt-md font-body-sm text-body-sm text-on-surface-variant">
 <span class="flex items-center gap-xs"><img src="vendor/logo.png" alt="Dark Spear" class="w-4 h-4"/>Dark Spear SecOps</span>
 <span id="comp-doc-footer-date">—</span>
 <span class="px-sm py-[2px] bg-secondary-container/50 text-on-secondary-container rounded-sm font-mono-md text-mono-md text-[11px] border border-secondary-container" data-i18n="comp.confidential">CONFIDENCIAL</span>
 </footer>
+</article>
 </section>
 </div>
 </main>
 </div>
 </div>
 <script>
-        // El índice 00-09 es navegación de un único documento continuo (como un
-        // PDF real con capítulos): los botones hacen scroll al capítulo dentro
-        // de esta misma página; RGPD/Madurez/Kill Chain/Resumen/Remediación
-        // tienen documento propio, así que esos ítems son enlaces normales.
+        // Índice 00-09: navegación de un único documento continuo.
+        // RGPD, madurez y Kill Chain también viven en Gobernanza; aquí se
+        // reúnen con los hallazgos del escaneo elegido.
         function goToSection(id) {
             var view = document.getElementById(id);
             if (!view) return;

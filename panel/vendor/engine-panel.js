@@ -409,6 +409,7 @@ function toolIcon(tool, verdict) {
   if (tool === "nmap") return "network";
   if (tool === "curl") return "globe";
   if (tool === "whatweb") return "scan-search";
+  if (tool === "wafw00f") return "shield";
   if (tool === "gobuster" || tool === "ffuf") return "folder-search";
   if (tool === "nikto") return "bug";
   if (tool === "(agent)") return "bot";
@@ -459,7 +460,7 @@ function stepCategory(step) {
   const args = (step.args || []).join(" ").toLowerCase();
   if (tool === "(finding)") return "findings";
   if (["axis_blocked", "phase_locked", "agent_error"].includes(step.verdict)) return "noise";
-  if (["nmap", "whatweb", "dig", "dnsrecon", "nslookup"].includes(tool)) return "recon";
+  if (["nmap", "whatweb", "wafw00f", "dig", "dnsrecon", "nslookup"].includes(tool)) return "recon";
   if (["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan"].includes(tool)) return "enum";
   if (["sqlmap", "hydra"].includes(tool)) return "exploit";
   if (tool === "curl") {
@@ -1464,6 +1465,9 @@ async function bootEngagement() {
       } else {
         const findings = await api.bridge.listFindings(currentEngId);
         list = Array.isArray(findings) ? findings : ((findings && findings.findings) || []);
+      }
+      if (list.some((f) => /WAF activo:|WAF\/CDN identificado:/i.test(f?.title || ""))) {
+        list = list.filter((f) => !/Sin WAF\/CDN identificable/i.test(f?.title || ""));
       }
       syncFindingsToInbox(list);
       const pending = list.filter((f) => f.status === "proposed" || f.status === "edited").length;
