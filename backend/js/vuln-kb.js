@@ -2750,3 +2750,191 @@ export function semgrepFindings(stdout, filename) {
   }
   return out;
 }
+
+/* ------------------------------------------------------------------------ *
+ * Nikto — el playbook ya lo corre 120 s (p2-nikto) pero el motor solo
+ * emitía UN hallazgo genérico si el blob mencionaba "vulnerability".
+ * Parseo de las líneas "+ …" (formato por defecto): una ficha por check
+ * con ruta/CVE cuando Nikto las deja, sin inventar exploits.
+ * ------------------------------------------------------------------------ */
+const NIKTO_SKIP_RE = /no cgi directories|item\(s\) reported|start time|end time|target ip|target hostname|target port|^server:\s|retrieved x-powered-by|multiple i(?:ndex )?files|uncommon header|cookie .+ flag|allowed http methods|0 host\(s\) tested/i;
+const NIKTO_HEADER_DUP_RE = /x-frame-options|x-content-type-options|strict-transport-security|content-security-policy|x-xss-protection|header is not present|header is not set|anti-clickjacking/i;
+
+export function niktoFindings(stdout) {
+  const out = [];
+  const seen = new Set();
+  for (const raw of String(stdout || "").split("\n")) {
+    const line = raw.replace(/^\+\s*/, "").trim();
+    if (!line || NIKTO_SKIP_RE.test(line) || NIKTO_HEADER_DUP_RE.test(line)) continue;
+    const cveM = line.match(/CVE-\d{4}-\d+/i);
+    const osvdbM = line.match(/OSVDB-\d+/i);
+    const pathM = line.match(/(\/[A-Za-z0-9._~/?#\[\]@!$&'()*+,;=%-]{1,80})/);
+    const path = pathM ? pathM[1].replace(/[),.;]+$/, "") : "";
+    if (!path && !cveM && !osvdbM) continue;
+    let severity = "Low";
+    if (cveM) severity = "High";
+    else if (/phpinfo|config\.(inc|php)|wp-config|\.bak|\.git|passwd|backup/i.test(line)) severity = "High";
+    else if (/directory indexing|index of/i.test(line)) severity = "Medium";
+    else if (osvdbM && path) severity = "Medium";
+    const rest = line
+      .replace(/^OSVDB-\d+:\s*/i, "")
+      .replace(/^CVE-\d{4}-\d+:\s*/i, "")
+      .slice(0, 110);
+    const title = `Nikto: ${path ? `${path} — ` : ""}${rest}`;
+    const key = title.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const refs = [cveM && cveM[0], osvdbM && osvdbM[0]].filter(Boolean).join(", ");
+    out.push({
+      title,
+      severity,
+      description: `Nikto confirmó este check contra la respuesta real del servicio: ${line}${refs ? ` Referencia ${refs}.` : ""}`,
+      remediation: cveM
+        ? `Revisar ${cveM[0]} y aplicar el parche o el hardening que cierra ese check. Re-ejecutar nikto sobre la misma ruta para verificar el cierre.`
+        : path
+          ? `Revisar ${path}: retirar del document root, autenticar o desactivar el listado. No depender de que la ruta no esté enlazada.`
+          : "Aplicar el control que Nikto señaló y verificar con la misma sonda.",
+    });
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * dnsrecon -t std — enumeración DNS + intento de transferencia de zona.
+ * No se usa -t brt (fuerza bruta de nombres): solo el plano que el NS
+ * ya publica o, si el AXFR está abierto, el que entrega entero.
+ * ------------------------------------------------------------------------ */
+export function dnsreconArgs(root) {
+  return ["-d", root, "-t", "std"];
+}
+
+const DNSRECON_RR = /^(?:\[(?:\*|\+|-)\]\s+)?(SOA|NS|MX|A|AAAA|CNAME|PTR|SRV)\s+(\S+)/i;
+
+function looksLikeDnsName(token) {
+  const t = String(token || "").replace(/\.$/, "").toLowerCase();
+  if (!t || t.length > 253) return "";
+  if (/^\d{1,3}(?:\.\d{1,3}){3}$/.test(t)) return "";
+  if (!/^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$/i.test(t)) return "";
+  return t;
+}
+
+export function dnsreconFindings(stdout, root) {
+  const text = String(stdout || "");
+  const apex = String(root || "").replace(/\.$/, "").toLowerCase();
+  const out = [];
+  if (/zone transfer (was )?successful/i.test(text)) {
+    out.push({
+      title: `Transferencia de zona DNS exitosa (dnsrecon) en ${apex || "el dominio"}`,
+      severity: "High",
+      description: `dnsrecon -t std obtuvo una transferencia de zona (AXFR) contra un NS de ${apex || "este dominio"}: el servidor entregó el plano DNS completo. Eso es inventario autoritativo (hosts, MX, internos), no un rumor de scanner (CWE-200).`,
+      remediation: "Deshabilitar AXFR hacia internet en todos los NS autoritativos (allow-transfer a IPs de esclavos, o none). Re-ejecutar dnsrecon -d <dominio> -t std hasta que el AXFR falle.",
+    });
+  }
+  const seen = new Set();
+  const extras = [];
+  for (const raw of text.split("\n")) {
+    const line = raw.replace(/^\[[*+-]\]\s+/, "").trim();
+    const m = line.match(DNSRECON_RR);
+    if (!m) continue;
+    const name = looksLikeDnsName(m[2]);
+    if (!name || name === apex || seen.has(name)) continue;
+    seen.add(name);
+    extras.push(`${m[1].toUpperCase()} ${name}`);
+    if (extras.length >= 8) break;
+  }
+  if (extras.length) {
+    out.push({
+      title: `dnsrecon: ${extras.length} hostname(s) extra(s) en ${apex || "el dominio"}`,
+      severity: "Info",
+      description: `Enumeración DNS estándar (dnsrecon -t std, sin fuerza bruta de nombres) listó hosts distintos del ápice: ${extras.join("; ")}. Inventario de superficie, no vulnerabilidad por sí solo.`,
+      remediation: "Ninguna por sí sola: confirmar con el cliente que esos nombres están en alcance. Retirar del DNS público lo que no deba resolverse desde internet.",
+    });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * WPScan — el playbook ya lo corre si isWordpress (p2-wpscan + plugins).
+ * Parseo de la salida clásica CLI: versión Insecure, bloques [!] Title
+ * con CVE, xmlrpc, usuarios. Sin payloads extra ni enumeración más agresiva.
+ * ------------------------------------------------------------------------ */
+export function wpscanFindings(stdout) {
+  const text = String(stdout || "");
+  const out = [];
+  const seen = new Set();
+  const add = (f) => {
+    const key = String(f.title || "").toLowerCase();
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    out.push(f);
+  };
+
+  const ver = text.match(/WordPress version\s+([\d.]+)\s+identified\s+\(Insecure/i);
+  if (ver) {
+    add({
+      title: `WPScan: WordPress ${ver[1]} (Insecure)`,
+      severity: "Medium",
+      description: `WPScan identificó WordPress ${ver[1]} como Insecure (hay una versión más reciente publicada). No es explotación: es inventario de componente desactualizado (CWE-1035).`,
+      remediation: "Actualizar el core de WordPress al último parche del branch soportado y re-ejecutar wpscan --url … hasta que deje de marcar Insecure.",
+    });
+  }
+
+  for (const block of text.split(/(?=^\[!\] Title:)/m)) {
+    const tm = block.match(/^\[!\] Title:\s*(.+)$/m);
+    if (!tm) continue;
+    const name = tm[1].trim().replace(/\s+/g, " ").slice(0, 90);
+    const cveM = block.match(/CVE-\d{4}-\d+/i);
+    add({
+      title: `WPScan: ${name}`,
+      severity: cveM ? "High" : "Medium",
+      description: `WPScan confirmó «${name}» contra la respuesta real del WordPress.${cveM ? ` Referencia ${cveM[0]}.` : ""}`,
+      remediation: cveM
+        ? `Revisar ${cveM[0]} y aplicar el parche del plugin, tema o core. Re-ejecutar wpscan sobre la misma URL.`
+        : "Actualizar el componente citado y re-ejecutar wpscan hasta que desaparezca el bloque [!] Title.",
+    });
+    if (out.length >= 8) break;
+  }
+
+  if (/xmlrpc\.php/i.test(text) && /xml-rpc|xmlrpc is enabled|found:\s*\n\s*\|\s*\*.*xmlrpc/i.test(text)) {
+    add({
+      title: "WPScan: xmlrpc.php habilitado",
+      severity: "Low",
+      description: "WPScan encontró xmlrpc.php respondiendo. El endpoint permite pingbacks y, si no está restringido, fuerza bruta de credenciales en bloque. No es un exploit: es superficie WordPress conocida (CWE-200).",
+      remediation: "Desactivar xmlrpc.php (filtro, plugin o deny del servidor) si no se usa, o limitar por IP/autenticación. Verificar que GET/POST a /xmlrpc.php deje de ser útil.",
+    });
+  }
+
+  const userIdx = text.search(/user\(s\) identified/i);
+  if (userIdx >= 0) {
+    const tail = text.slice(userIdx);
+    const users = [];
+    const seenU = new Set();
+    for (const m of tail.matchAll(/^\[\+\]\s+([A-Za-z0-9._@-]{2,32})\s*$/gm)) {
+      const u = m[1];
+      if (/^https?:/i.test(u) || seenU.has(u.toLowerCase())) continue;
+      seenU.add(u.toLowerCase());
+      users.push(u);
+      if (users.length >= 8) break;
+    }
+    if (!users.length) {
+      for (const m of tail.matchAll(/^\s*\|\s*\d+\s*\|\s*([A-Za-z0-9._@-]{2,32})\s*\|/gm)) {
+        const u = m[1];
+        if (seenU.has(u.toLowerCase())) continue;
+        seenU.add(u.toLowerCase());
+        users.push(u);
+        if (users.length >= 8) break;
+      }
+    }
+    if (users.length) {
+      add({
+        title: `WPScan: ${users.length} usuario(s) enumerado(s)`,
+        severity: "Info",
+        description: `WPScan enumeró cuentas WordPress visibles: ${users.join(", ")}. Inventario de identidades, no compromiso de contraseña.`,
+        remediation: "Ninguna por sí sola: evitar que author archives / ?author=N filtren logins; 2FA en cuentas privilegiadas.",
+      });
+    }
+  }
+
+  return out.slice(0, 8);
+}

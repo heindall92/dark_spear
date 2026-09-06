@@ -1703,6 +1703,58 @@
       },
     },
     {
+      re: /Transferencia de zona DNS exitosa/i,
+      cwe: ["CWE-200"],
+      owasp: "A05:2021 Security Misconfiguration",
+      mitre: [{ id: "T1590.002", name: "Gather Victim Network Information: DNS", tactic: "Reconnaissance" }],
+      govKey: "misconfig",
+      gdpr: ["Art. 32"],
+      iso: ["A.8.9"],
+      ens: "Alto",
+      nis2: "Art. 21.2.a",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      impact: { confidentiality: "medium", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Un NS autoritativo respondió a AXFR (dnsrecon -t std, sin fuerza bruta). Eso entrega el plano DNS completo: hosts internos, MX, staging. No es un exploit; es una copia del inventario que el servidor no debería servir a internet.",
+        en: "An authoritative NS answered AXFR (dnsrecon -t std, no name brute). That hands over the full DNS plane: internal hosts, MX, staging. Not an exploit; it is a copy of inventory the server should not serve to the internet.",
+      },
+      exec: {
+        es: "Transferencia de zona DNS abierta. Cerrar AXFR a internet (allow-transfer a esclavos o none) y repetir dnsrecon -t std hasta que falle.",
+        en: "Open DNS zone transfer. Close AXFR to the internet (allow-transfer to slaves or none) and re-run dnsrecon -t std until it fails.",
+      },
+      steps: {
+        es: ["Identificar el NS que respondió al AXFR.", "Restringir allow-transfer a las IPs de los esclavos, o none.", "Re-ejecutar dnsrecon -d <dominio> -t std y adjuntar el fallo del AXFR al ticket."],
+        en: ["Identify the NS that answered AXFR.", "Restrict allow-transfer to slave IPs, or none.", "Re-run dnsrecon -d <domain> -t std and attach the AXFR failure to the ticket."],
+      },
+    },
+    {
+      re: /^dnsrecon:/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1590.002", name: "Gather Victim Network Information: DNS", tactic: "Reconnaissance" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Inventario DNS de dnsrecon -t std: registros que el NS ya publica (A/NS/MX/CNAME), sin diccionario de nombres. Contexto de superficie, no un ticket de vulnerabilidad.",
+        en: "DNS inventory from dnsrecon -t std: records the NS already publishes (A/NS/MX/CNAME), no name dictionary. Surface context, not a vulnerability ticket.",
+      },
+      exec: {
+        es: "Hostnames extra vistos por dnsrecon. Revisar alcance; retirar del DNS público lo que no deba resolverse desde internet.",
+        en: "Extra hostnames seen by dnsrecon. Review scope; remove from public DNS what should not resolve from the internet.",
+      },
+      steps: {
+        es: ["Confirmar con el cliente que cada hostname está en alcance.", "Retirar staging/dev/interno que no deba ser público.", "Si hay AXFR abierto, priorizar esa ficha High, no este inventario."],
+        en: ["Confirm with the client that each hostname is in scope.", "Remove staging/dev/internal names that should not be public.", "If AXFR is open, prioritize that High card over this inventory."],
+      },
+    },
+    {
       re: /confirmado como tenant Microsoft 365/i,
       cwe: [],
       owasp: "N/A",
@@ -2310,6 +2362,64 @@
       refs: [{ label: "HackTricks", href: "https://hacktricks.wiki/en/index.html" }],
     },
     dvwaCard({
+      re: /^Nikto:/i,
+      cwe: ["CWE-200"],
+      owasp: "A05:2021 Security Misconfiguration",
+      mitre: [{ id: "T1595.002", name: "Active Scanning: Vulnerability Scanning", tactic: "Reconnaissance" }],
+      kill: "Reconnaissance",
+      impact: { confidentiality: "medium", integrity: "low", availability: "low" },
+      refs: [{ label: "CIRT Nikto", href: "https://cirt.net/Nikto2" }],
+      narrative: {
+        es: "Nikto confirmó este check contra la respuesta real del servicio (ruta, cabecera o firma OSVDB/CVE), no un aviso genérico de «el scanner encontró cosas». Cada línea «+» del informe es un hecho reproducible: la misma URL debe seguir respondiendo igual hasta que se cierre el control. No es un PoC ni una explotación; es inventario de superficie que el playbook ya pagó 120 s en enumerar.",
+        en: "Nikto confirmed this check against the real service response (path, header or OSVDB/CVE signature), not a generic «the scanner found stuff» notice. Each «+» line is a reproducible fact: the same URL should keep answering the same way until the control is closed. It is not a PoC and not exploitation; it is surface inventory the playbook already spent 120 s enumerating.",
+      },
+      exec: {
+        es: "Check de Nikto confirmado en una ruta o firma concreta. Trátalo como superficie a cerrar (retirar, autenticar o parchear), no como un informe genérico de scanner.",
+        en: "Confirmed Nikto check on a concrete path or signature. Treat it as surface to close (remove, authenticate or patch), not as a generic scanner report.",
+      },
+      steps: {
+        es: [
+          "Abrir la ruta exacta del título con el mismo host y confirmar el código HTTP / el listado / el fichero.",
+          "Retirar del document root, autenticar o aplicar el parche de la CVE/OSVDB citada.",
+          "Re-ejecutar nikto sobre esa ruta; el check no se da por cerrado hasta que desaparezca la línea «+».",
+        ],
+        en: [
+          "Open the exact path in the title on the same host and confirm the HTTP status / listing / file.",
+          "Remove it from the document root, authenticate it, or apply the cited CVE/OSVDB patch.",
+          "Re-run nikto on that path; the check is not closed until the «+» line is gone.",
+        ],
+      },
+    }),
+    dvwaCard({
+      re: /^WPScan:/i,
+      cwe: ["CWE-1035"],
+      owasp: "A06:2021 Vulnerable and Outdated Components",
+      mitre: [{ id: "T1595.002", name: "Active Scanning: Vulnerability Scanning", tactic: "Reconnaissance" }],
+      kill: "Reconnaissance",
+      impact: { confidentiality: "medium", integrity: "low", availability: "low" },
+      refs: [{ label: "WPScan", href: "https://wpscan.com/" }],
+      narrative: {
+        es: "WPScan confirmó este check contra el WordPress real (versión Insecure, bloque [!] Title con CVE, xmlrpc o usuarios enumerados). No es un PoC ni un payload extra: es el parseo de la salida que el playbook ya corre cuando detecta WordPress.",
+        en: "WPScan confirmed this check against the real WordPress (Insecure version, [!] Title block with CVE, xmlrpc or enumerated users). Not a PoC and not an extra payload: it is the parse of output the playbook already runs when it detects WordPress.",
+      },
+      exec: {
+        es: "Señal WPScan sobre un componente o superficie concreta. Actualizar o cerrar el control y re-ejecutar wpscan; no inventar un exploit.",
+        en: "WPScan signal on a concrete component or surface. Update or close the control and re-run wpscan; do not invent an exploit.",
+      },
+      steps: {
+        es: [
+          "Leer el título: versión Insecure, CVE de plugin/tema, xmlrpc o usuarios.",
+          "Actualizar core/plugin/tema o desactivar xmlrpc si no se usa.",
+          "Re-ejecutar wpscan --url …; el hallazgo no se cierra hasta que desaparezca la línea.",
+        ],
+        en: [
+          "Read the title: Insecure version, plugin/theme CVE, xmlrpc or users.",
+          "Update core/plugin/theme or disable xmlrpc if unused.",
+          "Re-run wpscan --url …; the finding is not closed until the line is gone.",
+        ],
+      },
+    }),
+    dvwaCard({
       re: /^Nuclei:|CVE-\d{4}-\d+.*template nuclei/i,
       cwe: ["CWE-1035"],
       owasp: "A06:2021 Vulnerable and Outdated Components",
@@ -2598,6 +2708,57 @@
     return L("Informativo: no abre ticket de vulnerabilidad. Sirve de contexto para leer el resto de fichas.", "Informational: it does not open a vulnerability ticket. It is context for reading the other dossiers.");
   }
 
+  function uniqueKeep(list) {
+    var seen = {};
+    var out = [];
+    (list || []).forEach(function (x) {
+      var k = String(x || "").toUpperCase();
+      if (!k || seen[k]) return;
+      seen[k] = 1;
+      out.push(x);
+    });
+    return out;
+  }
+
+  function toolFacts(f) {
+    var title = String((f && f.title) || "");
+    var desc = String((f && f.description) || "");
+    var blob = title + " " + desc;
+    var bits = [];
+    var cves = uniqueKeep(blob.match(/CVE-\d{4}-\d+/gi) || []);
+    if (cves.length) {
+      bits.push(L("CVE citada: " + cves.join(", ") + ". Eso ya es un identificador público; no hace falta inventar un PoC para argumentar el ticket.", "Cited CVE: " + cves.join(", ") + ". That is already a public identifier; you do not need to invent a PoC to argue the ticket."));
+    }
+    var tmpl = desc.match(/Template nuclei «([^»]+)»/i);
+    if (tmpl) {
+      bits.push(L("Template nuclei: " + tmpl[1] + ". El match es contra la respuesta real, no contra un banner de versión.", "Nuclei template: " + tmpl[1] + ". The match is against the real response, not a version banner."));
+    }
+    var param = title.match(/parámetro «([^»]+)»/i);
+    if (param) {
+      bits.push(L("Parámetro confirmado por sqlmap: «" + param[1] + "». Eso ya es explotación de laboratorio, no una sospecha.", "Parameter confirmed by sqlmap: «" + param[1] + "». That is already lab exploitation, not a suspicion."));
+    }
+    var niktoPath = title.match(/^Nikto:\s*(\/\S+)/);
+    if (niktoPath) {
+      bits.push(L("Ruta señalada por Nikto: " + niktoPath[1] + ". Trátala como superficie concreta, no como un aviso genérico de scanner.", "Path flagged by Nikto: " + niktoPath[1] + ". Treat it as concrete surface, not as a generic scanner notice."));
+    }
+    if (/Transferencia de zona DNS/i.test(title)) {
+      bits.push(L("AXFR respondió. Eso ya es una copia del plano DNS, no un rumor de scanner.", "AXFR answered. That is already a copy of the DNS plane, not a scanner rumor."));
+    }
+    var wp = title.match(/^WPScan:\s*(.+)/);
+    if (wp) {
+      bits.push(L("Señal WPScan: " + wp[1] + ". Actualizar el componente y re-ejecutar wpscan; no hace falta un exploit propio.", "WPScan signal: " + wp[1] + ". Update the component and re-run wpscan; you do not need your own exploit."));
+    }
+    var semgrep = title.match(/^Semgrep:\s*(.+)/);
+    if (semgrep) {
+      bits.push(L("Regla/archivo: " + semgrep[1] + ". La causa raíz suele ser que ese fichero era público; el patrón de código es el segundo ticket.", "Rule/file: " + semgrep[1] + ". The root cause is usually that the file was public; the code pattern is the second ticket."));
+    }
+    var tls = title.match(/vulnerable a (.+) \(testssl\.sh\)/i);
+    if (tls) {
+      bits.push(L("Vulnerabilidad TLS nombrada: " + tls[1].trim() + ". testssl.sh ya dijo «VULNERABLE (NOT ok)»; el ticket es parchear y rotar si hubo Heartbleed.", "Named TLS vulnerability: " + tls[1].trim() + ". testssl.sh already said «VULNERABLE (NOT ok)»; the ticket is to patch and rotate if Heartbleed applied."));
+    }
+    return bits.join(" ");
+  }
+
   function attackerPlain(cat, f) {
     var mitre = (cat && cat.mitre && cat.mitre[0]) || null;
     var kill = (cat && cat.kill) || "Exploitation";
@@ -2665,6 +2826,8 @@
         "En " + asset + " el análisis confirmó «" + title + "». " + baseExec + " " + sevDecision(sk),
         "On " + asset + " the scan confirmed «" + title + "». " + baseExec + " " + sevDecision(sk)
       );
+      var facts = toolFacts(f);
+      if (facts) exec += " " + facts;
       narrative = baseNar +
         "\n\n" + L("Qué observó este análisis en el activo", "What this scan saw on the asset") + "\n" +
         (desc || L("El motor no dejó un volcado adicional; el título y la clase del hallazgo son la evidencia.", "The engine left no extra dump; the title and the finding class are the evidence.")) +

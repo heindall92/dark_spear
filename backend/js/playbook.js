@@ -49,6 +49,7 @@ import {
   extractSubfinderHosts,
   httpxArgsForHosts,
   testsslArgs,
+  dnsreconArgs,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -175,24 +176,36 @@ function extractCapturedJwt(rawBlob) {
 }
 
 /**
- * Rutas que gobuster confirmó de verdad (no una lista fija de adivinanzas):
- * requiere el formato "(Status: nnn)" que gobuster imprime por línea
- * cuando no se le pasa -n, así que este patrón no puede confundirse con
- * texto de cualquier otra herramienta mezclado en el mismo blob acumulado.
- * Descarta las que ya cubre API_SURFACE_PROBES (evita hallazgo duplicado
- * por dos caminos distintos para el mismo path) y se protege contra un
- * volcado masivo (un SPA/catch-all que "encuentra" casi todo el wordlist):
- * si hay más de 25 líneas con ese formato, no es señal real, es ruido.
+ * Rutas que gobuster / ffuf / feroxbuster confirmaron de verdad (no una
+ * lista fija de adivinanzas). Cada herramienta imprime un formato distinto;
+ * si el blob mezcla más de 25 paths únicos, es ruido de SPA/catch-all.
  */
-function extractBruteDiscoveredPaths(rawBlob) {
+function normalizeBrutePath(raw) {
+  let p = String(raw || "").trim();
+  if (/^https?:\/\//i.test(p)) {
+    try { p = new URL(p).pathname; } catch { return ""; }
+  }
+  if (!p.startsWith("/")) p = `/${p}`;
+  p = p.replace(/\/+$/, "") || "/";
+  if (p.length > 80 || /[<>"\s]/.test(p)) return "";
+  return p;
+}
+
+export function extractBruteDiscoveredPaths(rawBlob) {
   const seen = new Set();
   const out = [];
-  for (const m of String(rawBlob || "").matchAll(/^(\/\S+)\s+\(Status:\s*\d{3}\)/gm)) {
-    const p = m[1].replace(/\/+$/, "") || "/";
-    if (p === "/" || API_SURFACE_PATHS.has(p) || seen.has(p)) continue;
+  const add = (raw) => {
+    const p = normalizeBrutePath(raw);
+    if (!p || p === "/" || API_SURFACE_PATHS.has(p) || seen.has(p)) return;
     seen.add(p);
     out.push(p);
-  }
+  };
+  const text = String(rawBlob || "");
+  for (const m of text.matchAll(/^(\/\S+)\s+\(Status:\s*\d{3}\)/gm)) add(m[1]);
+  for (const m of text.matchAll(/^(https?:\/\/\S+)\s+\(Status:\s*\d{3}\)/gm)) add(m[1]);
+  for (const m of text.matchAll(/^\s*(?:200|301|302|403)\s+GET\s+\S+\s+\S+\s+\S+\s+(https?:\/\/\S+)/gim)) add(m[1]);
+  for (const m of text.matchAll(/^https?:\/\/[^\s]+\/[A-Za-z0-9._~%-][^\s]*$/gim)) add(m[0]);
+  for (const m of text.matchAll(/^([A-Za-z0-9._~%-]{2,40})\s+\[Status:\s*\d{3}/gm)) add(`/${m[1]}`);
   if (out.length > 25) return [];
   return out.slice(0, 3);
 }
@@ -281,6 +294,9 @@ function domainOsintSteps(root, host) {
     }),
     step("p1-osint-subfinder", "subfinder", subfinderArgs(root), null, {
       desc: "Enumeración pasiva de subdominios (subfinder, sin tocar el target)",
+    }),
+    step("p1-osint-dnsrecon", "dnsrecon", dnsreconArgs(root), null, {
+      desc: "Enumeración DNS estándar (SOA/NS/MX/A + intento de transferencia de zona)",
     }),
     step("p1-osint-httpx", "httpx", (c) => (
       c.subfinderHosts && c.subfinderHosts.length ? httpxArgsForHosts(c.subfinderHosts) : null
@@ -601,9 +617,8 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
     step("p2-nuclei", "nuclei", nucleiCurlArgs(baseUrl, nucleiTagsForContext(ctx)), null, {
       desc: `Nuclei (tags: ${nucleiTagsForContext(ctx).join(",")})`,
     }),
-    // Sin -n: gobuster imprime "(Status: nnn)" por línea, formato que
-    // extractBruteDiscoveredPaths necesita para distinguir un hallazgo real
-    // de cualquier otro texto mezclado en el blob acumulado.
+    // Sin -n: gobuster imprime "(Status: nnn)"; ffuf -s imprime la URL;
+    // ferox -q imprime "200 GET … url". extractBruteDiscoveredPaths une los tres.
     step("p2-gobuster-dir", "gobuster", ["dir", "-u", baseUrl, "-w", WL.common, "-q", "-e", "--timeout", "10s"], null, {
       skipIf: skipHeavy,
     }),
@@ -621,25 +636,23 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
     step("p2-feroxbuster", "feroxbuster", ["-u", baseUrl, "-w", WL.common, "-q", "--no-state", "-t", "10", "--timeout", "10"], null, {
       skipIf: skipHeavy,
     }),
-    // Sigue hasta 3 rutas que gobuster confirmó de verdad (no una lista fija
-    // de adivinanzas): igual que robots-follow en fase 1, args es función
-    // porque el resultado solo se conoce tras correr gobuster en esta fase.
+    // Sigue hasta 3 rutas que gobuster/ffuf/ferox confirmaron de verdad.
     step("p2-brute-follow-1", "curl", (c) => (c.bruteDiscovered?.[0]
       ? ["-s", "-L", "--max-time", "12", "-H", "X-DS-Playbook: p2-brute-follow-1", baseUrl + c.bruteDiscovered[0]]
       : null), null, {
-      desc: "Sigue el 1er hallazgo real de gobuster",
+      desc: "Sigue el 1er path real de enumeración (gobuster/ffuf/ferox)",
       skipIf: (c) => !c.bruteDiscovered?.[0],
     }),
     step("p2-brute-follow-2", "curl", (c) => (c.bruteDiscovered?.[1]
       ? ["-s", "-L", "--max-time", "12", "-H", "X-DS-Playbook: p2-brute-follow-2", baseUrl + c.bruteDiscovered[1]]
       : null), null, {
-      desc: "Sigue el 2º hallazgo real de gobuster",
+      desc: "Sigue el 2º path real de enumeración (gobuster/ffuf/ferox)",
       skipIf: (c) => !c.bruteDiscovered?.[1],
     }),
     step("p2-brute-follow-3", "curl", (c) => (c.bruteDiscovered?.[2]
       ? ["-s", "-L", "--max-time", "12", "-H", "X-DS-Playbook: p2-brute-follow-3", baseUrl + c.bruteDiscovered[2]]
       : null), null, {
-      desc: "Sigue el 3er hallazgo real de gobuster",
+      desc: "Sigue el 3er path real de enumeración (gobuster/ffuf/ferox)",
       skipIf: (c) => !c.bruteDiscovered?.[2],
     }),
     ...[1, 2, 3].map((i) =>
