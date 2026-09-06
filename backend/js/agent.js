@@ -1,8 +1,9 @@
 import { askAgent } from "./ollama.js";
-import { execTool, QuotaExhaustedError, proposeFinding, advancePhase, getStatus } from "./bridge_client.js";
+import { execTool, QuotaExhaustedError, proposeFinding, advancePhase, getStatus, scanSource } from "./bridge_client.js";
 import { checkAndRecordAxis, peekAxisAgent } from "./axis.js";
 import { stepsForPhase, buildPlaybookContext, isMeaningfulToolOutput, parseTarget, scopeRoot, isIpHost } from "./playbook.js";
 import { collectHeuristicFindings, heuristicAssetFromTarget } from "./finding-heuristics.js";
+import { looksLikeSourceCode, semgrepFindings, guessSourceExtension } from "./vuln-kb.js";
 import { addStep, getSteps } from "./db.js";
 
 export const DANGEROUS_TOOLS = new Set([
@@ -37,7 +38,7 @@ export const PHASE_NAMES = {
 };
 
 const PHASE_TOOLS = {
-  1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "dig", "nslookup", "dnsrecon", "ldapsearch",
+  1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
       "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"],
   2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "smbclient", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
@@ -191,6 +192,32 @@ async function recordProposedFinding(db, engagementId, payload, seenFindings, re
       phase,
     }));
     return false;
+  }
+}
+
+/**
+ * Cuando una sonda cualquiera filtra algo que pinta como código fuente
+ * real (looksLikeSourceCode), lo manda a semgrep (análisis estático,
+ * fichero temporal server-side, nunca se guarda) en vez de depender solo
+ * de las firmas regex a mano de JS_CODE_DANGER_SIGNATURES. Nunca revienta
+ * el flujo principal del paso si el escaneo falla — es un enriquecimiento
+ * best-effort, no un paso obligatorio del playbook.
+ */
+async function maybeScanLeakedSource({ db, engagementId, target, phase, spec, sourceText, seenFindings, reportedTitles, onFindingProposed, onStep }) {
+  try {
+    const filename = `${spec.id}${guessSourceExtension(sourceText)}`;
+    const result = await scanSource("semgrep", filename, sourceText, target);
+    if (result.verdict && result.verdict !== "ok") return;
+    const hits = semgrepFindings(result.stdout, filename);
+    for (const hit of hits) {
+      await recordProposedFinding(
+        db, engagementId,
+        { title: hit.title, asset: target, severity: hit.severity, description: hit.description, remediation: hit.remediation },
+        seenFindings, reportedTitles, onFindingProposed, onStep, phase,
+      );
+    }
+  } catch {
+    // best-effort: un fallo de semgrep no debe tumbar el paso que lo disparó
   }
 }
 
@@ -351,6 +378,12 @@ async function runPlaybookSteps({
       if (errOut) outputs.push(errOut);
       stepRecords.push({ id: spec.id, text: [out, errOut].filter(Boolean).join("\n") });
       playbookCtx = buildPlaybookContext(outputs, playbookCtx);
+      if (looksLikeSourceCode(out)) {
+        await maybeScanLeakedSource({
+          db, engagementId, target, phase, spec, sourceText: out,
+          seenFindings, reportedTitles, onFindingProposed, onStep,
+        });
+      }
       if (!hasStepContent(result)) {
         return out;
       }
