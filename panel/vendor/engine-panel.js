@@ -1132,6 +1132,9 @@ async function bootStart() {
         endpoint: OLLAMA_CHAT_ENDPOINT,
         startedAt: Date.now(),
         engagementDir,
+        adDomain: (document.getElementById("ad-domain")?.value || "").trim(),
+        adUser: (document.getElementById("ad-user")?.value || "").trim(),
+        adPassword: document.getElementById("ad-password")?.value || "",
       }));
       if (model) sessionStorage.setItem(MODEL_KEY, model);
       window.location.href = "engagement.html";
@@ -1607,6 +1610,9 @@ async function bootEngagement() {
       phaseState,
       useAi,
       control: agentControl,
+      adDomain: run.adDomain || "",
+      adUser: run.adUser || "",
+      adPassword: run.adPassword || "",
       onStep: (step) => {
         appendStep(step);
         // Notificar en la campana cuando el playbook termina las 4 fases —
