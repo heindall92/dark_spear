@@ -39,7 +39,7 @@ export const PHASE_NAMES = {
 const PHASE_TOOLS = {
   1: ["nmap", "whatweb", "wafw00f", "dig", "nslookup", "dnsrecon", "ldapsearch",
       "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"],
-  2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "smbclient", "GetNPUsers.py",
+  2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "smbclient", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
       "searchsploit", "adscan", "certipy"],
   3: ["sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",

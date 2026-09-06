@@ -42,6 +42,9 @@ import {
   secretValidateCurlSteps,
   extractDangerousCodePatterns,
   codeDangerProbeSteps,
+  nucleiTagsForContext,
+  nucleiCurlArgs,
+  sqlmapCurlArgs,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -576,6 +579,9 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
       desc: "Nikto (máx. 2 min en labs)",
       skipIf: skipHeavy,
     }),
+    step("p2-nuclei", "nuclei", nucleiCurlArgs(baseUrl, nucleiTagsForContext(ctx)), null, {
+      desc: `Nuclei (tags: ${nucleiTagsForContext(ctx).join(",")})`,
+    }),
     // Sin -n: gobuster imprime "(Status: nnn)" por línea, formato que
     // extractBruteDiscoveredPaths necesita para distinguir un hallazgo real
     // de cualquier otro texto mezclado en el blob acumulado.
@@ -651,6 +657,13 @@ function phase3Steps(baseUrl, cookie, ctx) {
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
+    // sqlmap descubre y prueba sus propios formularios (--forms --crawl):
+    // más fiable que intentar capturar el formulario a mano en el motor.
+    // level=1/risk=1 son los valores más conservadores de la herramienta.
+    step("p3-sqlmap-forms", "sqlmap", sqlmapCurlArgs(baseUrl), null, {
+      desc: "sqlmap --forms --crawl (descubrimiento + explotación de inyección SQL)",
+      skipIf: (c) => !c.hasWebStack,
+    }),
     step("p3-curl-config-bak", "curl", ["-s", "-L", "--max-time", "15", "-H", "X-DS-Playbook: p3-curl-config-bak", baseUrl + "/config/config.inc.php.bak"], null, {
       desc: "Contenido de config.inc.php.bak",
       skipIf: (c) => !c.hasWebStack && !c.isDvwa,

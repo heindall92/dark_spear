@@ -2284,6 +2284,44 @@
       refs: [{ label: "HackTricks", href: "https://hacktricks.wiki/en/index.html" }],
     },
     dvwaCard({
+      re: /^Nuclei:|CVE-\d{4}-\d+.*template nuclei/i,
+      cwe: ["CWE-1035"],
+      owasp: "A06:2021 Vulnerable and Outdated Components",
+      mitre: [{ id: "T1190", name: "Exploit Public-Facing Application", tactic: "Initial Access" }],
+      refs: [{ label: "Nuclei templates", href: "https://cloud.projectdiscovery.io/templates" }],
+      narrative: {
+        es: "Match confirmado por un template de nuclei contra la respuesta real del target — no es una sospecha por versión reportada en un banner, es un patrón (endpoint, comportamiento, firma) que la propia plantilla verificó. Severidad y CVE (si aplica) los define el template, no una heurística propia de este motor.",
+        en: "Confirmed match from a nuclei template against the real target response — not a version-banner guess, a pattern the template itself verified. Severity/CVE (if any) come from the template, not a heuristic guess.",
+      },
+      exec: {
+        es: "Hallazgo confirmado por escaneo de plantillas (nuclei) contra el target real. Revisar la CVE/misconfiguración exacta que el template referencia.",
+        en: "Finding confirmed by template-based scanning (nuclei) against the real target. Review the exact CVE/misconfig the template references.",
+      },
+      steps: {
+        es: ["Ver el template-id exacto en la descripción del hallazgo.", "Aplicar el parche/hardening que la CVE o misconfiguración requiere.", "Re-ejecutar solo ese template tras remediar para confirmar cierre."],
+        en: ["Check the exact template-id in the finding description.", "Apply the patch/hardening the CVE or misconfig requires.", "Re-run just that template after remediation to confirm closure."],
+      },
+    }),
+    dvwaCard({
+      re: /confirmada por sqlmap|confirmed by sqlmap/i,
+      cwe: ["CWE-89"],
+      owasp: "A03:2021 Injection",
+      mitre: [{ id: "T1190", name: "Exploit Public-Facing Application", tactic: "Initial Access" }],
+      refs: [{ label: "HackTricks — SQL Injection", href: HT + "sql-injection/index.html" }],
+      narrative: {
+        es: "sqlmap descubrió el formulario por su cuenta (--forms --crawl) y confirmó la inyección con sus propios tests (level=1/risk=1, los más conservadores). A diferencia de una sonda manual con un solo payload, esto cubre varias técnicas de inyección (boolean/time/error-based) antes de reportar.",
+        en: "sqlmap discovered the form on its own (--forms --crawl) and confirmed the injection with its own tests (level=1/risk=1, the most conservative). Unlike a single hand-crafted payload probe, this covers several injection techniques before reporting.",
+      },
+      exec: {
+        es: "Inyección SQL confirmada por herramienta especializada (sqlmap), no por sonda genérica. Máxima prioridad de remediación.",
+        en: "SQL injection confirmed by a specialized tool (sqlmap), not a generic probe. Top remediation priority.",
+      },
+      steps: {
+        es: ["Migrar a consultas parametrizadas en el formulario/parámetro exacto.", "Rol de BD de mínimo privilegio.", "Si se requiere medir alcance real de datos expuestos, repetir con --dump-all solo bajo autorización explícita del cliente."],
+        en: ["Migrate to parameterized queries for the exact form/parameter.", "Least-privilege DB role.", "If real data exposure scope is needed, repeat with --dump-all only under explicit client authorization."],
+      },
+    }),
+    dvwaCard({
       re: /Inyección SQL confirmada en parámetro|SQL injection confirmed in parameter/i,
       cwe: ["CWE-89"],
       owasp: "A03:2021 Injection",
