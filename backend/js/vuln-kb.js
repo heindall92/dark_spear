@@ -1752,8 +1752,8 @@ export const SSRF_IMDS_WEAK_RE = /\bami-id\b|\binstance-id\b|\bsecurity-credenti
  * ------------------------------------------------------------------------ */
 
 export const PERIMETER_PORTS = [
-  "21", "22", "23", "25", "53", "80", "110", "139", "143", "443", "445",
-  "1433", "1521", "2049", "3306", "3389", "5432", "5900", "6379",
+  "21", "22", "23", "25", "53", "80", "88", "110", "139", "143", "389", "443", "445",
+  "636", "1433", "1521", "2049", "3306", "3389", "5432", "5900", "6379",
   "8080", "8443", "9200", "11211", "27017",
 ];
 
@@ -1762,8 +1762,11 @@ export const EXPOSED_SERVICE_RISK = {
   21: { name: "FTP", severity: "Medium" },
   22: { name: "SSH", severity: "Low" },
   23: { name: "Telnet", severity: "High" },
+  88: { name: "Kerberos", severity: "High" },
   139: { name: "NetBIOS", severity: "High" },
+  389: { name: "LDAP", severity: "High" },
   445: { name: "SMB", severity: "High" },
+  636: { name: "LDAPS", severity: "Medium" },
   1433: { name: "MSSQL", severity: "High" },
   1521: { name: "Oracle", severity: "High" },
   2049: { name: "NFS", severity: "High" },
@@ -2937,4 +2940,224 @@ export function wpscanFindings(stdout) {
   }
 
   return out.slice(0, 8);
+}
+
+/* ------------------------------------------------------------------------ *
+ * Active Directory — collection read-only (setup + inventario).
+ * Misma espina que Claude-AD: map before you exploit. Sin coercion, sin
+ * ACL write, sin DCSync. Se enciende solo si el blob/nmap huele a AD/SMB.
+ * ------------------------------------------------------------------------ */
+const AD_PORT_OPEN_RE = /(?:^|\n)\s*(?:88|139|389|445|636)\/tcp\s+open\b/i;
+const AD_BANNER_RE = /microsoft-ds|netbios-ssn|kerberos-sec|Active Directory Domain Services|Domain Controllers?|Samba [23]\.\d|Windows Server (?:201[2-9]|202[2-5])|\[\*\]\s*Windows|\(domain:[A-Za-z0-9._-]+\)|Domain Name:\s*[A-Za-z0-9._-]+|defaultNamingContext:\s*DC=/i;
+
+/** ¿Hay señal de AD/SMB/LDAP en salidas acumuladas o en un flag explícito? */
+export function detectAdSignals(blob, ctx = {}) {
+  if (ctx.isAdTarget === true) return true;
+  const text = String(blob || "");
+  if (!text.trim()) return false;
+  if (AD_PORT_OPEN_RE.test(text)) return true;
+  if (AD_BANNER_RE.test(text)) return true;
+  return false;
+}
+
+export function adCollectionSteps(step, host) {
+  const h = String(host || "").trim();
+  if (!h) return [];
+  const skip = (c) => !c.isAdTarget;
+  return [
+    step("p1-ad-netexec-smb", "netexec", ["smb", h], null, {
+      desc: "Fingerprint SMB/AD sin credenciales (netexec)",
+      skipIf: skip,
+    }),
+    step("p1-ad-enum4linux", "enum4linux", ["-a", h], null, {
+      desc: "Enumeración SMB/NetBIOS/LDAP anónima (enum4linux -a)",
+      skipIf: skip,
+    }),
+    step("p1-ad-smbclient", "smbclient", ["-L", `//${h}`, "-N", "-g"], null, {
+      desc: "Listado de shares SMB con sesión nula (smbclient -N)",
+      skipIf: skip,
+    }),
+    step("p1-ad-ldapsearch-rootdse", "ldapsearch", [
+      "-x", "-H", `ldap://${h}`, "-s", "base", "-b", "",
+      "(objectClass=*)", "namingContexts", "defaultNamingContext", "dnsHostName", "ldapServiceName",
+    ], null, {
+      desc: "rootDSE LDAP anónimo (namingContexts)",
+      skipIf: skip,
+    }),
+  ];
+}
+
+function extractAdDomain(text) {
+  const t = String(text || "");
+  let m = t.match(/\(domain:([A-Za-z0-9._-]+)\)/i)
+    || t.match(/Domain Name:\s*([A-Za-z0-9._-]+)/i)
+    || t.match(/domain(?: name)?:\s*([A-Za-z0-9._-]+)/i)
+    || t.match(/defaultNamingContext:\s*DC=([^,\s]+)/i);
+  if (m) return m[1].replace(/^DC=/i, "");
+  m = t.match(/dnsHostName:\s*(\S+)/i);
+  if (m && m[1].includes(".")) {
+    const parts = m[1].split(".");
+    if (parts.length >= 2) return parts.slice(1).join(".");
+  }
+  return "";
+}
+
+/** Fingerprint netexec/nxc smb sin auth → dominio / signing / OS. */
+export function netexecSmbFindings(stdout) {
+  const text = String(stdout || "");
+  const out = [];
+  const domain = extractAdDomain(text);
+  const hostM = text.match(/\(name:([A-Za-z0-9._-]+)\)/i);
+  const osM = text.match(/\(\*\).*?\(([^)]*Windows[^)]*)\)/i)
+    || text.match(/SMB\s+\S+\s+445\s+\S+\s+\[\*\]\s+(.+?)(?:\s+\(name:)/i);
+  const signingFalse = /signing:\s*(?:False|No)\b/i.test(text);
+  if (domain || hostM) {
+    out.push({
+      title: `AD: dominio ${domain || "desconocido"} detectado vía SMB${hostM ? ` (host ${hostM[1]})` : ""}`,
+      severity: "Info",
+      description: `netexec smb (sin credenciales) fingerprintó Active Directory/SMB${domain ? `: dominio «${domain}»` : ""}${hostM ? `, hostname «${hostM[1]}»` : ""}${osM ? `. Sistema: ${osM[1].trim()}` : ""}. Inventario de superficie interna; no es compromiso.`,
+      remediation: "Confirmar que el host está en el alcance AD firmado. Restringir 445/389/88 al perímetro de administración si no debe ser alcanzable desde la red de escaneo.",
+    });
+  }
+  if (signingFalse) {
+    out.push({
+      title: "AD: SMB signing deshabilitado (relay factible)",
+      severity: "High",
+      description: "netexec reportó SMB signing False/No: un atacante con posición de red puede retransmitir autenticación NTLM (coercion + relay). Hallazgo de postura; no se ha ejecutado relay.",
+      remediation: "Habilitar SMB signing requerido por GPO (Microsoft network server: Digitally sign communications — Always). Re-verificar con netexec smb <host>.",
+    });
+  }
+  return out.slice(0, 4);
+}
+
+/** enum4linux -a: usuarios, shares, dominio, política. */
+export function enum4linuxFindings(stdout) {
+  const text = String(stdout || "");
+  if (!/enum4linux|Getting domain|Session (?:is as|opened)|Sharename|user:\[/i.test(text)
+    && !/\[\*\]\s*Getting/i.test(text)) {
+    // Algunas builds no imprimen "enum4linux" en stdout; aceptar bloques típicos.
+    if (!/Domain Name:|password policy|user:\[|Sharename/i.test(text)) return [];
+  }
+  const out = [];
+  const seen = new Set();
+  const add = (f) => {
+    const k = String(f.title || "").toLowerCase();
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    out.push(f);
+  };
+
+  const domain = extractAdDomain(text);
+  if (domain) {
+    add({
+      title: `AD: dominio ${domain} (enum4linux)`,
+      severity: "Info",
+      description: `enum4linux identificó el dominio/workgroup «${domain}» por enumeración anónima SMB/NetBIOS. Contexto de Active Directory; no implica acceso privilegiado.`,
+      remediation: "Inventario: confirmar alcance. Si la sesión nula no debería existir, endurecer RestrictNullSessAccess / shares.",
+    });
+  }
+
+  const users = [];
+  const seenU = new Set();
+  for (const m of text.matchAll(/user:\[([^\]]+)\]/gi)) {
+    const u = m[1].trim();
+    if (!u || seenU.has(u.toLowerCase())) continue;
+    seenU.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 12) break;
+  }
+  if (users.length) {
+    add({
+      title: `AD: ${users.length} usuario(s) enumerado(s) sin autenticación`,
+      severity: "Medium",
+      description: `enum4linux listó cuentas vía sesión nula/RID cycling: ${users.slice(0, 8).join(", ")}${users.length > 8 ? "…" : ""}. Inventario de identidades (CWE-200); no se probaron contraseñas.`,
+      remediation: "Deshabilitar null sessions y RID cycling anónimo (LocalAccountTokenFilterPolicy / RestrictAnonymous). No exponer SAMR a redes no confiables.",
+    });
+  }
+
+  const shares = [];
+  for (const m of text.matchAll(/^\s*([A-Za-z0-9$._-]{2,40})\s+(?:Disk|IPC|Printer)/gim)) {
+    const s = m[1];
+    if (/^IPC\$?$/i.test(s)) continue;
+    if (!shares.includes(s)) shares.push(s);
+    if (shares.length >= 8) break;
+  }
+  if (shares.length) {
+    add({
+      title: `AD: ${shares.length} share(s) SMB visibles (enum4linux)`,
+      severity: "Info",
+      description: `Shares anunciados: ${shares.join(", ")}. Revisar si alguno es accesible sin auth en el paso smbclient.`,
+      remediation: "Auditar ACLs de cada share; retirar shares administrativos innecesarios del perímetro.",
+    });
+  }
+
+  const minLen = text.match(/Minimum password length:\s*(\d+)/i);
+  if (minLen && Number(minLen[1]) < 8) {
+    add({
+      title: `AD: longitud mínima de contraseña ${minLen[1]} (débil)`,
+      severity: "Medium",
+      description: `enum4linux leyó la política de dominio: Minimum password length = ${minLen[1]} (< 8). Facilita fuerza bruta y password spray (CWE-521).`,
+      remediation: "Subir la política de dominio a ≥ 14 caracteres (o passphrase) y habilitar complejidad / fine-grained PSO donde aplique.",
+    });
+  }
+
+  return out.slice(0, 8);
+}
+
+/** smbclient -L -N: shares listables con sesión nula. */
+export function smbclientNullFindings(stdout) {
+  const text = String(stdout || "");
+  if (/NT_STATUS_ACCESS_DENIED|NT_STATUS_LOGON_FAILURE|session setup failed/i.test(text)
+    && !/Disk|IPC|Sharename/i.test(text)) {
+    return [];
+  }
+  const shares = [];
+  for (const m of text.matchAll(/(?:^|\n)([A-Za-z0-9$._-]{2,40})\|(?:Disk|IPC|Printer)/g)) {
+    const s = m[1];
+    if (/^IPC\$?$/i.test(s)) continue;
+    if (!shares.includes(s)) shares.push(s);
+  }
+  // Formato clásico tabular
+  for (const m of text.matchAll(/^\s*([A-Za-z0-9$._-]{2,40})\s+Disk/gim)) {
+    if (!shares.includes(m[1])) shares.push(m[1]);
+  }
+  if (!shares.length) return [];
+  const sensitive = shares.filter((s) => /^(ADMIN\$|C\$|IPC\$|SYSVOL|NETLOGON)$/i.test(s) || /backup|secret|finance|hr/i.test(s));
+  return [{
+    title: `AD: sesión nula SMB lista ${shares.length} share(s)`,
+    severity: sensitive.length ? "High" : "Medium",
+    description: `smbclient -L //-N listó shares sin credenciales: ${shares.slice(0, 10).join(", ")}${shares.length > 10 ? "…" : ""}.${sensitive.length ? ` Incluye superficie sensible: ${sensitive.join(", ")}.` : ""} Sesión nula = inventario gratis para un atacante (CWE-200).`,
+    remediation: "Restringir null session (RestrictNullSessAccess=1, shares en NullSessionShares vacía). Exigir autenticación para listar shares.",
+  }];
+}
+
+/** ldapsearch rootDSE anónimo. */
+export function ldapAnonymousFindings(stdout) {
+  const text = String(stdout || "");
+  if (/Can'?t contact|Invalid credentials|Strong\(er\) authentication|operations error/i.test(text)
+    && !/namingContexts|defaultNamingContext|dnsHostName/i.test(text)) {
+    return [];
+  }
+  const contexts = [];
+  for (const m of text.matchAll(/namingContexts:\s*(\S+)/gi)) {
+    if (!contexts.includes(m[1])) contexts.push(m[1]);
+  }
+  const def = (text.match(/defaultNamingContext:\s*(\S+)/i) || [])[1];
+  const host = (text.match(/dnsHostName:\s*(\S+)/i) || [])[1];
+  if (!contexts.length && !def && !host) return [];
+  return [{
+    title: "AD: bind LDAP anónimo a rootDSE",
+    severity: "Medium",
+    description: `ldapsearch -x obtuvo rootDSE sin credenciales${def ? `: defaultNamingContext «${def}»` : ""}${host ? `, dnsHostName «${host}»` : ""}${contexts.length ? `. namingContexts: ${contexts.slice(0, 4).join("; ")}` : ""}. Discovery de directorio sin auth (CWE-200); no se enumeró el árbol completo.`,
+    remediation: "Deshabilitar binds anónimos LDAP (dsHeuristics / LDAP server policies) o restringir rootDSE a redes de administración. Preferir LDAPS con autenticación.",
+  }];
+}
+
+/** Consolida parsers AD sobre el texto de cada sonda. */
+export function adCollectionFindings(kind, stdout) {
+  if (kind === "netexec") return netexecSmbFindings(stdout);
+  if (kind === "enum4linux") return enum4linuxFindings(stdout);
+  if (kind === "smbclient") return smbclientNullFindings(stdout);
+  if (kind === "ldap") return ldapAnonymousFindings(stdout);
+  return [];
 }

@@ -1755,6 +1755,84 @@
       },
     },
     {
+      re: /^AD:\s*SMB signing deshabilitado/i,
+      cwe: ["CWE-294"],
+      owasp: "A07:2021 Identification and Authentication Failures",
+      mitre: [{ id: "T1557.001", name: "Adversary-in-the-Middle: LLMNR/NBT-NS Poisoning and SMB Relay", tactic: "Credential Access" }],
+      govKey: "misconfig",
+      gdpr: ["Art. 32"],
+      iso: ["A.8.9"],
+      ens: "Alto",
+      nis2: "Art. 21.2.i",
+      kill: "Credential Access",
+      cvssVector: "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N",
+      impact: { confidentiality: "high", integrity: "high", availability: "none" },
+      narrative: {
+        es: "SMB signing desactivado permite retransmitir autenticación NTLM si un atacante puede forzar una conexión (coercion). Dark Spear solo fingerprintó la postura con netexec; no ejecutó relay. Control ENS op.exp.2 / NIS2 acceso.",
+        en: "Disabled SMB signing allows NTLM auth relay if an attacker can coerce a connection. Dark Spear only fingerprinted posture with netexec; it did not run relay.",
+      },
+      exec: {
+        es: "SMB signing off. Activar signing requerido por GPO y re-verificar con netexec smb.",
+        en: "SMB signing off. Require signing via GPO and re-check with netexec smb.",
+      },
+      steps: {
+        es: ["GPO: Microsoft network server — Digitally sign communications (always).", "Re-ejecutar netexec smb <host> hasta ver signing:True.", "Revisar hosts que aún firmen opcional."],
+        en: ["GPO: Microsoft network server — Digitally sign communications (always).", "Re-run netexec smb <host> until signing:True.", "Review hosts still on optional signing."],
+      },
+    },
+    {
+      re: /^AD:\s*sesión nula SMB|^AD:\s*\d+ share\(s\) SMB|^AD:\s*bind LDAP|^AD:\s*\d+ usuario\(s\) enumerado/i,
+      cwe: ["CWE-200"],
+      owasp: "A01:2021 Broken Access Control",
+      mitre: [{ id: "T1135", name: "Network Share Discovery", tactic: "Discovery" }],
+      govKey: "misconfig",
+      gdpr: ["Art. 32"],
+      iso: ["A.8.9", "A.5.15"],
+      ens: "Medio",
+      nis2: "Art. 21.2.i",
+      kill: "Discovery",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
+      impact: { confidentiality: "medium", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Enumeración Active Directory sin credenciales (sesión nula SMB, rootDSE LDAP o RID cycling). Es la fase Collection de un assessment AD: inventario, no explotación. Claude-AD / PTES: map before you exploit.",
+        en: "Unauthenticated Active Directory enumeration (SMB null session, LDAP rootDSE or RID cycling). AD assessment Collection phase: inventory, not exploitation.",
+      },
+      exec: {
+        es: "Superficie AD enumerable sin auth. Cerrar null sessions / binds anónimos y limitar 445/389 al admin.",
+        en: "AD surface enumerable without auth. Close null sessions / anonymous binds and limit 445/389 to admin nets.",
+      },
+      steps: {
+        es: ["Restringir RestrictNullSessAccess y NullSessionShares.", "Deshabilitar bind LDAP anónimo.", "Re-ejecutar smbclient -N / ldapsearch -x hasta que fallen."],
+        en: ["Tighten RestrictNullSessAccess and NullSessionShares.", "Disable anonymous LDAP bind.", "Re-run smbclient -N / ldapsearch -x until they fail."],
+      },
+    },
+    {
+      re: /^AD:/i,
+      cwe: [],
+      owasp: "N/A",
+      mitre: [{ id: "T1087.002", name: "Account Discovery: Domain Account", tactic: "Discovery" }],
+      govKey: "context",
+      gdpr: [],
+      iso: ["A.5.9"],
+      ens: "Informativo",
+      nis2: "N/A",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:N",
+      impact: { confidentiality: "none", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Inventario Active Directory de la fase Collection (fingerprint SMB/LDAP, dominio, política). Contexto para Attack Graph y MITRE; no abre ticket de explotación por sí solo.",
+        en: "Active Directory inventory from the Collection phase (SMB/LDAP fingerprint, domain, policy). Context for Attack Graph and MITRE; not an exploitation ticket by itself.",
+      },
+      exec: {
+        es: "Señal AD de inventario. Confirmar alcance del dominio y cerrar exposición innecesaria de 445/389/88.",
+        en: "AD inventory signal. Confirm domain scope and close unnecessary 445/389/88 exposure.",
+      },
+      steps: {
+        es: ["Confirmar con el cliente el dominio y DCs en alcance.", "Si 445/389 están en Internet, priorizar el hallazgo de perímetro.", "Collection completa antes de paths de ataque."],
+        en: ["Confirm domain and DCs in scope with the client.", "If 445/389 face the internet, prioritize the perimeter finding.", "Finish collection before attack paths."],
+      },
+    },
+    {
       re: /confirmado como tenant Microsoft 365/i,
       cwe: [],
       owasp: "N/A",
@@ -2743,6 +2821,10 @@
     }
     if (/Transferencia de zona DNS/i.test(title)) {
       bits.push(L("AXFR respondió. Eso ya es una copia del plano DNS, no un rumor de scanner.", "AXFR answered. That is already a copy of the DNS plane, not a scanner rumor."));
+    }
+    var ad = title.match(/^AD:\s*(.+)/);
+    if (ad) {
+      bits.push(L("Señal Active Directory: " + ad[1] + ". Collection read-only; no es explotación ni relay.", "Active Directory signal: " + ad[1] + ". Read-only collection; not exploitation or relay."));
     }
     var wp = title.match(/^WPScan:\s*(.+)/);
     if (wp) {

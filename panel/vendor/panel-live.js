@@ -3061,6 +3061,145 @@
     }
   }
 
+  function adClassifyFindings(findings) {
+    var domain = [];
+    var users = [];
+    var shares = [];
+    var posture = [];
+    var other = [];
+    (findings || []).forEach(function (f) {
+      var t = String((f && f.title) || "");
+      if (!/^AD:/i.test(t) && !/SMB \(TCP\/445\)|LDAP \(TCP\/389\)|Kerberos \(TCP\/88\)|LDAPS \(TCP\/636\)/i.test(t)) return;
+      if (/SMB signing|bind LDAP|longitud mínima/i.test(t)) posture.push(f);
+      else if (/usuario/i.test(t)) users.push(f);
+      else if (/share|sesión nula/i.test(t)) shares.push(f);
+      else if (/dominio|fingerprint|enum4linux\)/i.test(t) || /TCP\/(445|389|88|636)/.test(t)) domain.push(f);
+      else if (/^AD:/i.test(t)) other.push(f);
+    });
+    return { domain: domain, users: users, shares: shares, posture: posture, other: other };
+  }
+
+  function bootAdAssessment() {
+    var body = document.getElementById("panel-ad-body");
+    if (!body) return;
+    var hub = null;
+
+    function renderAd(findings, meta, scanId) {
+      var target = (meta && meta.target) || "—";
+      var groups = adClassifyFindings(findings);
+      var all = groups.domain.concat(groups.users, groups.shares, groups.posture, groups.other);
+      var crumb = document.getElementById("ad-detail-crumb");
+      var scanBtn = document.getElementById("ad-btn-scan-target");
+      var mitreBtn = document.getElementById("ad-btn-mitre");
+      if (crumb) crumb.textContent = target;
+      if (scanBtn) scanBtn.href = scanEngagementUrl(meta);
+      if (mitreBtn) {
+        mitreBtn.href = scanId
+          ? "mitre.html?scan=" + encodeURIComponent(scanId)
+          : "mitre.html?scan=program";
+      }
+
+      function adTable(items) {
+        if (!items.length) {
+          return '<div class="ds-empty py-lg"><div class="ds-empty-icon"><i data-lucide="network" class="icon-lg"></i></div>' +
+            '<p class="font-body-md text-on-surface-variant">' + escapeHtml(tKey("ad.noSignal",
+              "Sin señales AD en este análisis. El playbook solo corre collection si nmap ve 445/389/88/636 o un banner SMB/AD.")) +
+            "</p></div>";
+        }
+        return '<div class="overflow-x-auto"><table class="w-full text-left border-collapse">' +
+          '<thead><tr class="border-b border-outline-variant/40 font-label-md text-label-md text-on-surface-variant uppercase">' +
+          "<th class=\"py-sm pr-md\">" + escapeHtml(tKey("ad.colFinding", "Hallazgo")) + "</th>" +
+          "<th class=\"py-sm pr-md\">" + escapeHtml(tKey("ad.colAsset", "Activo")) + "</th>" +
+          "<th class=\"py-sm\">" + escapeHtml(tKey("ad.colSeverity", "Severidad")) + "</th></tr></thead><tbody>" +
+          items.slice(0, 20).map(function (f) {
+            var sp = sevPill(f.severity);
+            return "<tr class=\"border-b border-outline-variant/20 font-body-sm\">" +
+              "<td class=\"py-sm pr-md text-on-surface\">" + escapeHtml(f.title || "—") + "</td>" +
+              "<td class=\"py-sm pr-md font-mono-md text-secondary\">" + escapeHtml(f.asset || "—") + "</td>" +
+              "<td class=\"py-sm\"><span class=\"" + sp.badge + " px-sm py-xs rounded font-label-md text-label-md\">" +
+              escapeHtml(sp.label) + "</span></td></tr>";
+          }).join("") +
+          "</tbody></table></div>";
+      }
+
+      body.innerHTML =
+        '<div class="glass-panel rounded-xl p-md flex items-start gap-sm border-l-4 border-l-primary">' +
+        '<i data-lucide="info" class="icon-md text-primary shrink-0 mt-xs"></i>' +
+        '<p class="font-body-sm text-on-surface">' + escapeHtml(tKey("ad.banner",
+          "Hallazgos de la fase Collection (read-only). No incluyen Kerberoast, relay ni abuso de ACL: eso requiere credenciales y aprobación humana.")) +
+        "</p></div>" +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">' +
+        osintKpiCard("network", tKey("ad.kpiDomain", "Dominio / fingerprint"), groups.domain.length, groups.domain.length ? "warn" : "neutral") +
+        osintKpiCard("users", tKey("ad.kpiUsers", "Usuarios enumerados"), groups.users.length, groups.users.length ? "warn" : "neutral") +
+        osintKpiCard("folder-open", tKey("ad.kpiShares", "Shares / null session"), groups.shares.length, groups.shares.length ? "warn" : "neutral") +
+        osintKpiCard("shield-alert", tKey("ad.kpiPosture", "Postura (signing / LDAP)"), groups.posture.length, groups.posture.length ? "warn" : "neutral") +
+        "</div>" +
+        '<div class="acrylic-panel rounded-xl p-lg ambient-shadow flex flex-col gap-md">' +
+        '<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">' +
+        '<i data-lucide="network" class="icon-md text-primary"></i>' +
+        '<span>' + escapeHtml(tKey("ad.tableTitle", "Inventario Active Directory")) + "</span></h3>" +
+        adTable(all) +
+        "</div>";
+
+      if (window.lucide) lucide.createIcons();
+      if (window.DarkSpearI18n && DarkSpearI18n.apply) DarkSpearI18n.apply(body);
+    }
+
+    var exportBtn = document.getElementById("ad-btn-export");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", function () {
+        if (!window.DarkSpearExport || !DarkSpearExport.run) return;
+        var findings = ((hub && hub.state.findings) || []).filter(function (f) {
+          return /^AD:/i.test(String(f.title || ""));
+        });
+        DarkSpearExport.run("json", {
+          findings: findings,
+          target: hub && hub.state.meta ? hub.state.meta.target : undefined,
+          scope: hub && hub.state.meta ? hub.state.meta.scope : undefined,
+          engagementId: hub && hub.state.scanId,
+        });
+      });
+    }
+    var refreshBtn = document.getElementById("ad-btn-refresh");
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", function () {
+        if (hub && hub.reloadDetail) hub.reloadDetail();
+      });
+    }
+
+    if (document.getElementById("ad-list-view")) {
+      hub = bootScanHub({
+        pageFile: "ad-assessment.html",
+        listViewId: "ad-list-view",
+        detailViewId: "ad-detail-view",
+        cardsId: "ad-scans-cards",
+        emptyId: "ad-scans-empty",
+        searchId: "ad-list-search",
+        titleId: "ad-detail-title",
+        subtitleId: "ad-detail-subtitle",
+        ctaLabel: tKey("ad.open", "Ver Active Directory"),
+        ctaIcon: "network",
+        scanTargetCta: true,
+        onDetail: function (findings, meta, id) {
+          var subEl = document.getElementById("ad-detail-subtitle");
+          if (subEl) {
+            var n = adClassifyFindings(findings);
+            var count = n.domain.length + n.users.length + n.shares.length + n.posture.length + n.other.length;
+            subEl.textContent =
+              "Target: " + (meta.target || id) +
+              (meta.scope ? " · Scope: " + meta.scope : "") +
+              " · " + count + " " + tKey("scan.findings", "hallazgos") + " AD";
+          }
+          renderAd(findings, meta, id);
+        },
+      });
+    } else {
+      Promise.all([loadFindings(), fetchStatus()]).then(function (res) {
+        renderAd(res[0], { target: res[1].target, scope: res[1].scope }, null);
+      });
+    }
+  }
+
   function bootNotifications() {
     var list = document.getElementById("notif-list");
     if (!list) return;
@@ -4395,6 +4534,10 @@
     var q = scanId ? ("?scan=" + encodeURIComponent(scanId)) : "";
     var cards = [
       ["osint.html" + q, "binoculars", tKey("nav.osint", "OSINT"), osintN + " " + tKey("comp.osintHits", "hallazgos OSINT")],
+      ["ad-assessment.html" + q, "network", tKey("nav.ad", "Active Directory"), (function () {
+        var a = adClassifyFindings(findings);
+        return a.domain.length + a.users.length + a.shares.length + a.posture.length + a.other.length;
+      })() + " " + tKey("comp.adHits", "señales AD")],
       ["attack-graph.html" + q, "share-2", tKey("nav.graph", "Grafo de ataque"), Object.keys(assets).length + " " + tKey("comp.graphAssets", "activos en el grafo")],
       ["mitre.html" + q, "swords", tKey("nav.mitre", "MITRE ATT&CK"), mitreN + " " + tKey("comp.mitreTechs", "técnicas MITRE")],
       ["kill-chain.html" + q, "git-branch", tKey("nav.killchain", "Kill Chain"), tKey("comp.openChapter", "Abrir capítulo")],
@@ -4403,7 +4546,7 @@
       '<i data-lucide="link" class="text-primary"></i>' +
       escapeHtml(tKey("comp.connectedTitle", "Superficies conectadas")) + "</h3>" +
       '<p class="font-body-sm text-on-surface-variant mb-md">' +
-      escapeHtml(tKey("comp.connectedLead", "OSINT, grafo de ataque y ATT&CK del mismo análisis.")) + "</p>" +
+      escapeHtml(tKey("comp.connectedLead", "OSINT, Active Directory, grafo de ataque y ATT&CK del mismo análisis.")) + "</p>" +
       '<div class="grid grid-cols-1 sm:grid-cols-2 gap-sm">' +
       cards.map(function (c) {
         return '<a class="flex items-center gap-sm p-sm rounded-lg border border-outline-variant/40 hover:bg-surface-container-low transition-colors" href="' +
@@ -5193,6 +5336,7 @@
     else if (p === "assets.html") bootAssets();
     else if (p === "reporting.html") bootReporting();
     else if (p === "osint.html") bootOsint();
+    else if (p === "ad-assessment.html") bootAdAssessment();
     else if (p === "attack-graph.html") bootAttackGraph();
     else if (p === "notifications.html") bootNotifications();
     else if (p === "mitre.html") bootMitre();

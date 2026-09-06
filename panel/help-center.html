@@ -197,6 +197,7 @@
 <i data-lucide="binoculars"></i>
 <span data-i18n="nav.osint">OSINT</span>
 </a>
+<a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="ad-assessment.html"><i data-lucide="network"></i><span data-i18n="nav.ad">Active Directory</span></a>
 <a class="flex items-center gap-md px-md py-sm rounded-lg text-on-surface-variant hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="attack-graph.html">
 <i data-lucide="share-2"></i>
 <span data-i18n="nav.graph">Grafo de ataque</span>
@@ -382,7 +383,7 @@
 </article>
 
 <article id="topic-graph-mitre" class="rounded-xl bg-surface-container-lowest/80 backdrop-blur-xl border border-outline-variant/30 p-lg">
-<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm mb-md"><i data-lucide="share-2" class="text-primary-container"></i><span>Grafo de ataque, MITRE, OSINT y Activos</span></h3>
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm mb-md"><i data-lucide="share-2" class="text-primary-container"></i><span>Grafo de ataque, MITRE, OSINT, Active Directory y Activos</span></h3>
 <div class="flex flex-col gap-sm">
 <details class="help-item group rounded-lg border border-outline-variant/30" open="">
 <summary class="cursor-pointer list-none flex items-center justify-between gap-sm p-md font-body-lg text-[15px] font-semibold text-on-surface"><span class="help-q">¿Qué muestra el Grafo de ataque?</span><i data-lucide="chevron-down" class="icon-sm text-on-surface-variant transition-transform group-open:rotate-180"></i></summary>
@@ -401,6 +402,10 @@
 <details class="help-item group rounded-lg border border-outline-variant/30">
 <summary class="cursor-pointer list-none flex items-center justify-between gap-sm p-md font-body-lg text-[15px] font-semibold text-on-surface"><span class="help-q">¿De dónde salen los datos de OSINT?</span><i data-lucide="chevron-down" class="icon-sm text-on-surface-variant transition-transform group-open:rotate-180"></i></summary>
 <div class="help-a px-md pb-md font-body-sm text-body-sm text-on-surface-variant leading-relaxed">OSINT no hace una consulta aparte a fuentes externas: clasifica los hallazgos ya confirmados del engagement en credenciales filtradas, subdominios/infraestructura expuesta, repositorios públicos y menciones, según su contenido. Es la superficie de exposición real detectada, no un motor de búsqueda en abierto independiente.</div>
+</details>
+<details class="group border border-outline-variant/40 rounded-lg overflow-hidden">
+<summary class="cursor-pointer list-none flex items-center justify-between gap-sm p-md font-body-lg text-[15px] font-semibold text-on-surface"><span class="help-q">¿Qué es Active Directory en Dark Spear?</span><i data-lucide="chevron-down" class="icon-sm text-on-surface-variant transition-transform group-open:rotate-180"></i></summary>
+<div class="help-a px-md pb-md font-body-sm text-body-sm text-on-surface-variant leading-relaxed">Si nmap ve SMB/LDAP/Kerberos (445/389/88/636), el playbook corre <strong>collection read-only</strong> (netexec, enum4linux, smbclient -N, ldapsearch rootDSE) y emite hallazgos <code>AD:</code>. No ejecuta relay, Kerberoast ni abuso de ACL: eso requiere credenciales y aprobación humana. Se abre desde <a class="text-primary hover:underline" href="ad-assessment.html">Active Directory</a> en la sidebar (bajo OSINT).</div>
 </details>
 <details class="help-item group rounded-lg border border-outline-variant/30">
 <summary class="cursor-pointer list-none flex items-center justify-between gap-sm p-md font-body-lg text-[15px] font-semibold text-on-surface"><span class="help-q">¿Cuándo pasa un activo de "Escaneando" a completado?</span><i data-lucide="chevron-down" class="icon-sm text-on-surface-variant transition-transform group-open:rotate-180"></i></summary>
