@@ -52,6 +52,7 @@ import {
   dnsreconArgs,
   detectAdSignals,
   adCollectionSteps,
+  detectDomainController,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -229,6 +230,7 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
     // "wp-content", etc. como entradas de diccionario — no como detección real.
     isWordpress: /\/wp-content\/|\/wp-includes\/|wp-login\.php|powered by wordpress|generator" content="wordpress/.test(blob) || ctx.isWordpress === true,
     isAdTarget: ctx.isAdTarget === true || detectAdSignals(rawBlob, ctx),
+    isDomainController: ctx.isDomainController === true || detectDomainController(rawBlob, ctx),
     isApache: /apache/.test(blob),
     hasLogin: /login\.php|name="password"|sign in|type="password"/.test(blob) || ctx.hasLogin === true,
     hasWebStack: /apache|nginx|php|dvwa|wordpress|http\//.test(blob) || ctx.hasWebStack === true,

@@ -1755,6 +1755,32 @@
       },
     },
     {
+      re: /^AD:\s*Domain Controller probable/i,
+      cwe: ["CWE-284"],
+      owasp: "A01:2021 Broken Access Control",
+      mitre: [{ id: "T1018", name: "Remote System Discovery", tactic: "Discovery" }],
+      govKey: "misconfig",
+      gdpr: ["Art. 32"],
+      iso: ["A.8.9", "A.8.20"],
+      ens: "Alto",
+      nis2: "Art. 21.2.i",
+      kill: "Reconnaissance",
+      cvssVector: "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:N/A:N",
+      impact: { confidentiality: "high", integrity: "none", availability: "none" },
+      narrative: {
+        es: "Firma de Domain Controller: Kerberos (88) + LDAP (389) abiertos a la vez (mindmap Orange Cyberdefense). El DC es el corazón del dominio; no debería ser alcanzable desde redes no confiables. Dark Spear solo fingerprinta; no abre WinRM ni Kerberoast.",
+        en: "Domain Controller fingerprint: Kerberos (88) + LDAP (389) open together (Orange Cyberdefense mindmap). The DC is the domain core; it should not be reachable from untrusted nets. Dark Spear only fingerprints; it does not open WinRM or Kerberoast.",
+      },
+      exec: {
+        es: "DC probable expuesto. Restringir 88/389/445/135/5985 al admin net. Para Kerberos en el lab: IP+FQDN en /etc/hosts del operador.",
+        en: "Likely DC exposed. Restrict 88/389/445/135/5985 to the admin net. For Kerberos in the lab: put IP+FQDN in the operator /etc/hosts.",
+      },
+      steps: {
+        es: ["Confirmar con nmap -p 88,389,445,135,3268,5985.", "Mover el DC fuera de Internet / segmentar.", "Si el assessment AD continúa, resolver el dominio en /etc/hosts antes de herramientas Kerberos."],
+        en: ["Confirm with nmap -p 88,389,445,135,3268,5985.", "Keep the DC off the internet / segment it.", "If the AD assessment continues, resolve the domain in /etc/hosts before Kerberos tools."],
+      },
+    },
+    {
       re: /^AD:\s*SMB signing deshabilitado/i,
       cwe: ["CWE-294"],
       owasp: "A07:2021 Identification and Authentication Failures",

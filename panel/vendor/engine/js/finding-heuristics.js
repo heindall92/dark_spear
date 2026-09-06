@@ -53,9 +53,12 @@ import {
   dnsreconFindings,
   wpscanFindings,
   netexecSmbFindings,
+  netexecSharesFindings,
+  rpcclientUsersFindings,
   enum4linuxFindings,
   smbclientNullFindings,
   ldapAnonymousFindings,
+  domainControllerFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
   extractAsnFromBlob,
@@ -141,8 +144,10 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-osint-dnsrecon") push("dnsrecon", text);
     if (r.id === "p2-wpscan" || r.id === "p2-wpscan-plugins") push("wpscan", text);
     if (r.id === "p1-ad-netexec-smb") push("ad-netexec", text);
+    if (r.id === "p1-ad-netexec-guest-shares") push("ad-netexec-shares", text);
     if (r.id === "p1-ad-enum4linux") push("ad-enum4linux", text);
     if (r.id === "p1-ad-smbclient") push("ad-smbclient", text);
+    if (r.id === "p1-ad-rpcclient-users") push("ad-rpcclient", text);
     if (r.id === "p1-ad-ldapsearch-rootdse") push("ad-ldap", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
@@ -372,6 +377,11 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const periText = probeIdx["nmap-perimeter"];
   if (periText) {
     perimeterFirewallFindings(periText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+    domainControllerFindings(periText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+  }
+  const nmapSvText = (stepRecords.find((r) => r && r.id === "p1-nmap-sV") || {}).text;
+  if (nmapSvText && domainControllerFindings(periText || "").length === 0) {
+    domainControllerFindings(nmapSvText).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
   }
 
   if (probeIdx["host-ufw"] != null || probeIdx["host-iptables"] != null || probeIdx["host-nft"] != null) {
@@ -658,6 +668,11 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     netexecSmbFindings(adNetexec).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
+  const adShares = probeIdx["ad-netexec-shares"];
+  if (adShares) {
+    netexecSharesFindings(adShares).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
   const adEnum = probeIdx["ad-enum4linux"];
   if (adEnum) {
     enum4linuxFindings(adEnum).forEach((f) =>
@@ -666,6 +681,11 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adSmb = probeIdx["ad-smbclient"];
   if (adSmb) {
     smbclientNullFindings(adSmb).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adRpc = probeIdx["ad-rpcclient"];
+  if (adRpc) {
+    rpcclientUsersFindings(adRpc).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
   const adLdap = probeIdx["ad-ldap"];

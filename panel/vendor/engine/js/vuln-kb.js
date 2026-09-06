@@ -1752,8 +1752,9 @@ export const SSRF_IMDS_WEAK_RE = /\bami-id\b|\binstance-id\b|\bsecurity-credenti
  * ------------------------------------------------------------------------ */
 
 export const PERIMETER_PORTS = [
-  "21", "22", "23", "25", "53", "80", "88", "110", "139", "143", "389", "443", "445",
-  "636", "1433", "1521", "2049", "3306", "3389", "5432", "5900", "6379",
+  "21", "22", "23", "25", "53", "80", "88", "110", "135", "139", "143", "389", "443", "445",
+  "636", "3268", "3269", "3389", "5432", "5900", "5985", "5986", "6379",
+  "1433", "1521", "2049", "3306",
   "8080", "8443", "9200", "11211", "27017",
 ];
 
@@ -1762,11 +1763,15 @@ export const EXPOSED_SERVICE_RISK = {
   21: { name: "FTP", severity: "Medium" },
   22: { name: "SSH", severity: "Low" },
   23: { name: "Telnet", severity: "High" },
+  53: { name: "DNS", severity: "Medium" },
   88: { name: "Kerberos", severity: "High" },
+  135: { name: "MSRPC", severity: "High" },
   139: { name: "NetBIOS", severity: "High" },
   389: { name: "LDAP", severity: "High" },
   445: { name: "SMB", severity: "High" },
   636: { name: "LDAPS", severity: "Medium" },
+  3268: { name: "Global Catalog", severity: "High" },
+  3269: { name: "Global Catalog SSL", severity: "Medium" },
   1433: { name: "MSSQL", severity: "High" },
   1521: { name: "Oracle", severity: "High" },
   2049: { name: "NFS", severity: "High" },
@@ -1774,6 +1779,8 @@ export const EXPOSED_SERVICE_RISK = {
   3389: { name: "RDP", severity: "High" },
   5432: { name: "PostgreSQL", severity: "High" },
   5900: { name: "VNC", severity: "High" },
+  5985: { name: "WinRM", severity: "High" },
+  5986: { name: "WinRM HTTPS", severity: "High" },
   6379: { name: "Redis", severity: "High" },
   9200: { name: "Elasticsearch", severity: "High" },
   11211: { name: "Memcached", severity: "High" },
@@ -2944,20 +2951,78 @@ export function wpscanFindings(stdout) {
 
 /* ------------------------------------------------------------------------ *
  * Active Directory — collection read-only (setup + inventario).
- * Misma espina que Claude-AD: map before you exploit. Sin coercion, sin
- * ACL write, sin DCSync. Se enciende solo si el blob/nmap huele a AD/SMB.
+ * Espina: Orange Cyberdefense AD mindmap + Claude-AD — map before you
+ * exploit. Fase 1 = null sessions. Sin spray, sin AS-REP hash dump, sin
+ * WinRM shell automático. Se enciende si el blob/nmap huele a AD/SMB/DC.
+ * Ref: https://orange-cyberdefense.github.io/ocd-mindmaps/
  * ------------------------------------------------------------------------ */
-const AD_PORT_OPEN_RE = /(?:^|\n)\s*(?:88|139|389|445|636)\/tcp\s+open\b/i;
-const AD_BANNER_RE = /microsoft-ds|netbios-ssn|kerberos-sec|Active Directory Domain Services|Domain Controllers?|Samba [23]\.\d|Windows Server (?:201[2-9]|202[2-5])|\[\*\]\s*Windows|\(domain:[A-Za-z0-9._-]+\)|Domain Name:\s*[A-Za-z0-9._-]+|defaultNamingContext:\s*DC=/i;
 
-/** ¿Hay señal de AD/SMB/LDAP en salidas acumuladas o en un flag explícito? */
+/** Puertos que delatan infraestructura AD (mindmap OCD / DC fingerprint). */
+export const AD_SURFACE_PORTS = [53, 88, 135, 139, 389, 445, 636, 3268, 3269, 5985, 5986, 3389];
+
+const AD_PORT_OPEN_RE = /(?:^|\n)\s*(?:53|88|135|139|389|445|636|3268|3269|5985|5986)\/tcp\s+open\b/i;
+const AD_BANNER_RE = /microsoft-ds|netbios-ssn|kerberos-sec|msrpc|Active Directory Domain Services|Domain Controllers?|Samba [23]\.\d|Windows Server (?:201[2-9]|202[2-5])|\[\*\]\s*Windows|\(domain:[A-Za-z0-9._-]+\)|Domain Name:\s*[A-Za-z0-9._-]+|defaultNamingContext:\s*DC=/i;
+
+/**
+ * Clasifica superficie AD a partir de la tabla nmap.
+ * 88+389 abiertos juntos ≈ Domain Controller (confianza alta).
+ */
+export function classifyAdSurface(nmapText) {
+  const { open } = parseNmapPortTable(nmapText);
+  const ports = new Set(open.map((r) => r.port));
+  const adPorts = AD_SURFACE_PORTS.filter((p) => ports.has(p));
+  const likelyDc = ports.has(88) && ports.has(389);
+  return {
+    adPorts,
+    likelyDc,
+    hasKerberos: ports.has(88),
+    hasLdap: ports.has(389) || ports.has(636),
+    hasSmb: ports.has(445) || ports.has(139),
+    hasRpc: ports.has(135),
+    hasGc: ports.has(3268) || ports.has(3269),
+    hasDns: ports.has(53),
+    hasWinrm: ports.has(5985) || ports.has(5986),
+    hasRdp: ports.has(3389),
+  };
+}
+
+/** ¿Hay señal de AD/SMB/LDAP/DC en salidas acumuladas o en un flag explícito? */
 export function detectAdSignals(blob, ctx = {}) {
-  if (ctx.isAdTarget === true) return true;
+  if (ctx.isAdTarget === true || ctx.isDomainController === true) return true;
   const text = String(blob || "");
   if (!text.trim()) return false;
   if (AD_PORT_OPEN_RE.test(text)) return true;
   if (AD_BANNER_RE.test(text)) return true;
+  const c = classifyAdSurface(text);
+  if (c.likelyDc || (c.hasSmb && c.hasLdap)) return true;
   return false;
+}
+
+export function detectDomainController(blob, ctx = {}) {
+  if (ctx.isDomainController === true) return true;
+  return classifyAdSurface(blob).likelyDc;
+}
+
+/**
+ * Hallazgo cuando nmap muestra firma de Domain Controller (88+389).
+ * Un DC expuesto a la red de escaneo es superficie crítica de perímetro.
+ */
+export function domainControllerFindings(nmapText) {
+  const c = classifyAdSurface(nmapText);
+  if (!c.likelyDc) return [];
+  const extras = [];
+  if (c.hasSmb) extras.push("445/SMB");
+  if (c.hasRpc) extras.push("135/RPC");
+  if (c.hasGc) extras.push("3268/GC");
+  if (c.hasDns) extras.push("53/DNS");
+  if (c.hasWinrm) extras.push("5985/WinRM");
+  if (c.hasRdp) extras.push("3389/RDP");
+  return [{
+    title: "AD: Domain Controller probable (Kerberos 88 + LDAP 389)",
+    severity: "High",
+    description: `nmap ve TCP/88 (Kerberos) y TCP/389 (LDAP) abiertos a la vez: firma clásica de Domain Controller${extras.length ? `. También abiertos: ${extras.join(", ")}` : ""}. Un DC no debería ser alcanzable desde redes no confiables (CWE-284). Collection read-only sigue; no se ha atacado Kerberos ni WinRM.`,
+    remediation: "Restringir 88/389/445/135/3268/5985 al segmento de administración o VPN. Si el engagement AD continúa, resolver el FQDN del dominio en /etc/hosts del operador (Kerberos falla sin nombre). Re-escanear desde fuera del admin net hasta que 88+389 queden filtered/closed.",
+  }];
 }
 
 export function adCollectionSteps(step, host) {
@@ -2966,7 +3031,11 @@ export function adCollectionSteps(step, host) {
   const skip = (c) => !c.isAdTarget;
   return [
     step("p1-ad-netexec-smb", "netexec", ["smb", h], null, {
-      desc: "Fingerprint SMB/AD sin credenciales (netexec)",
+      desc: "Fingerprint SMB/AD sin credenciales (netexec) — mindmap OCD Fase 1",
+      skipIf: skip,
+    }),
+    step("p1-ad-netexec-guest-shares", "netexec", ["smb", h, "-u", "guest", "-p", "", "--shares"], null, {
+      desc: "Shares SMB con guest/null (netexec) — null session",
       skipIf: skip,
     }),
     step("p1-ad-enum4linux", "enum4linux", ["-a", h], null, {
@@ -2977,11 +3046,15 @@ export function adCollectionSteps(step, host) {
       desc: "Listado de shares SMB con sesión nula (smbclient -N)",
       skipIf: skip,
     }),
+    step("p1-ad-rpcclient-users", "rpcclient", ["-U", "", "-N", h, "-c", "enumdomusers"], null, {
+      desc: "RID/users vía RPC null session (rpcclient enumdomusers)",
+      skipIf: skip,
+    }),
     step("p1-ad-ldapsearch-rootdse", "ldapsearch", [
       "-x", "-H", `ldap://${h}`, "-s", "base", "-b", "",
       "(objectClass=*)", "namingContexts", "defaultNamingContext", "dnsHostName", "ldapServiceName",
     ], null, {
-      desc: "rootDSE LDAP anónimo (namingContexts)",
+      desc: "rootDSE LDAP anónimo (null bind)",
       skipIf: skip,
     }),
   ];
@@ -2992,8 +3065,14 @@ function extractAdDomain(text) {
   let m = t.match(/\(domain:([A-Za-z0-9._-]+)\)/i)
     || t.match(/Domain Name:\s*([A-Za-z0-9._-]+)/i)
     || t.match(/domain(?: name)?:\s*([A-Za-z0-9._-]+)/i)
-    || t.match(/defaultNamingContext:\s*DC=([^,\s]+)/i);
-  if (m) return m[1].replace(/^DC=/i, "");
+    || t.match(/defaultNamingContext:\s*((?:DC=[^,=\s]+,?)+)/i);
+  if (m) {
+    let d = m[1];
+    if (/^DC=/i.test(d)) {
+      d = d.split(",").map((p) => p.replace(/^DC=/i, "")).filter(Boolean).join(".");
+    }
+    return d.replace(/^DC=/i, "");
+  }
   m = t.match(/dnsHostName:\s*(\S+)/i);
   if (m && m[1].includes(".")) {
     const parts = m[1].split(".");
@@ -3001,6 +3080,8 @@ function extractAdDomain(text) {
   }
   return "";
 }
+
+const HOSTS_TIP = "Cuando el engagement pase a Kerberos, añadir `IP FQDN dominio` en /etc/hosts del operador: Kerberos falla si no resuelve el nombre.";
 
 /** Fingerprint netexec/nxc smb sin auth → dominio / signing / OS. */
 export function netexecSmbFindings(stdout) {
@@ -3015,19 +3096,81 @@ export function netexecSmbFindings(stdout) {
     out.push({
       title: `AD: dominio ${domain || "desconocido"} detectado vía SMB${hostM ? ` (host ${hostM[1]})` : ""}`,
       severity: "Info",
-      description: `netexec smb (sin credenciales) fingerprintó Active Directory/SMB${domain ? `: dominio «${domain}»` : ""}${hostM ? `, hostname «${hostM[1]}»` : ""}${osM ? `. Sistema: ${osM[1].trim()}` : ""}. Inventario de superficie interna; no es compromiso.`,
-      remediation: "Confirmar que el host está en el alcance AD firmado. Restringir 445/389/88 al perímetro de administración si no debe ser alcanzable desde la red de escaneo.",
+      description: `netexec smb (sin credenciales) fingerprintó Active Directory/SMB${domain ? `: dominio «${domain}»` : ""}${hostM ? `, hostname «${hostM[1]}»` : ""}${osM ? `. Sistema: ${osM[1].trim()}` : ""}. Inventario de superficie interna; no es compromiso. ${HOSTS_TIP}`,
+      remediation: `Confirmar alcance AD firmado. Restringir 445/389/88 al perímetro de administración. ${HOSTS_TIP}`,
     });
   }
   if (signingFalse) {
     out.push({
       title: "AD: SMB signing deshabilitado (relay factible)",
       severity: "High",
-      description: "netexec reportó SMB signing False/No: un atacante con posición de red puede retransmitir autenticación NTLM (coercion + relay). Hallazgo de postura; no se ha ejecutado relay.",
+      description: "netexec reportó SMB signing False/No: un atacante con posición de red puede retransmitir autenticación NTLM (coercion + relay). Hallazgo de postura; no se ha ejecutado relay (mindmap OCD / Claude-AD).",
       remediation: "Habilitar SMB signing requerido por GPO (Microsoft network server: Digitally sign communications — Always). Re-verificar con netexec smb <host>.",
     });
   }
   return out.slice(0, 4);
+}
+
+/** netexec --shares (guest/null): permisos READ/WRITE por share. */
+export function netexecSharesFindings(stdout) {
+  const text = String(stdout || "");
+  if (!/Enumerating shares|SHARE\s+Permissions|READ|WRITE/i.test(text)
+    && !/\bADMIN\$\b|\bC\$\b|\bSYSVOL\b/i.test(text)) {
+    return [];
+  }
+  const shares = [];
+  const writeShares = [];
+  for (const line of text.split("\n")) {
+    const m = line.match(/\b([A-Za-z0-9$._-]{2,40})\s+(READ(?:\s*,\s*WRITE)?|WRITE(?:\s*,\s*READ)?|NO ACCESS)/i)
+      || line.match(/\b([A-Za-z0-9$._-]{2,40})\s+.*\b(READ|WRITE)\b/i);
+    if (!m) continue;
+    const name = m[1];
+    if (/^IPC\$?$/i.test(name) || /^(SHARE|Permissions|Remark)$/i.test(name)) continue;
+    if (!shares.includes(name)) shares.push(name);
+    if (/WRITE/i.test(m[2] || line)) writeShares.push(name);
+  }
+  if (!shares.length && !writeShares.length) return [];
+  const out = [];
+  if (writeShares.some((s) => /^C\$/i.test(s))) {
+    out.push({
+      title: "AD: escritura en C$ vía SMB (privilegio admin-equivalente)",
+      severity: "Critical",
+      description: "netexec --shares vio WRITE sobre C$: indicador fuerte de privilegios de administrador local / Backup Operators / equivalente. No se abrió shell WinRM ni se escribió nada.",
+      remediation: "Rotar la cuenta usada (guest/null no debería tener WRITE en C$). Auditar membresía de Administrators / Backup Operators. Restringir C$ a admins.",
+    });
+  }
+  out.push({
+    title: `AD: ${shares.length || writeShares.length} share(s) vía guest/null (netexec)`,
+    severity: writeShares.length ? "High" : "Medium",
+    description: `netexec smb -u guest -p '' --shares listó: ${(shares.length ? shares : writeShares).slice(0, 10).join(", ")}${writeShares.length ? `. Con WRITE: ${writeShares.join(", ")}` : ""}. Fase 1 null session (mindmap OCD); no password spray.`,
+    remediation: "Cerrar null/guest sessions; auditar ACLs de SYSVOL/NETLOGON/shares de datos.",
+  });
+  return out.slice(0, 4);
+}
+
+/** rpcclient enumdomusers (null). */
+export function rpcclientUsersFindings(stdout) {
+  const text = String(stdout || "");
+  if (/NT_STATUS_ACCESS_DENIED|NT_STATUS_LOGON_FAILURE|Cannot connect/i.test(text)
+    && !/user:\[/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/user:\[([^\]]+)\]/gi)) {
+    const u = m[1].trim();
+    if (!u || seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 20) break;
+  }
+  if (!users.length) return [];
+  return [{
+    title: `AD: ${users.length} usuario(s) vía RPC null (rpcclient)`,
+    severity: "Medium",
+    description: `rpcclient -U "" -N -c enumdomusers volcó cuentas: ${users.slice(0, 10).join(", ")}${users.length > 10 ? "…" : ""}. Inventario RID sin password (CWE-200). No se lanzó AS-REP ni spray (Fase 2+ requiere lista + aprobación).`,
+    remediation: "Deshabilitar null session / SAMR anónimo hacia redes no confiables. La lista alimenta assessment autorizado, no fuerza bruta automática.",
+  }];
 }
 
 /** enum4linux -a: usuarios, shares, dominio, política. */
