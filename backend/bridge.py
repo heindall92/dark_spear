@@ -90,8 +90,8 @@ PHASE_NAMES = {
 # phase's OWN additions, not the running total.
 PHASE_TOOLS = {
     1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
-        "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"},
-    2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "smbclient", "GetNPUsers.py",
+        "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"},
+    2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
         "searchsploit", "adscan", "certipy"},
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
@@ -112,6 +112,35 @@ SCAN_SOURCE_TOOLS: dict[str, list[str]] = {
 MAX_SCAN_SOURCE_BYTES = 500_000
 
 MAX_PHASE = max(PHASE_TOOLS)
+
+# Kali packages Impacket as impacket-* wrappers; upstream docs / our playbook
+# still name the scripts GetNPUsers.py, lookupsid.py, etc. Resolve either.
+TOOL_PATH_ALIASES: dict[str, tuple[str, ...]] = {
+    "GetNPUsers.py": ("GetNPUsers.py", "impacket-GetNPUsers"),
+    "GetUserSPNs.py": ("GetUserSPNs.py", "impacket-GetUserSPNs"),
+    "lookupsid.py": ("lookupsid.py", "impacket-lookupsid"),
+    "samrdump.py": ("samrdump.py", "impacket-samrdump"),
+    "secretsdump.py": ("secretsdump.py", "impacket-secretsdump"),
+    "wmiexec.py": ("wmiexec.py", "impacket-wmiexec"),
+    "psexec.py": ("psexec.py", "impacket-psexec"),
+    "smbexec.py": ("smbexec.py", "impacket-smbexec"),
+    "atexec.py": ("atexec.py", "impacket-atexec"),
+    "dcomexec.py": ("dcomexec.py", "impacket-dcomexec"),
+    "ntlmrelayx.py": ("ntlmrelayx.py", "impacket-ntlmrelayx"),
+    "mssqlclient.py": ("mssqlclient.py", "impacket-mssqlclient"),
+    "ticketer.py": ("ticketer.py", "impacket-ticketer"),
+    "getST.py": ("getST.py", "impacket-getST"),
+    "raiseChild.py": ("raiseChild.py", "impacket-raiseChild"),
+    "certipy": ("certipy", "certipy-ad"),
+}
+
+
+def resolve_tool_path(tool: str) -> str | None:
+    for name in TOOL_PATH_ALIASES.get(tool, (tool,)):
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
 
 
 def cumulative_phase_tools(phase: int) -> set[str]:
@@ -1140,7 +1169,8 @@ class Handler(BaseHTTPRequestHandler):
             # so the audit log records exactly what executed (not just the
             # whitelisted name) — closes the gap between "name we approved"
             # and "binary that actually ran" if PATH ever resolves oddly.
-            resolved = shutil.which(tool)
+            # Also maps GetNPUsers.py → impacket-GetNPUsers on Kali.
+            resolved = resolve_tool_path(tool)
             if resolved is None:
                 result = {"stdout": "", "stderr": f"{tool}: command not found",
                           "exit_code": -1, "verdict": "error"}
@@ -1565,7 +1595,7 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "content_too_large"})
                 return
 
-            resolved = shutil.which(tool)
+            resolved = resolve_tool_path(tool)
             if resolved is None:
                 result = {"stdout": "", "stderr": f"{tool}: command not found",
                           "exit_code": -1, "verdict": "error"}

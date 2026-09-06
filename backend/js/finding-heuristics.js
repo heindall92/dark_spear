@@ -58,6 +58,12 @@ import {
   enum4linuxFindings,
   smbclientNullFindings,
   ldapAnonymousFindings,
+  getNpUsersFindings,
+  getUserSpnsFindings,
+  certipyFindFindings,
+  netexecWinrmFindings,
+  lookupsidFindings,
+  samrdumpFindings,
   domainControllerFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
@@ -149,6 +155,12 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-ad-smbclient") push("ad-smbclient", text);
     if (r.id === "p1-ad-rpcclient-users") push("ad-rpcclient", text);
     if (r.id === "p1-ad-ldapsearch-rootdse") push("ad-ldap", text);
+    if (/^p2-ad-asrep-/.test(r.id)) push("ad-asrep", text);
+    if (r.id === "p2-ad-getuserspns") push("ad-spn", text);
+    if (r.id === "p2-ad-certipy-find") push("ad-certipy", text);
+    if (r.id === "p3-ad-netexec-winrm") push("ad-winrm", text);
+    if (r.id === "p2-ad-lookupsid-null" || r.id === "p2-ad-lookupsid-auth") push("ad-lookupsid", text);
+    if (r.id === "p2-ad-samrdump-null" || r.id === "p2-ad-samrdump-auth") push("ad-samrdump", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -691,6 +703,36 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adLdap = probeIdx["ad-ldap"];
   if (adLdap) {
     ldapAnonymousFindings(adLdap).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adAsrep = probeIdx["ad-asrep"];
+  if (adAsrep) {
+    getNpUsersFindings(adAsrep).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adSpn = probeIdx["ad-spn"];
+  if (adSpn) {
+    getUserSpnsFindings(adSpn).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adCertipy = probeIdx["ad-certipy"];
+  if (adCertipy) {
+    certipyFindFindings(adCertipy).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adWinrm = probeIdx["ad-winrm"];
+  if (adWinrm) {
+    netexecWinrmFindings(adWinrm).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adLookupsid = probeIdx["ad-lookupsid"];
+  if (adLookupsid) {
+    lookupsidFindings(adLookupsid).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adSamrdump = probeIdx["ad-samrdump"];
+  if (adSamrdump) {
+    samrdumpFindings(adSamrdump).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

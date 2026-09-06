@@ -3060,7 +3060,110 @@ export function adCollectionSteps(step, host) {
   ];
 }
 
-function extractAdDomain(text) {
+/**
+ * Fase 2 AD (auth-aware, sin crack ni shell):
+ * - GetNPUsers -no-pass sobre usuarios de Fase 1 (AS-REP roastable).
+ * - GetUserSPNs sin -request + certipy find -vulnerable si hay creds opcionales.
+ */
+export function adAuthCollectionSteps(step, host) {
+  const h = String(host || "").trim();
+  if (!h) return [];
+  const domainOf = (c) => String(c.adDomain || "").trim();
+  const skipAd = (c) => !c.isAdTarget;
+  const skipCreds = (c) => !c.isAdTarget || !String(c.adUser || "").trim()
+    || !String(c.adPassword || "").length || !domainOf(c);
+  const steps = [];
+
+  steps.push(
+    step("p2-ad-lookupsid-null", "lookupsid.py", ["-no-pass", `@${h}`, "2000"], null, {
+      desc: "RID cycling null (lookupsid -no-pass) — inventario SID",
+      skipIf: skipAd,
+    }),
+    step("p2-ad-samrdump-null", "samrdump.py", ["-no-pass", `@${h}`], null, {
+      desc: "Listado SAMR null (samrdump -no-pass)",
+      skipIf: skipAd,
+    }),
+    step("p2-ad-lookupsid-auth", "lookupsid.py", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      return [`${d}/${user}:${pass}@${h}`, "2000"];
+    }, null, {
+      desc: "RID cycling autenticado (lookupsid)",
+      skipIf: skipCreds,
+    }),
+    step("p2-ad-samrdump-auth", "samrdump.py", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      return [`${d}/${user}:${pass}@${h}`];
+    }, null, {
+      desc: "Listado SAMR autenticado (samrdump)",
+      skipIf: skipCreds,
+    }),
+  );
+
+  for (let i = 0; i < 5; i += 1) {
+    const idx = i;
+    steps.push(step(`p2-ad-asrep-${idx + 1}`, "GetNPUsers.py", (c) => {
+      const u = (c.adUsers || [])[idx];
+      const d = domainOf(c);
+      if (!u || !d) return null;
+      return [`${d}/${u}`, "-no-pass", "-dc-ip", h];
+    }, null, {
+      desc: `AS-REP check usuario #${idx + 1} (GetNPUsers -no-pass)`,
+      skipIf: (c) => skipAd(c) || !(c.adUsers || [])[idx] || !domainOf(c),
+    }));
+  }
+
+  steps.push(
+    step("p2-ad-getuserspns", "GetUserSPNs.py", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      return [`${d}/${user}:${pass}`, "-dc-ip", h];
+    }, null, {
+      desc: "Listado SPN Kerberoastable (GetUserSPNs sin -request)",
+      skipIf: skipCreds,
+    }),
+    step("p2-ad-certipy-find", "certipy", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!d || !user || !pass) return null;
+      return ["find", "-u", `${user}@${d}`, "-p", pass, "-dc-ip", h, "-vulnerable", "-stdout"];
+    }, null, {
+      desc: "ADCS templates vulnerables (certipy find -vulnerable -stdout)",
+      skipIf: skipCreds,
+    }),
+  );
+  return steps;
+}
+
+/** Fase 3: validez WinRM con creds — netexec winrm, sin evil-winrm / shell. */
+export function adWinrmCheckSteps(step, host) {
+  const h = String(host || "").trim();
+  if (!h) return [];
+  return [
+    step("p3-ad-netexec-winrm", "netexec", (c) => {
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["winrm", h, "-u", user, "-p", pass];
+      const d = String(c.adDomain || "").trim();
+      if (d) args.push("-d", d);
+      return args;
+    }, null, {
+      desc: "Comprobar autenticación WinRM (netexec; sin shell)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+  ];
+}
+
+export function extractAdDomain(text) {
   const t = String(text || "");
   let m = t.match(/\(domain:([A-Za-z0-9._-]+)\)/i)
     || t.match(/Domain Name:\s*([A-Za-z0-9._-]+)/i)
@@ -3079,6 +3182,30 @@ function extractAdDomain(text) {
     if (parts.length >= 2) return parts.slice(1).join(".");
   }
   return "";
+}
+
+/** Usuarios RID/SAM de salidas enum4linux / rpcclient / lookupsid / samrdump. */
+export function extractAdUsersFromBlob(text) {
+  const users = [];
+  const seen = new Set();
+  const push = (u) => {
+    const name = String(u || "").trim();
+    if (!name || seen.has(name.toLowerCase())) return;
+    if (/^\$|krbtgt$/i.test(name)) return;
+    if (/^(SidType|Domain|Builtin|Account|User)$/i.test(name)) return;
+    seen.add(name.toLowerCase());
+    users.push(name);
+  };
+  for (const m of String(text || "").matchAll(/user:\[([^\]]+)\]/gi)) push(m[1]);
+  // lookupsid: 500: CORP\Administrator (SidTypeUser)
+  for (const m of String(text || "").matchAll(/\d+:\s*(?:[^\\\s]+\\)?([A-Za-z0-9._$-]+)\s*\(SidTypeUser\)/gi)) {
+    push(m[1]);
+  }
+  // samrdump lines "User : name" / "Found user: name"
+  for (const m of String(text || "").matchAll(/(?:^|\n)\s*User\s*[:=]\s*([A-Za-z0-9._$-]+)/gi)) {
+    push(m[1]);
+  }
+  return users.slice(0, 40);
 }
 
 const HOSTS_TIP = "Cuando el engagement pase a Kerberos, añadir `IP FQDN dominio` en /etc/hosts del operador: Kerberos falla si no resuelve el nombre.";
@@ -3168,8 +3295,8 @@ export function rpcclientUsersFindings(stdout) {
   return [{
     title: `AD: ${users.length} usuario(s) vía RPC null (rpcclient)`,
     severity: "Medium",
-    description: `rpcclient -U "" -N -c enumdomusers volcó cuentas: ${users.slice(0, 10).join(", ")}${users.length > 10 ? "…" : ""}. Inventario RID sin password (CWE-200). No se lanzó AS-REP ni spray (Fase 2+ requiere lista + aprobación).`,
-    remediation: "Deshabilitar null session / SAMR anónimo hacia redes no confiables. La lista alimenta assessment autorizado, no fuerza bruta automática.",
+    description: `rpcclient -U "" -N -c enumdomusers volcó cuentas: ${users.slice(0, 10).join(", ")}${users.length > 10 ? "…" : ""}. Inventario RID sin password (CWE-200). La lista alimenta GetNPUsers -no-pass en Fase 2; no hay password spray automático.`,
+    remediation: "Deshabilitar null session / SAMR anónimo hacia redes no confiables. Auditar cuentas con UF_DONT_REQUIRE_PREAUTH tras el paso AS-REP.",
   }];
 }
 
@@ -3296,11 +3423,196 @@ export function ldapAnonymousFindings(stdout) {
   }];
 }
 
+/** GetNPUsers.py -no-pass: cuentas AS-REP roastables (UF_DONT_REQUIRE_PREAUTH). */
+export function getNpUsersFindings(stdout) {
+  const text = String(stdout || "");
+  if (/KDC_ERR_C_PRINCIPAL_UNKNOWN|Cannot contact|Kerberos SessionError/i.test(text)
+    && !/\$krb5asrep\$/i.test(text)) {
+    return [];
+  }
+  const roastable = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/\$krb5asrep\$\d+\$([^@:\s]+)@([^\s:]+)/gi)) {
+    const u = `${m[1]}@${m[2]}`;
+    if (seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    roastable.push(u);
+  }
+  if (!roastable.length) return [];
+  return [{
+    title: `AD: ${roastable.length} cuenta(s) AS-REP roastable(s)`,
+    severity: "High",
+    description: `GetNPUsers.py -no-pass obtuvo AS-REP sin preauth para: ${roastable.slice(0, 8).join(", ")}${roastable.length > 8 ? "…" : ""}. UF_DONT_REQUIRE_PREAUTH (CWE-308). No se ha crackeado el hash (sin hashcat/john automático).`,
+    remediation: "Quitar DONT_REQ_PREAUTH de esas cuentas (PowerShell: Set-ADAccountControl -DoesNotRequirePreAuth $false). Preferir autenticación con preauth obligatorio en el dominio.",
+  }];
+}
+
+/** GetUserSPNs.py sin -request: inventario de SPNs (Kerberoastables). */
+export function getUserSpnsFindings(stdout) {
+  const text = String(stdout || "");
+  if (/KDC_ERR|Logon failure|STATUS_LOGON_FAILURE|Cannot authenticate/i.test(text)
+    && !/ServicePrincipalName|SPN/i.test(text)) {
+    return [];
+  }
+  const spns = [];
+  const seen = new Set();
+  for (const line of text.split("\n")) {
+    const m = line.match(/\b((?:HTTP|MSSQL|CIFS|HOST|LDAP|SMTP|DNS|TERMSRV|WSMan)\/[^\s]+)\b/i)
+      || line.match(/\b([A-Za-z0-9_-]+\/[A-Za-z0-9._-]+\.[A-Za-z0-9._-]+)\b/);
+    if (!m) continue;
+    const spn = m[1];
+    if (seen.has(spn.toLowerCase())) continue;
+    seen.add(spn.toLowerCase());
+    spns.push(spn);
+    if (spns.length >= 20) break;
+  }
+  if (!spns.length && !/ServicePrincipalName/i.test(text)) return [];
+  if (!spns.length) {
+    return [{
+      title: "AD: cuentas con SPN detectadas (GetUserSPNs)",
+      severity: "Medium",
+      description: "GetUserSPNs listó cuentas con ServicePrincipalName (superficie Kerberoast). No se solicitó TGS (-request omitido): inventario, no hash dump.",
+      remediation: "Revisar cuentas de servicio: contraseñas largas (≥25), gMSA donde sea posible, rotación. Minimizar SPNs innecesarios.",
+    }];
+  }
+  return [{
+    title: `AD: ${spns.length} SPN(s) Kerberoastable(s) enumerado(s)`,
+    severity: "Medium",
+    description: `GetUserSPNs (sin -request) listó SPNs: ${spns.slice(0, 10).join(", ")}${spns.length > 10 ? "…" : ""}. Superficie de Kerberoasting (T1558.003); no se ha pedido ticket ni crackeado.`,
+    remediation: "gMSA / contraseñas de servicio largas; auditar SPNs huérfanos; no reutilizar passwords de cuentas de máquina en cuentas de usuario.",
+  }];
+}
+
+/** certipy find -vulnerable -stdout. */
+export function certipyFindFindings(stdout) {
+  const text = String(stdout || "");
+  if (/Invalid credentials|KDC_ERR|LDAP.*failed|unauthorized/i.test(text)
+    && !/Vulnerable|ESC\d|Certificate Template/i.test(text)) {
+    return [];
+  }
+  const templates = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:Template Name|Certificate Template)\s*[:=]\s*([A-Za-z0-9._-]+)/gi)) {
+    const t = m[1];
+    if (seen.has(t.toLowerCase())) continue;
+    seen.add(t.toLowerCase());
+    templates.push(t);
+  }
+  const esc = [...text.matchAll(/\bESC([1-9]|1[0-5])\b/gi)].map((m) => `ESC${m[1]}`);
+  const escUnique = [...new Set(esc.map((e) => e.toUpperCase()))];
+  if (!templates.length && !escUnique.length && !/Vulnerable Certificate Template/i.test(text)) {
+    return [];
+  }
+  const sev = escUnique.some((e) => /^ESC(1|4|8)$/i.test(e)) ? "Critical" : "High";
+  return [{
+    title: `AD: ADCS template(s) vulnerable(s)${escUnique.length ? ` (${escUnique.slice(0, 4).join(", ")})` : ""}`,
+    severity: sev,
+    description: `certipy find -vulnerable -stdout detectó plantillas/ESC${templates.length ? `: ${templates.slice(0, 6).join(", ")}` : ""}${escUnique.length ? `. Clases: ${escUnique.join(", ")}` : ""}. Solo enumeración read-only; no se solicitó certificado abusivo.`,
+    remediation: "Auditar plantillas (enrollee supplies subject, overly permissive enrollment). Remediaciones ESC1–ESC8 según SpecterOps / Certified Pre-Owned. Restringir Enrollment Agents y managers.",
+  }];
+}
+
+/** netexec winrm: validez de creds, sin shell. */
+export function netexecWinrmFindings(stdout) {
+  const text = String(stdout || "");
+  if (/\[-\].*(?:LOGIN|STATUS_LOGON|Authentication)/i.test(text)
+    && !/\[\+\].*WINRM|Pwn3d/i.test(text)) {
+    return [];
+  }
+  const pwn = /Pwn3d!/i.test(text);
+  const ok = /WINRM\s+\S+.*\[\+\]/i.test(text) || pwn;
+  if (!ok) return [];
+  const userM = text.match(/\[\+\]\s*([^\s:]+)\\([^\s:]+):/i)
+    || text.match(/\[\+\]\s*([^\\\s]+)\\([^:\s]+)/i);
+  const who = userM ? `${userM[1]}\\${userM[2]}` : "cuenta suministrada";
+  return [{
+    title: pwn
+      ? `AD: WinRM autenticado con privilegio admin (${who})`
+      : `AD: autenticación WinRM válida (${who})`,
+    severity: pwn ? "Critical" : "High",
+    description: `netexec winrm confirmó credenciales válidas para ${who}${pwn ? " con indicador Pwn3d! (admin/local admin equivalente)" : ""}. Solo check de auth; no se abrió evil-winrm ni se ejecutó comando remoto.`,
+    remediation: "Rotar la cuenta si no debía tener WinRM; restringir 5985/5986 al admin net; Privileged Access Workstations; MFA donde aplique.",
+  }];
+}
+
+/** lookupsid.py: RID cycling → cuentas SidTypeUser. */
+export function lookupsidFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_ACCESS_DENIED|STATUS_LOGON_FAILURE|Connection error|SMB SessionError/i.test(text)
+    && !/SidTypeUser/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(\d+):\s*(?:([^\\\s]+)\\)?([A-Za-z0-9._$-]+)\s*\(SidTypeUser\)/gi)) {
+    const rid = m[1];
+    const u = m[3];
+    const key = u.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    users.push(rid === "500" || /^Administrator$/i.test(u) ? `${u} (RID ${rid})` : u);
+    if (users.length >= 25) break;
+  }
+  if (!users.length) return [];
+  return [{
+    title: `AD: ${users.length} cuenta(s) vía RID cycling (lookupsid)`,
+    severity: "Medium",
+    description: `lookupsid enumeró SidTypeUser: ${users.slice(0, 12).join(", ")}${users.length > 12 ? "…" : ""}. Inventario RID (T1087.002); no password spray.`,
+    remediation: "Restringir SAMR/LSA a redes de administración. Deshabilitar null sessions si el dump fue anónimo.",
+  }];
+}
+
+/** samrdump.py: listado de usuarios vía SAMR. */
+export function samrdumpFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_ACCESS_DENIED|STATUS_LOGON_FAILURE|Connection error|SMB SessionError/i.test(text)
+    && !/User\s*[:=]|Found domain/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:^|\n)\s*User\s*[:=]\s*([A-Za-z0-9._$-]+)/gi)) {
+    const u = m[1];
+    if (seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 25) break;
+  }
+  const domain = (text.match(/Found domain\s*[:=]\s*([A-Za-z0-9._-]+)/i)
+    || text.match(/Domain\s*[:=]\s*\[?([A-Za-z0-9._-]+)/i) || [])[1];
+  if (!users.length && !domain) return [];
+  const out = [];
+  if (domain) {
+    out.push({
+      title: `AD: dominio ${domain} (samrdump)`,
+      severity: "Info",
+      description: `samrdump identificó el dominio «${domain}» vía SAMR.`,
+      remediation: `Confirmar alcance. ${HOSTS_TIP}`,
+    });
+  }
+  if (users.length) {
+    out.push({
+      title: `AD: ${users.length} usuario(s) vía SAMR (samrdump)`,
+      severity: "Medium",
+      description: `samrdump listó: ${users.slice(0, 12).join(", ")}${users.length > 12 ? "…" : ""}. Inventario de identidades; no se probaron contraseñas.`,
+      remediation: "Limitar SAMR anónimo/guest; auditar exposición 445 hacia redes no confiables.",
+    });
+  }
+  return out.slice(0, 4);
+}
+
 /** Consolida parsers AD sobre el texto de cada sonda. */
 export function adCollectionFindings(kind, stdout) {
   if (kind === "netexec") return netexecSmbFindings(stdout);
+  if (kind === "netexec-shares") return netexecSharesFindings(stdout);
+  if (kind === "netexec-winrm") return netexecWinrmFindings(stdout);
   if (kind === "enum4linux") return enum4linuxFindings(stdout);
   if (kind === "smbclient") return smbclientNullFindings(stdout);
   if (kind === "ldap") return ldapAnonymousFindings(stdout);
+  if (kind === "asrep") return getNpUsersFindings(stdout);
+  if (kind === "spn") return getUserSpnsFindings(stdout);
+  if (kind === "certipy") return certipyFindFindings(stdout);
+  if (kind === "lookupsid") return lookupsidFindings(stdout);
+  if (kind === "samrdump") return samrdumpFindings(stdout);
   return [];
 }

@@ -39,8 +39,8 @@ export const PHASE_NAMES = {
 
 const PHASE_TOOLS = {
   1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
-      "enum4linux", "rpcclient", "echo", "curl", "ufw", "iptables", "nft"],
-  2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "smbclient", "GetNPUsers.py",
+      "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"],
+  2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
       "searchsploit", "adscan", "certipy"],
   3: ["sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
@@ -494,7 +494,7 @@ async function waitForRunControl(control) {
   }
 }
 
-export async function runAgentLoop({ db, engagementId, model, target, scope, systemPrompt, endpoint, onStep, onPauseForConfirmation, onWaitingForQuota = () => {}, onFindingProposed = () => {}, phaseState, useAi = true, control = null }) {
+export async function runAgentLoop({ db, engagementId, model, target, scope, systemPrompt, endpoint, onStep, onPauseForConfirmation, onWaitingForQuota = () => {}, onFindingProposed = () => {}, phaseState, useAi = true, control = null, adDomain = "", adUser = "", adPassword = "" }) {
   let steps = await getSteps(db, engagementId);
   let axisWarning = false;
   let agentErrorHint = "";
@@ -505,7 +505,13 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
   const playbookDone = new Set();
   let lastPlaybookPhase = 0;
   const playbookShared = {
-    ctx: { scope: scope || target, cookieFile: `/tmp/ds-cookies-${engagementId}.txt` },
+    ctx: {
+      scope: scope || target,
+      cookieFile: `/tmp/ds-cookies-${engagementId}.txt`,
+      adDomain: String(adDomain || "").trim(),
+      adUser: String(adUser || "").trim(),
+      adPassword: adPassword != null ? String(adPassword) : "",
+    },
     outputs: [],
   };
   // Reanudación (reload de página o fase ya avanzada en el servidor): el

@@ -313,6 +313,32 @@
 <hr class="border-t border-surface-variant/50 w-full"/>
 
 <div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
+<div class="min-w-0">
+<p class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<i data-lucide="network" class="text-secondary"></i>
+<span data-i18n="start.adTitle">Active Directory (opcional)</span>
+</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.adLead">Credenciales de dominio para Fase 2+ (SPN, Certipy, WinRM check). Solo en esta sesión del navegador; no se guardan en disco. Sin ellas: AS-REP -no-pass si Fase 1 enumeró usuarios.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="ad-domain" data-i18n="start.adDomain">Dominio</label>
+<input id="ad-domain" name="ad-domain" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="CORP.LOCAL" type="text" autocomplete="off"/>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="ad-user" data-i18n="start.adUser">Usuario</label>
+<input id="ad-user" name="ad-user" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="alice" type="text" autocomplete="off"/>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="ad-password" data-i18n="start.adPassword">Contraseña</label>
+<input id="ad-password" name="ad-password" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="••••••••" type="password" autocomplete="off"/>
+</div>
+</div>
+</div>
+
+<hr class="border-t border-surface-variant/50 w-full"/>
+
+<div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
 <div class="flex items-start justify-between gap-md">
 <div class="min-w-0">
 <p class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">

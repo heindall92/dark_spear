@@ -52,7 +52,11 @@ import {
   dnsreconArgs,
   detectAdSignals,
   adCollectionSteps,
+  adAuthCollectionSteps,
+  adWinrmCheckSteps,
   detectDomainController,
+  extractAdDomain,
+  extractAdUsersFromBlob,
 } from "./vuln-kb.js";
 
 const WL = {
@@ -231,6 +235,12 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
     isWordpress: /\/wp-content\/|\/wp-includes\/|wp-login\.php|powered by wordpress|generator" content="wordpress/.test(blob) || ctx.isWordpress === true,
     isAdTarget: ctx.isAdTarget === true || detectAdSignals(rawBlob, ctx),
     isDomainController: ctx.isDomainController === true || detectDomainController(rawBlob, ctx),
+    adDomain: String(ctx.adDomain || extractAdDomain(rawBlob) || "").trim(),
+    adUsers: (ctx.adUsers && ctx.adUsers.length)
+      ? ctx.adUsers
+      : extractAdUsersFromBlob(rawBlob),
+    adUser: String(ctx.adUser || "").trim(),
+    adPassword: ctx.adPassword != null ? String(ctx.adPassword) : "",
     isApache: /apache/.test(blob),
     hasLogin: /login\.php|name="password"|sign in|type="password"/.test(blob) || ctx.hasLogin === true,
     hasWebStack: /apache|nginx|php|dvwa|wordpress|http\//.test(blob) || ctx.hasWebStack === true,
@@ -681,10 +691,12 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
       step("p2-wpscan-plugins", "wpscan", ["--url", baseUrl, "--enumerate", "ap", "--plugins-detection", "aggressive"], () => ctx.isWordpress),
     );
   }
+
+  steps.push(...adAuthCollectionSteps(step, host));
   return steps;
 }
 
-function phase3Steps(baseUrl, cookie, ctx) {
+function phase3Steps(baseUrl, host, cookie, ctx) {
   const needsAuth = (c) => c.isDvwa || c.hasLogin;
   const steps = [
     // hydra vive en PHASE_TOOLS[3] del lado del bridge (exploitation): un
@@ -718,6 +730,7 @@ function phase3Steps(baseUrl, cookie, ctx) {
       skipIf: (c) => !c.isDvwa,
       desc: "setup.php autenticado ( fuga de config )",
     }),
+    ...adWinrmCheckSteps(step, host),
   ];
   return steps;
 }
@@ -750,7 +763,7 @@ export function stepsForPhase(phase, target, ctx = {}) {
   let list = [];
   if (phase === 1) list = phase1Steps(baseUrl, host, target, cookie, enriched);
   else if (phase === 2) list = phase2Steps(baseUrl, host, target, cookie, enriched);
-  else if (phase === 3) list = phase3Steps(baseUrl, cookie, enriched);
+  else if (phase === 3) list = phase3Steps(baseUrl, host, cookie, enriched);
   else if (phase === 4) list = phase4Steps(baseUrl, cookie, enriched);
 
   return list.filter((s) => {

@@ -3066,17 +3066,19 @@
     var users = [];
     var shares = [];
     var posture = [];
+    var auth = [];
     var other = [];
     (findings || []).forEach(function (f) {
       var t = String((f && f.title) || "");
       if (!/^AD:/i.test(t) && !/SMB \(TCP\/445\)|LDAP \(TCP\/389\)|Kerberos \(TCP\/88\)|LDAPS \(TCP\/636\)/i.test(t)) return;
-      if (/SMB signing|bind LDAP|longitud mínima|Domain Controller|escritura en C\$/i.test(t)) posture.push(f);
-      else if (/usuario|RPC null/i.test(t)) users.push(f);
+      if (/AS-REP|SPN|Kerberoastable|ADCS|WinRM/i.test(t)) auth.push(f);
+      else if (/SMB signing|bind LDAP|longitud mínima|Domain Controller|escritura en C\$/i.test(t)) posture.push(f);
+      else if (/usuario|RPC null|RID cycling|SAMR \(samrdump\)/i.test(t)) users.push(f);
       else if (/share|sesión nula|guest\/null/i.test(t)) shares.push(f);
-      else if (/dominio|fingerprint|enum4linux\)/i.test(t) || /TCP\/(445|389|88|636|135|5985)/.test(t)) domain.push(f);
+      else if (/dominio|fingerprint|enum4linux\)|samrdump\)/i.test(t) || /TCP\/(445|389|88|636|135|5985)/.test(t)) domain.push(f);
       else if (/^AD:/i.test(t)) other.push(f);
     });
-    return { domain: domain, users: users, shares: shares, posture: posture, other: other };
+    return { domain: domain, users: users, shares: shares, posture: posture, auth: auth, other: other };
   }
 
   function bootAdAssessment() {
@@ -3087,7 +3089,7 @@
     function renderAd(findings, meta, scanId) {
       var target = (meta && meta.target) || "—";
       var groups = adClassifyFindings(findings);
-      var all = groups.domain.concat(groups.users, groups.shares, groups.posture, groups.other);
+      var all = groups.domain.concat(groups.users, groups.shares, groups.posture, groups.auth, groups.other);
       var dcN = all.filter(function (f) { return /Domain Controller probable/i.test(f.title || ""); }).length;
       var crumb = document.getElementById("ad-detail-crumb");
       var scanBtn = document.getElementById("ad-btn-scan-target");
@@ -3127,13 +3129,14 @@
         '<div class="glass-panel rounded-xl p-md flex items-start gap-sm border-l-4 border-l-primary">' +
         '<i data-lucide="info" class="icon-md text-primary shrink-0 mt-xs"></i>' +
         '<p class="font-body-sm text-on-surface">' + escapeHtml(tKey("ad.banner",
-          "Hallazgos de la fase Collection (read-only). No incluyen Kerberoast, relay ni abuso de ACL: eso requiere credenciales y aprobación humana.")) +
+          "Hallazgos AD (collection + enum). Kerberoast con -request, relay y shells requieren aprobación humana fuera del playbook automático.")) +
         "</p></div>" +
-        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-md">' +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-md">' +
         osintKpiCard("network", tKey("ad.kpiDomain", "Dominio / fingerprint"), groups.domain.length + dcN, (groups.domain.length || dcN) ? "warn" : "neutral") +
         osintKpiCard("users", tKey("ad.kpiUsers", "Usuarios enumerados"), groups.users.length, groups.users.length ? "warn" : "neutral") +
         osintKpiCard("folder-open", tKey("ad.kpiShares", "Shares / null session"), groups.shares.length, groups.shares.length ? "warn" : "neutral") +
         osintKpiCard("shield-alert", tKey("ad.kpiPosture", "Postura (signing / LDAP / DC)"), groups.posture.length + dcN, (groups.posture.length || dcN) ? "warn" : "neutral") +
+        osintKpiCard("key-round", tKey("ad.kpiAuth", "Auth (AS-REP / SPN / ADCS / WinRM)"), groups.auth.length, groups.auth.length ? "warn" : "neutral") +
         "</div>" +
         '<div class="acrylic-panel rounded-xl p-lg ambient-shadow flex flex-col gap-md">' +
         '<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">' +
@@ -3185,7 +3188,7 @@
           var subEl = document.getElementById("ad-detail-subtitle");
           if (subEl) {
             var n = adClassifyFindings(findings);
-            var count = n.domain.length + n.users.length + n.shares.length + n.posture.length + n.other.length;
+            var count = n.domain.length + n.users.length + n.shares.length + n.posture.length + n.auth.length + n.other.length;
             subEl.textContent =
               "Target: " + (meta.target || id) +
               (meta.scope ? " · Scope: " + meta.scope : "") +
@@ -4537,7 +4540,7 @@
       ["osint.html" + q, "binoculars", tKey("nav.osint", "OSINT"), osintN + " " + tKey("comp.osintHits", "hallazgos OSINT")],
       ["ad-assessment.html" + q, "network", tKey("nav.ad", "Active Directory"), (function () {
         var a = adClassifyFindings(findings);
-        return a.domain.length + a.users.length + a.shares.length + a.posture.length + a.other.length;
+        return a.domain.length + a.users.length + a.shares.length + a.posture.length + a.auth.length + a.other.length;
       })() + " " + tKey("comp.adHits", "señales AD")],
       ["attack-graph.html" + q, "share-2", tKey("nav.graph", "Grafo de ataque"), Object.keys(assets).length + " " + tKey("comp.graphAssets", "activos en el grafo")],
       ["mitre.html" + q, "swords", tKey("nav.mitre", "MITRE ATT&CK"), mitreN + " " + tKey("comp.mitreTechs", "técnicas MITRE")],
