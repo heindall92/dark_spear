@@ -52,6 +52,10 @@ import {
   niktoFindings,
   dnsreconFindings,
   wpscanFindings,
+  netexecSmbFindings,
+  enum4linuxFindings,
+  smbclientNullFindings,
+  ldapAnonymousFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
   extractAsnFromBlob,
@@ -136,6 +140,10 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-nikto") push("nikto", text);
     if (r.id === "p1-osint-dnsrecon") push("dnsrecon", text);
     if (r.id === "p2-wpscan" || r.id === "p2-wpscan-plugins") push("wpscan", text);
+    if (r.id === "p1-ad-netexec-smb") push("ad-netexec", text);
+    if (r.id === "p1-ad-enum4linux") push("ad-enum4linux", text);
+    if (r.id === "p1-ad-smbclient") push("ad-smbclient", text);
+    if (r.id === "p1-ad-ldapsearch-rootdse") push("ad-ldap", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -642,6 +650,27 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const wpscanText = probeIdx["wpscan"];
   if (wpscanText) {
     wpscanFindings(wpscanText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  const adNetexec = probeIdx["ad-netexec"];
+  if (adNetexec) {
+    netexecSmbFindings(adNetexec).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adEnum = probeIdx["ad-enum4linux"];
+  if (adEnum) {
+    enum4linuxFindings(adEnum).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adSmb = probeIdx["ad-smbclient"];
+  if (adSmb) {
+    smbclientNullFindings(adSmb).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adLdap = probeIdx["ad-ldap"];
+  if (adLdap) {
+    ldapAnonymousFindings(adLdap).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
