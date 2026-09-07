@@ -1049,7 +1049,7 @@
       techniques: [
         { id: "T1189", name: "Drive-by Compromise", coverage: "high", re: /xss|cross.site|drive.?by/i },
         { id: "T1190", name: "Exploit Public-Facing Application", coverage: "high", re: /sql|injection|sqli|rce|public.?facing/i },
-        { id: "T1133", name: "External Remote Services", coverage: "high", re: /vpn|rdp|ssh|remote.?service|expuesto a internet/i },
+        { id: "T1133", name: "External Remote Services", coverage: "high", re: /vpn|rdp|ssh|remote.?service|expuesto a internet|kerberos \(tcp\/88\)|ldap \(tcp\/389\)/i },
         { id: "T1566", name: "Phishing", coverage: "none", re: /phish|spear/i },
       ],
     },
@@ -1071,6 +1071,7 @@
         { id: "T1197", name: "BITS Jobs", coverage: "none", re: /bits/i },
         { id: "T1543", name: "Create or Modify System Process", coverage: "none", re: /service|systemd|persistence/i },
         { id: "T1505.003", name: "Web Shell", coverage: "partial", re: /file upload|hackable\/uploads/i },
+        { id: "T1136.002", name: "Create Account: Domain Account", coverage: "high", re: /machineaccountquota\s*=\s*[1-9]/i },
       ],
     },
     {
@@ -1078,7 +1079,9 @@
       count: 14,
       techniques: [
         { id: "T1548", name: "Abuse Elevation Control Mechanism", coverage: "partial", re: /privilege|escalat|sudo|uac/i },
-        { id: "T1134", name: "Access Token Manipulation", coverage: "none", re: /token|impersonat/i },
+        { id: "T1134", name: "Access Token Manipulation", coverage: "partial", re: /\btoken\b|impersonat/i },
+        { id: "T1134.001", name: "Token Impersonation/Theft", coverage: "high", re: /delegaci[oó]n kerberos|trusted_for_delegation|unconstrained|rbcd|finddelegation/i },
+        { id: "T1078.002", name: "Valid Accounts: Domain Accounts", coverage: "high", re: /laps legible|passwd_notreqd|password not required|winrm autenticado|autenticaci[oó]n winrm/i },
       ],
     },
     {
@@ -1097,30 +1100,43 @@
       tactic: "Credential Access",
       count: 17,
       techniques: [
-        { id: "T1110", name: "Brute Force", coverage: "partial", re: /brute|password|credential|hydra/i },
+        { id: "T1110", name: "Brute Force", coverage: "partial", re: /\bbrute\b|hydra|password spray|fuerza bruta/i },
         { id: "T1606", name: "Forge Web Credentials", coverage: "high", re: /jwt alg=none|secreto jwt|jwt d[ée]bil|forjado/i },
         { id: "T1552.001", name: "Unsecured Credentials: Credentials In Files", coverage: "high", re: /\.env expuesto|config\.inc\.php\.bak|db_password|secretos de aplicaci|hardcodead[oa] en bundle js|secreto hardcodeado en bundle|viva confirmada/i },
         { id: "T1552.005", name: "Unsecured Credentials: Cloud Instance Metadata API", coverage: "high", re: /metadata aws|169\.254\.169\.254|ssrf.*metadata/i },
+        { id: "T1552.006", name: "Unsecured Credentials: Group Policy Preferences", coverage: "high", re: /gpp cpassword|gpp autologon|sysvol.*cpassword/i },
+        { id: "T1558.003", name: "Kerberoasting", coverage: "high", re: /spn\(s\) kerberoastable|cuentas con spn|getuserspns|kerberoast/i },
+        { id: "T1558.004", name: "AS-REP Roasting", coverage: "high", re: /as-rep roastable|getnpusers|dont_req_preauth|uf_dont_require_preauth/i },
+        { id: "T1557.001", name: "LLMNR/NBT-NS Poisoning and SMB Relay", coverage: "high", re: /smb signing deshabilitado|relay factible|ntlm.?relay/i },
+        { id: "T1649", name: "Steal or Forge Authentication Certificates", coverage: "high", re: /adcs template|certipy|esc[0-9]/i },
       ],
     },
     {
       tactic: "Discovery",
       count: 12,
       techniques: [
-        { id: "T1046", name: "Network Service Discovery", coverage: "high", re: /port.?scan|service.?discover|nmap.?-s[vc]|open.?port|filtered|expuesto a internet|perímetro con filtrado/i },
+        { id: "T1046", name: "Network Service Discovery", coverage: "high", re: /port.?scan|service.?discover|nmap.?-s[vc]|open.?port|filtered|expuesto a internet|perímetro con filtrado|domain controller probable/i },
         { id: "T1082", name: "System Information Discovery", coverage: "partial", re: /system.?info|phpinfo|server.?info|banner/i },
         { id: "T1083", name: "File and Directory Discovery", coverage: "high", re: /gobuster|ffuf|feroxbuster|directory.?discover|forbidden|not.?found.?probe|dirbust|listable|listado de directorio|index of/i },
         { id: "T1518", name: "Software Discovery", coverage: "high", re: /versi[oó]n en cabecera|revela versi[oó]n|cabecera server|whatweb/i },
         { id: "T1518.001", name: "Security Software Discovery", coverage: "high", re: /waf\/cdn identificado|waf activo|sin waf\/cdn|ufw activo/i },
         { id: "T1526", name: "Cloud Service Discovery", coverage: "high", re: /infraestructura identificada como aws/i },
+        { id: "T1087.002", name: "Account Discovery: Domain Account", coverage: "high", re: /ad:\s*.*usuario|rpc null|rid cycling|samrdump|netexec --users|admincount|bloodhound dconly|ad:\s*dominio /i },
+        { id: "T1135", name: "Network Share Discovery", coverage: "high", re: /sesi[oó]n nula smb|share\(s\)|guest\/null|netexec.*--shares/i },
+        { id: "T1018", name: "Remote System Discovery", coverage: "high", re: /domain controller|--dc-list|equipo\(s\) de dominio|--computers/i },
+        { id: "T1482", name: "Domain Trust Discovery", coverage: "high", re: /trust\(s\) de dominio|trusts de dominio|trusteddomain/i },
+        { id: "T1069.002", name: "Permission Groups Discovery: Domain Groups", coverage: "high", re: /grupos privilegiados|netexec --groups|domain admins|membercount/i },
+        { id: "T1615", name: "Group Policy Discovery", coverage: "high", re: /gpp |group policy|machineaccountquota|pol[ií]tica de contraseñas del dominio/i },
       ],
     },
     {
       tactic: "Lateral Movement",
       count: 9,
       techniques: [
-        { id: "T1210", name: "Exploitation of Remote Services", coverage: "none", re: /lateral|pivot|smb.?relay|remote.?exploit/i },
-        { id: "T1021", name: "Remote Services", coverage: "none", re: /rdp|winrm|ssh.?lateral|remote.?service.?login/i },
+        { id: "T1210", name: "Exploitation of Remote Services", coverage: "partial", re: /lateral|pivot|smb.?relay|remote.?exploit/i },
+        { id: "T1021", name: "Remote Services", coverage: "partial", re: /\brdp\b|ssh.?lateral|remote.?service.?login/i },
+        { id: "T1021.006", name: "Windows Remote Management", coverage: "high", re: /winrm autenticado|autenticaci[oó]n winrm|pwn3d.*winrm|netexec winrm/i },
+        { id: "T1550", name: "Use Alternate Authentication Material", coverage: "partial", re: /print spooler activo|superficie de coercion|printerbug|petitpotam/i },
       ],
     },
     {
@@ -1167,6 +1183,17 @@
   });
 
   function mitreForFinding(f) {
+    // Preferir el mapeo del dossier (fichas AD concretas) cuando esté cargado.
+    if (window.DarkSpearDossier && typeof DarkSpearDossier.enrich === "function") {
+      try {
+        var d = DarkSpearDossier.enrich(f || {});
+        if (d && Array.isArray(d.mitre) && d.mitre.length) {
+          return d.mitre.map(function (t) {
+            return { id: t.id, name: t.name, tactic: t.tactic };
+          }).filter(function (t) { return t && t.id; });
+        }
+      } catch (e) { /* fallback regex */ }
+    }
     var blob = ((f.title || "") + " " + (f.description || "") + " " + (f.asset || "")).toLowerCase();
     var out = [];
     MITRE_MAP.forEach(function (m) {
