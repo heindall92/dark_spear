@@ -74,6 +74,12 @@ import {
   gppPasswordFindings,
   gppAutologinFindings,
   ldapTrustFindings,
+  ldapPasswdNotRequiredFindings,
+  ldapAdminCountFindings,
+  ldapTrustedForDelegationFindings,
+  machineAccountQuotaFindings,
+  spoolerFindings,
+  lapsReadableFindings,
   domainControllerFindings,
   cloudIdentityFindings,
   orgAsnSiblingFindings,
@@ -181,6 +187,12 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-ad-nxc-gpp") push("ad-gpp", text);
     if (r.id === "p2-ad-nxc-gpp-autologin") push("ad-gpp-autologin", text);
     if (r.id === "p2-ad-ldap-trusts") push("ad-trusts", text);
+    if (r.id === "p2-ad-nxc-passwd-notreq") push("ad-passwd-notreq", text);
+    if (r.id === "p2-ad-nxc-admin-count") push("ad-admin-count", text);
+    if (r.id === "p2-ad-nxc-trusted-deleg") push("ad-trusted-deleg", text);
+    if (r.id === "p2-ad-nxc-maq") push("ad-maq", text);
+    if (r.id === "p2-ad-nxc-spooler") push("ad-spooler", text);
+    if (r.id === "p2-ad-nxc-laps") push("ad-laps", text);
     if (r.id === "p1-host-ufw") push("host-ufw", text);
     if (r.id === "p1-host-iptables") push("host-iptables", text);
     if (r.id === "p1-host-nft") push("host-nft", text);
@@ -803,6 +815,36 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adTrusts = probeIdx["ad-trusts"];
   if (adTrusts) {
     ldapTrustFindings(adTrusts).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adPassNot = probeIdx["ad-passwd-notreq"];
+  if (adPassNot) {
+    ldapPasswdNotRequiredFindings(adPassNot).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adAdminCount = probeIdx["ad-admin-count"];
+  if (adAdminCount) {
+    ldapAdminCountFindings(adAdminCount).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adTrustedDeleg = probeIdx["ad-trusted-deleg"];
+  if (adTrustedDeleg) {
+    ldapTrustedForDelegationFindings(adTrustedDeleg).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adMaq = probeIdx["ad-maq"];
+  if (adMaq) {
+    machineAccountQuotaFindings(adMaq).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adSpooler = probeIdx["ad-spooler"];
+  if (adSpooler) {
+    spoolerFindings(adSpooler).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adLaps = probeIdx["ad-laps"];
+  if (adLaps) {
+    lapsReadableFindings(adLaps).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

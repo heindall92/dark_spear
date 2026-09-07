@@ -29,6 +29,12 @@ import {
   gppAutologinFindings,
   ldapTrustFindings,
   adDomainToDn,
+  ldapPasswdNotRequiredFindings,
+  ldapAdminCountFindings,
+  ldapTrustedForDelegationFindings,
+  machineAccountQuotaFindings,
+  spoolerFindings,
+  lapsReadableFindings,
 } from "../backend/js/vuln-kb.js";
 import { stepsForPhase, buildPlaybookContext } from "../backend/js/playbook.js";
 import { collectHeuristicFindings } from "../backend/js/finding-heuristics.js";
@@ -100,6 +106,10 @@ check("nxc computers", ids2.includes("p2-ad-nxc-computers"));
 check("dc-list", ids2.includes("p2-ad-nxc-dc-list"));
 check("gpp_password", ids2.includes("p2-ad-nxc-gpp"));
 check("ldap trusts", ids2.includes("p2-ad-ldap-trusts"));
+check("passwd-notreq", ids2.includes("p2-ad-nxc-passwd-notreq"));
+check("maq", ids2.includes("p2-ad-nxc-maq"));
+check("spooler", ids2.includes("p2-ad-nxc-spooler"));
+check("laps", ids2.includes("p2-ad-nxc-laps"));
 check("adDomainToDn", adDomainToDn("CORP.LOCAL") === "DC=CORP,DC=LOCAL");
 const asrepSpec = stepsP2.find((s) => s.id === "p2-ad-asrep-1");
 const asrepArgs = typeof asrepSpec.args === "function"
@@ -166,6 +176,17 @@ const gppOut = "Found SYSVOL share\nFound Policies\\\\{GUID}\\\\Machine\\\\Prefe
 check("GPP Critical", gppPasswordFindings(gppOut).some((f) => /GPP cpassword/.test(f.title) && f.severity === "Critical"));
 const trustOut = "dn: CN=CHILD,CN=System,DC=corp,DC=local\ncn: CHILD\nflatName: CHILD\ntrustDirection: 3\nobjectClass: trustedDomain\n";
 check("trusts Medium/Info", ldapTrustFindings(trustOut).some((f) => /trust/.test(f.title)));
+const passNotOut = "LDAP  10.10.10.10  389  DC01  guest  PASSWD_NOTREQD\nLDAP  10.10.10.10  389  DC01  tempuser  password not required\n";
+check("PASSWD_NOTREQD High", ldapPasswdNotRequiredFindings(passNotOut).some((f) => /PASSWD_NOTREQD/.test(f.title) && f.severity === "High"));
+const adminOut = "LDAP  10.10.10.10  389  DC01  alice adminCount=1\nLDAP  10.10.10.10  389  DC01  bob adminCount=1\n";
+check("adminCount Medium", ldapAdminCountFindings(adminOut).some((f) => /adminCount/.test(f.title)));
+const tdOut = "LDAP  10.10.10.10  389  DC01  DC01$ TRUSTED_FOR_DELEGATION\n";
+check("TrustedForDelegation High", ldapTrustedForDelegationFindings(tdOut).some((f) => /TRUSTED_FOR_DELEGATION/.test(f.title) && f.severity === "High"));
+check("MAQ Medium", machineAccountQuotaFindings("MachineAccountQuota: 10\n").some((f) => /MachineAccountQuota = 10/.test(f.title)));
+check("spooler Medium", spoolerFindings("[+] Spooler service enabled\n").some((f) => /Print Spooler activo/.test(f.title)));
+const lapsOut = "Getting LAPS Passwords\nComputer: WEB01$\nLAPS Password: redacted-in-test\n";
+check("LAPS Critical", lapsReadableFindings(lapsOut).some((f) => /LAPS legible/.test(f.title) && f.severity === "Critical"));
+check("LAPS no password in title", !lapsReadableFindings(lapsOut).some((f) => /redacted-in-test/.test(f.title)));
 
 const heur = collectHeuristicFindings(
   dcNmap + nxc + asrepOut,
@@ -191,6 +212,12 @@ const heur = collectHeuristicFindings(
     { id: "p2-ad-nxc-dc-list", text: dcListOut },
     { id: "p2-ad-nxc-gpp", text: gppOut },
     { id: "p2-ad-ldap-trusts", text: trustOut },
+    { id: "p2-ad-nxc-passwd-notreq", text: passNotOut },
+    { id: "p2-ad-nxc-admin-count", text: adminOut },
+    { id: "p2-ad-nxc-trusted-deleg", text: tdOut },
+    { id: "p2-ad-nxc-maq", text: "MachineAccountQuota: 10\n" },
+    { id: "p2-ad-nxc-spooler", text: "[+] Spooler service enabled\n" },
+    { id: "p2-ad-nxc-laps", text: lapsOut },
   ],
 );
 check("heurística DC", heur.some((f) => /Domain Controller probable/.test(f.title)));
@@ -208,6 +235,10 @@ check("heurística delegation", heur.some((f) => /delegación Kerberos/.test(f.t
 check("heurística computers", heur.some((f) => /equipo/.test(f.title)));
 check("heurística GPP", heur.some((f) => /GPP cpassword/.test(f.title)));
 check("heurística trusts", heur.some((f) => /trust/.test(f.title)));
+check("heurística PASSWD_NOTREQD", heur.some((f) => /PASSWD_NOTREQD/.test(f.title)));
+check("heurística MAQ", heur.some((f) => /MachineAccountQuota/.test(f.title)));
+check("heurística spooler", heur.some((f) => /Print Spooler/.test(f.title)));
+check("heurística LAPS", heur.some((f) => /LAPS legible/.test(f.title)));
 
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
