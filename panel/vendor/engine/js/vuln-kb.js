@@ -3278,6 +3278,84 @@ export function adAuthCollectionSteps(step, host) {
       desc: "Trusts AD vía LDAP (objectClass=trustedDomain)",
       skipIf: skipCreds,
     }),
+    step("p2-ad-nxc-passwd-notreq", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["ldap", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--password-not-required");
+      return args;
+    }, null, {
+      desc: "Cuentas UF_PASSWD_NOTREQD (netexec ldap --password-not-required)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-admin-count", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["ldap", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--admin-count");
+      return args;
+    }, null, {
+      desc: "Cuentas adminCount=1 (netexec ldap --admin-count)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-trusted-deleg", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["ldap", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "--trusted-for-delegation");
+      return args;
+    }, null, {
+      desc: "TRUSTED_FOR_DELEGATION (netexec ldap --trusted-for-delegation)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-maq", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["ldap", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "-M", "maq");
+      return args;
+    }, null, {
+      desc: "MachineAccountQuota del dominio (netexec -M maq)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-spooler", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "-M", "spooler");
+      return args;
+    }, null, {
+      desc: "Print Spooler activo (netexec -M spooler) — solo detección",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+    step("p2-ad-nxc-laps", "netexec", (c) => {
+      const d = domainOf(c);
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["ldap", h];
+      if (d) args.push("-d", d);
+      args.push("-u", user, "-p", pass, "-M", "laps");
+      return args;
+    }, null, {
+      desc: "LAPS legible por la cuenta de assessment (netexec -M laps)",
+      skipIf: skipCreds,
+    }),
   );
   return steps;
 }
@@ -4091,6 +4169,218 @@ export function ldapTrustFindings(stdout) {
   }];
 }
 
+/** netexec ldap --password-not-required. */
+export function ldapPasswdNotRequiredFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED|Invalid credentials/i.test(text)
+    && !/PASSWD_NOTREQD|password not required|PasswordNotRequired/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:LDAP\s+\S+\s+\d+\s+\S+\s+)?([A-Za-z0-9._$-]{2,64})(?:\s+\(.*PASSWD|.*password not required)/gi)) {
+    const u = m[1];
+    if (/^(LDAP|SMB|[*]|User)$/i.test(u)) continue;
+    if (seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 20) break;
+  }
+  // Broader: lines mentioning the flag with a samaccount
+  for (const m of text.matchAll(/\b([A-Za-z0-9._$-]{2,64})\b[^\n]{0,40}(?:PASSWD_NOTREQD|PasswordNotRequired|password not required)/gi)) {
+    const u = m[1];
+    if (/^(LDAP|does|User|Account|has|with)$/i.test(u)) continue;
+    if (seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 20) break;
+  }
+  if (!users.length && !/PASSWD_NOTREQD|password not required|PasswordNotRequired/i.test(text)) return [];
+  return [{
+    title: users.length
+      ? `AD: ${users.length} cuenta(s) con PASSWD_NOTREQD`
+      : "AD: cuentas con password not required detectadas",
+    severity: "High",
+    description: `netexec ldap --password-not-required listó cuentas con UF_PASSWD_NOTREQD${users.length ? `: ${users.slice(0, 10).join(", ")}${users.length > 10 ? "…" : ""}` : ""}. Permiten autenticación sin contraseña (CWE-521). No se inició sesión con esas cuentas.`,
+    remediation: "Quitar PASSWD_NOTREQD (Set-ADAccountControl -PasswordNotRequired $false); forzar password; auditar quién las creó.",
+  }];
+}
+
+/** netexec ldap --admin-count. */
+export function ldapAdminCountFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED/i.test(text) && !/adminCount|AdminCount/i.test(text)) {
+    return [];
+  }
+  const users = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/\b([A-Za-z0-9._$-]{2,64})\b[^\n]{0,60}adminCount\s*[:=]?\s*1/gi)) {
+    const u = m[1];
+    if (/^(LDAP|SMB|User|Account|has)$/i.test(u)) continue;
+    if (seen.has(u.toLowerCase())) continue;
+    seen.add(u.toLowerCase());
+    users.push(u);
+    if (users.length >= 25) break;
+  }
+  // nxc often just lists samaccount names after the flag
+  if (!users.length) {
+    for (const m of text.matchAll(/LDAP\s+\S+\s+\d+\s+\S+\s+([A-Za-z0-9._$-]{2,64})\s*$/gm)) {
+      const u = m[1];
+      if (seen.has(u.toLowerCase())) continue;
+      seen.add(u.toLowerCase());
+      users.push(u);
+      if (users.length >= 25) break;
+    }
+  }
+  if (!users.length && !/adminCount|--admin-count/i.test(text)) return [];
+  return [{
+    title: users.length
+      ? `AD: ${users.length} cuenta(s) con adminCount=1`
+      : "AD: cuentas adminCount=1 enumeradas",
+    severity: "Medium",
+    description: `netexec ldap --admin-count listó identidades con adminCount=1 (protección SDPROP / ex-admins)${users.length ? `: ${users.slice(0, 12).join(", ")}${users.length > 12 ? "…" : ""}` : ""}. Inventario privilegiado; no implica que sigan en Domain Admins.`,
+    remediation: "Revisar membresía real; limpiar adminCount residual con Clear-ADAccountExpiration / SDProp docs; mínimo privilegio.",
+  }];
+}
+
+/** netexec ldap --trusted-for-delegation. */
+export function ldapTrustedForDelegationFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED/i.test(text)
+    && !/TRUSTED_FOR_DELEGATION|TrustedForDelegation|trusted for delegation/i.test(text)) {
+    return [];
+  }
+  const accounts = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/\b([A-Za-z0-9._$-]{2,64}\$?)\b[^\n]{0,50}(?:TRUSTED_FOR_DELEGATION|Trusted for delegation)/gi)) {
+    const a = m[1];
+    if (seen.has(a.toLowerCase())) continue;
+    seen.add(a.toLowerCase());
+    accounts.push(a);
+    if (accounts.length >= 20) break;
+  }
+  if (!accounts.length) {
+    for (const m of text.matchAll(/LDAP\s+\S+\s+\d+\s+\S+\s+([A-Za-z0-9._$-]{2,64}\$?)/g)) {
+      const a = m[1];
+      if (seen.has(a.toLowerCase())) continue;
+      seen.add(a.toLowerCase());
+      accounts.push(a);
+      if (accounts.length >= 20) break;
+    }
+  }
+  if (!accounts.length && !/TRUSTED_FOR_DELEGATION|trusted-for-delegation|Trusted for delegation/i.test(text)) {
+    return [];
+  }
+  return [{
+    title: accounts.length
+      ? `AD: ${accounts.length} objeto(s) TRUSTED_FOR_DELEGATION`
+      : "AD: TRUSTED_FOR_DELEGATION detectado",
+    severity: "High",
+    description: `netexec ldap --trusted-for-delegation listó objetos con unconstrained delegation${accounts.length ? `: ${accounts.slice(0, 10).join(", ")}${accounts.length > 10 ? "…" : ""}` : ""}. Complementa findDelegation; no se solicitó TGT forwardable.`,
+    remediation: "Retirar TrustedForDelegation en servers no DC; preferir constrained/RBCD acotado.",
+  }];
+}
+
+/** netexec -M maq. */
+export function machineAccountQuotaFindings(stdout) {
+  const text = String(stdout || "");
+  const m = text.match(/MachineAccountQuota\s*[:=]\s*(-?\d+)/i);
+  if (!m) {
+    if (/Getting the MachineAccountQuota/i.test(text)) {
+      return [{
+        title: "AD: MachineAccountQuota consultado",
+        severity: "Info",
+        description: "netexec -M maq consultó ms-DS-MachineAccountQuota pero no parseó el valor. Revisar evidencia.",
+        remediation: "Si MAQ > 0, usuarios pueden crear machine accounts (RBCD path).",
+      }];
+    }
+    return [];
+  }
+  const q = Number(m[1]);
+  if (q === 0) {
+    return [{
+      title: "AD: MachineAccountQuota = 0 (duro)",
+      severity: "Info",
+      description: "ms-DS-MachineAccountQuota es 0: usuarios estándar no pueden añadir machine accounts. Buena postura frente a RBCD con cuenta low-priv.",
+      remediation: "Mantener en 0 salvo necesidad justificada.",
+    }];
+  }
+  return [{
+    title: `AD: MachineAccountQuota = ${q}`,
+    severity: q > 0 ? "Medium" : "Info",
+    description: `netexec -M maq: ms-DS-MachineAccountQuota=${q}. Con cuota > 0 un usuario autenticado puede crear computer objects y montar paths RBCD (CWE-269). No se creó ninguna máquina.`,
+    remediation: "Poner MachineAccountQuota a 0 en el dominio (o PSO/restricción equivalente) si no hay requisito de negocio.",
+  }];
+}
+
+/** netexec -M spooler — detección, sin coerce. */
+export function spoolerFindings(stdout) {
+  const text = String(stdout || "");
+  if (/Spooler service enabled|Spoolss|print spooler|Spooler is running/i.test(text)
+    || (/\[\+\]/.test(text) && /spooler/i.test(text))) {
+    return [{
+      title: "AD: Print Spooler activo (superficie de coercion)",
+      severity: "Medium",
+      description: "netexec -M spooler detectó el servicio Print Spooler. Facilita coerciones (PrinterBug/PetitPotam-style) si hay relay factible. Solo detección; no se envió coerce ni listener.",
+      remediation: "Deshabilitar Spooler en DCs y servers que no impriman; bloquear 445/135 entre segmentos; SMB signing obligatorio.",
+    }];
+  }
+  if (/Spooler service disabled|Spooler is not|not running|\[\-\].*spooler/i.test(text)) {
+    return [{
+      title: "AD: Print Spooler no activo",
+      severity: "Info",
+      description: "netexec -M spooler no vio Spooler habilitado en el target. Reduce superficie de printer coercion.",
+      remediation: "Mantener Spooler off en DCs.",
+    }];
+  }
+  return [];
+}
+
+/**
+ * netexec -M laps: la cuenta de assessment puede leer LAPS.
+ * No se incluyen contraseñas en el hallazgo — solo hosts afectados.
+ */
+export function lapsReadableFindings(stdout) {
+  const text = String(stdout || "");
+  if (/STATUS_LOGON_FAILURE|LOGIN FAILED|Invalid credentials/i.test(text)
+    && !/LAPS|ms-MCS-AdmPwd|msLAPS-Password/i.test(text)) {
+    return [];
+  }
+  const comps = [];
+  const seen = new Set();
+  for (const m of text.matchAll(/(?:Computer|Host|sAMAccountName)\s*[:=]\s*([A-Za-z0-9._$-]+)/gi)) {
+    const c = m[1].replace(/\$$/, "") + "$";
+    if (seen.has(c.toLowerCase())) continue;
+    seen.add(c.toLowerCase());
+    comps.push(c);
+    if (comps.length >= 20) break;
+  }
+  for (const m of text.matchAll(/\b([A-Za-z0-9._-]{2,40}\$)\b/g)) {
+    if (seen.has(m[1].toLowerCase())) continue;
+    seen.add(m[1].toLowerCase());
+    comps.push(m[1]);
+    if (comps.length >= 20) break;
+  }
+  const hasPwd = /LAPS Password|ms-MCS-AdmPwd|msLAPS-Password|Password\s*[:=]\s*\S+/i.test(text);
+  if (!hasPwd && !/Getting LAPS|LAPS Passwords/i.test(text)) return [];
+  if (!hasPwd) {
+    return [{
+      title: "AD: LAPS consultado sin secretos legibles",
+      severity: "Info",
+      description: "netexec -M laps corrió pero no extrajo ms-MCS-AdmPwd/msLAPS legible para esta cuenta. Buena señal si el assessment no debía leer LAPS.",
+      remediation: "Verificar ACLs LAPS (ms-Mcs-AdmPwd) solo para gMSA/admins de workstation.",
+    }];
+  }
+  return [{
+    title: comps.length
+      ? `AD: LAPS legible en ${comps.length} equipo(s)`
+      : "AD: LAPS passwords legibles por la cuenta de assessment",
+    severity: "Critical",
+    description: `netexec -M laps pudo leer contraseñas LAPS${comps.length ? ` en: ${comps.slice(0, 10).join(", ")}${comps.length > 10 ? "…" : ""}` : ""}. La cuenta usada tiene privilegio excesivo sobre ms-MCS-AdmPwd / msLAPS-*. El secreto no se incluye en este hallazgo; está en la evidencia cruda del paso.`,
+    remediation: "Restringir lectura LAPS a grupos justificados; rotar passwords LAPS de hosts afectados; auditar whoCanReadLAPS.",
+  }];
+}
+
 /** Consolida parsers AD sobre el texto de cada sonda. */
 export function adCollectionFindings(kind, stdout) {
   if (kind === "netexec") return netexecSmbFindings(stdout);
@@ -4114,5 +4404,11 @@ export function adCollectionFindings(kind, stdout) {
   if (kind === "gpp") return gppPasswordFindings(stdout);
   if (kind === "gpp-autologin") return gppAutologinFindings(stdout);
   if (kind === "trusts") return ldapTrustFindings(stdout);
+  if (kind === "passwd-notreq") return ldapPasswdNotRequiredFindings(stdout);
+  if (kind === "admin-count") return ldapAdminCountFindings(stdout);
+  if (kind === "trusted-deleg") return ldapTrustedForDelegationFindings(stdout);
+  if (kind === "maq") return machineAccountQuotaFindings(stdout);
+  if (kind === "spooler") return spoolerFindings(stdout);
+  if (kind === "laps") return lapsReadableFindings(stdout);
   return [];
 }
