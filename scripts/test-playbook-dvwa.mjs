@@ -336,6 +336,49 @@ async function main() {
     raceFindingsPartial.some((f) => /Directorio \/ftp\/ listable/i.test(f.title)),
   );
 
+  // Regresión: "Aplicación DVWA expuesta" y "security=low" no deben
+  // confirmar contra el blob acumulado de TODA la sesión — solo contra la
+  // respuesta propia de la sonda de la raíz (head-root), con filtro de
+  // página negativa y evidence_step_ids reales.
+  const dvwaCrossContamBlob = "algo random dvwa mencionado en un script de terceros";
+  const dvwaCrossContamRecords = [
+    { id: "p1-osint-curl-head-root", text: "<title>Vantek · Tu cuenta</title>" },
+  ];
+  const dvwaCrossContamFindings = collectHeuristicFindings(
+    dvwaCrossContamBlob,
+    asset,
+    {},
+    dvwaCrossContamRecords,
+  );
+  check(
+    "\"dvwa\" suelto en el blob acumulado (no en la sonda de la raíz) NO confirma \"Aplicación DVWA expuesta\"",
+    !dvwaCrossContamFindings.some((f) => /Aplicación DVWA expuesta/i.test(f.title)),
+  );
+
+  const dvwaRootRealRecords = [
+    { id: "p1-osint-curl-head-root", text: "<title>Login :: Damn Vulnerable Web Application (DVWA) v1.10</title>" },
+  ];
+  const dvwaRootRealFindings = collectHeuristicFindings("", asset, {}, dvwaRootRealRecords);
+  const dvwaRootRealFinding = dvwaRootRealFindings.find((f) => /Aplicación DVWA expuesta/i.test(f.title));
+  check(
+    "\"dvwa\" real en la sonda de la raíz SÍ confirma, con evidence_step_ids poblado",
+    Boolean(dvwaRootRealFinding) && dvwaRootRealFinding.evidence_step_ids.length > 0,
+  );
+
+  const securityLowCrossContamRecords = [
+    { id: "p1-osint-curl-head-root", text: "<title>Vantek · Tu cuenta</title>" },
+  ];
+  const securityLowCrossContamFindings = collectHeuristicFindings(
+    "set-cookie: security=low",
+    asset,
+    {},
+    securityLowCrossContamRecords,
+  );
+  check(
+    "\"security=low\" en el blob acumulado (no en la sonda de la raíz) NO confirma \"DVWA con nivel de seguridad en «low»\"",
+    !securityLowCrossContamFindings.some((f) => /DVWA con nivel de seguridad/i.test(f.title)),
+  );
+
   console.log("");
   console.log(unitFail ? "RESULTADO: FAIL — hay regresiones en el aislamiento por-paso" : "RESULTADO: OK — todas las verificaciones pasaron");
 
