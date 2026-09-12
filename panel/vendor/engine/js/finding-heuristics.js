@@ -162,6 +162,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
     if (r.id === "p1-testssl") push("testssl", text);
+    if (r.id === "p1-ad-testssl") push("ad-testssl", text);
     if (r.id === "p2-nikto") push("nikto", text);
     if (r.id === "p1-osint-dnsrecon") push("dnsrecon", text);
     if (r.id === "p2-wpscan" || r.id === "p2-wpscan-plugins") push("wpscan", text);
@@ -254,32 +255,57 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     return re.test(extraText(id));
   }
 
-  function add(title, severity, description, remediation) {
+  function add(title, severity, description, remediation, evidenceIds = []) {
     findings.push({
       title,
       asset: asset || "unknown",
       severity,
       description,
       remediation,
-      evidence_step_ids: [],
+      evidence_step_ids: evidenceIds,
     });
   }
 
-  if (/dvwa|damn vulnerable web application/i.test(b)) {
+  // Ambos checks de DVWA de acá abajo confirmaban antes contra el blob
+  // ACUMULADO de toda la sesión (cientos de respuestas concatenadas): si la
+  // palabra "dvwa" aparecía en CUALQUIER respuesta de la corrida (un script
+  // de terceros, un comentario, restos de otra sesión), confirmaba sin
+  // relación con el target real. Con registro por-paso disponible, se
+  // restringen a la respuesta propia de la sonda de la raíz (head-root) — la
+  // misma disciplina que ya exige el resto del archivo (ver comentario en
+  // collectHeuristicFindings). OJO: acá NO se aplica isDvwaNegativePage() —
+  // esa función existe para confirmar un MÓDULO específico (un redirect a
+  // login ahí sí significa "módulo no alcanzado"), pero para "¿existe DVWA
+  // en este target?" ver la página de login de DVWA (título "Login ::
+  // Damn Vulnerable Web Application") YA ES la confirmación positiva, no un
+  // falso negativo. Sin stepRecords (compat hacia atrás), cae al blob
+  // completo como antes.
+  const rootOwnText = probeIdx["head-root"] || "";
+  const dvwaOnRoot = hasRecords
+    ? Boolean(rootOwnText) && /dvwa|damn vulnerable web application/i.test(rootOwnText)
+    : /dvwa|damn vulnerable web application/i.test(b);
+
+  if (dvwaOnRoot) {
     add(
       "Aplicación DVWA expuesta en el objetivo",
       "Medium",
       "Fingerprint HTTP (whatweb/curl) identificó Damn Vulnerable Web Application (DVWA). Es una aplicación deliberadamente vulnerable (SQLi, XSS, CSRF, upload, RFI). No debe existir fuera de un lab aislado: equivale a publicar un polígono de ataque contra la propia organización.",
       "No exponer DVWA fuera de laboratorio aislado. En producción, retirar la aplicación y revisar que no queden copias en el perimetro.",
+      hasRecords ? ["p1-osint-curl-head-root"] : [],
     );
   }
 
-  if (/set-cookie:[^\n]*security=low/i.test(b)) {
+  const securityLowOnRoot = hasRecords
+    ? /set-cookie:[^\n]*security=low/i.test(rootOwnText)
+    : /set-cookie:[^\n]*security=low/i.test(b);
+
+  if (securityLowOnRoot) {
     add(
       "DVWA con nivel de seguridad en «low»",
       "High",
       "La cookie «security=low» confirma que los retos de DVWA están en dificultad mínima (SQLi, XSS, CSRF, upload, etc. son triviales de explotar).",
       "Subir el nivel en security.php para pruebas representativas; en entornos reales eliminar DVWA.",
+      hasRecords ? ["p1-osint-curl-head-root"] : [],
     );
   }
 
@@ -686,6 +712,14 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const testsslText = probeIdx["testssl"];
   if (testsslText) {
     testsslFindings(testsslText, ctx.host || asset).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // testssl.sh contra el dominio AD real (si el target original era una IP
+  // y la collection AD reveló el dominio de verdad, ver cruce en playbook.js).
+  const adTestsslText = probeIdx["ad-testssl"];
+  if (adTestsslText) {
+    testsslFindings(adTestsslText, ctx.adDomain || ctx.host || asset).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
