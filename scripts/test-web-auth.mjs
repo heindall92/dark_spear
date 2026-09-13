@@ -20,6 +20,10 @@ check(
   "sin token retorna null",
   detectCsrfToken("<html><body>sin token acá</body></html>") === null,
 );
+check(
+  "detecta token con value ANTES que name (orden de atributos invertido)",
+  detectCsrfToken('<input type="hidden" value="xyz789" name="_token">') === "xyz789",
+);
 
 // detectUserField
 check(
@@ -33,6 +37,10 @@ check(
 check(
   "default a email sin campo reconocible",
   detectUserField("<html>sin inputs relevantes</html>") === "email",
+);
+check(
+  "detecta campo con name ANTES que type (orden de atributos invertido)",
+  detectUserField('<input name="username" type="text">') === "username",
 );
 
 // buildLoginSteps — fake step() que solo registra lo que se le pasó
