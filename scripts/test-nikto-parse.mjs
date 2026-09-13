@@ -29,20 +29,27 @@ const sample = `
 + /phpinfo.php: Output from the phpinfo() function was found.
 + OSVDB-3233: /icons/README: Apache default file found.
 + CVE-2017-7679: /cgi-bin/: Apache mod_mime buffer overflow.
++ [013587] /: Suggested security header missing: referrer-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy
 + 12 item(s) reported on remote host
 `;
 
 const hits = niktoFindings(sample);
 check("no inventa hallazgo por cabeceras ya cubiertas (XFO/XCTO)", !hits.some((f) => /X-Frame|X-Content-Type/i.test(f.title)));
 check("no inventa hallazgo por x-powered-by / Server", !hits.some((f) => /x-powered-by|Apache\/2/i.test(f.title)));
+check("ignora referrer-policy + URL MDN (no path //developer…)", !hits.some((f) => /referrer-policy|mozilla\.org|\/\/developer/i.test(f.title + f.description)));
 check("captura config.php como High", hits.some((f) => /config\.php/.test(f.title) && f.severity === "High"));
-check("captura phpinfo como High", hits.some((f) => /phpinfo\.php/.test(f.title) && f.severity === "High"));
-check("captura directory indexing como Medium", hits.some((f) => /icons/.test(f.title) && /indexing/i.test(f.title + f.description) && f.severity === "Medium"));
+check("captura phpinfo como High", hits.some((f) => /phpinfo\(\)/.test(f.title) && /phpinfo\.php/.test(f.title) && f.severity === "High"));
+check("captura directory indexing como Medium", hits.some((f) => /icons/.test(f.title) && /listado de directorio/i.test(f.title) && f.severity === "Medium"));
 check("captura CVE en título/desc y High", hits.some((f) => /CVE-2017-7679/.test(f.title + f.description) && f.severity === "High"));
 check("captura OSVDB-3092 /admin/", hits.some((f) => /\/admin\//.test(f.title)));
+check("títulos cortos (sin prosa EN de Nikto)", hits.every((f) => f.title.length <= 72 && !/This might be interesting|may contain database|Suggested security/i.test(f.title)));
+check("título config en ES", hits.some((f) => f.title === "Nikto: configuración expuesta en /config.php"));
+check("título CVE corto", hits.some((f) => f.title === "Nikto: CVE-2017-7679 en /cgi-bin/"));
+check("descripción conserva la línea cruda", hits.some((f) => /PHP Config file may contain/.test(f.description)));
 check("tope razonable (≤8)", hits.length <= 8 && hits.length >= 4);
 check("sin salida -> []", niktoFindings("").length === 0);
 check("solo ruido de cabecera -> []", niktoFindings("+ The X-Frame-Options header is not present.\n").length === 0);
+check("solo referrer-policy Suggested -> []", niktoFindings("+ [013587] /: Suggested security header missing: referrer-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy\n").length === 0);
 
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
