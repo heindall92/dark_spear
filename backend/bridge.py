@@ -826,6 +826,36 @@ def _apply_finding_status_transition(finding: dict, action: str) -> str | None:
     return "invalid_action"
 
 
+_REDACT_KEY_RE = re.compile(r"((?:^|[&?])(?:password|pwd)=)[^&\s]*", re.IGNORECASE)
+_REDACT_FLAG_NAMES = {"-p", "--password", "-pass", "--pass"}
+
+
+def redact_args(args: list) -> list:
+    """Enmascara credenciales antes de persistirlas en audit_log.
+
+    Cubre dos patrones: (1) curl -d "email=x&password=secret" — la key
+    password=/pwd= dentro de un body concatenado en un solo arg (regex
+    inline, sin tocar el resto del body); (2) hydra -p <valor> / netexec
+    --password <valor> — flag y valor en args SEPARADOS, se redacta el arg
+    que sigue al flag conocido. _token (CSRF) no se toca: no es secreto de
+    cuenta, es útil para depurar un login fallido.
+    """
+    redacted = []
+    redact_next = False
+    for a in args:
+        s = str(a)
+        if redact_next:
+            redacted.append("***REDACTED***")
+            redact_next = False
+            continue
+        if s.lower() in _REDACT_FLAG_NAMES:
+            redacted.append(s)
+            redact_next = True
+            continue
+        redacted.append(_REDACT_KEY_RE.sub(r"\1***REDACTED***", s))
+    return redacted
+
+
 def audit_log(entry: dict) -> None:
     entry["ts"] = time.time()
     with LOG_PATH.open("a") as f:
@@ -1175,7 +1205,7 @@ class Handler(BaseHTTPRequestHandler):
             if resolved is None:
                 result = {"stdout": "", "stderr": f"{tool}: command not found",
                           "exit_code": -1, "verdict": "error"}
-                audit_log({"event": "exec", "tool": tool, "args": args,
+                audit_log({"event": "exec", "tool": tool, "args": redact_args(args),
                            "target": target, "exit_code": result["exit_code"],
                            "verdict": result["verdict"]})
                 self._send_json(200, result)
@@ -1213,7 +1243,7 @@ class Handler(BaseHTTPRequestHandler):
                 result = {"stdout": "", "stderr": str(e),
                           "exit_code": -1, "verdict": "error"}
             audit_log({"event": "exec", "tool": tool, "resolved_path": resolved,
-                       "args": args, "target": target,
+                       "args": redact_args(args), "target": target,
                        "cwd": run_cwd,
                        "exit_code": result["exit_code"], "verdict": result["verdict"]})
             EXEC_STEP_COUNT += 1
