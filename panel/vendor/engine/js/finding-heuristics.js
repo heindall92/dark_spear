@@ -48,6 +48,7 @@ import {
   nucleiFindings,
   sqlmapFindings,
   httpxFindings,
+  katanaFindings,
   testsslFindings,
   niktoFindings,
   dnsreconFindings,
@@ -161,6 +162,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-nuclei") push("nuclei", text);
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
+    if (r.id === "p2-katana") push("katana", text);
     if (r.id === "p1-testssl") push("testssl", text);
     if (r.id === "p1-ad-testssl") push("ad-testssl", text);
     if (r.id === "p2-nikto") push("nikto", text);
@@ -747,6 +749,13 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const httpxText = probeIdx["httpx-hosts"];
   if (httpxText) {
     httpxFindings(httpxText, scopeRoot(ctx.host || "", ctx.scope)).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // katana: crawling activo, inventario de endpoints consolidado (1 finding).
+  const katanaText = probeIdx["katana"];
+  if (katanaText) {
+    katanaFindings(katanaText, asset).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
