@@ -643,8 +643,13 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
   return steps;
 }
 
+// Tope de formularios a sondear: sin límite, forms × campos × 2 (XSS+SQLi)
+// puede explotar el conteo de pasos en apps con muchas páginas visitadas.
+// Mismo criterio que hydraAdUserSteps (tope 3 usuarios).
+const MAX_FORM_PROBE_TARGETS = 5;
+
 function phase2FormProbeSteps(baseUrl, ctx) {
-  const forms = ctx.discoveredForms || [];
+  const forms = (ctx.discoveredForms || []).slice(0, MAX_FORM_PROBE_TARGETS);
   const steps = [];
   forms.forEach((form, i) => {
     steps.push(...xssFormProbeSteps(step, `p2-formxss-${i}`, baseUrl, form, ctx.cookieFile));
