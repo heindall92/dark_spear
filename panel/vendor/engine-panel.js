@@ -1135,6 +1135,9 @@ async function bootStart() {
         adDomain: (document.getElementById("ad-domain")?.value || "").trim(),
         adUser: (document.getElementById("ad-user")?.value || "").trim(),
         adPassword: document.getElementById("ad-password")?.value || "",
+        webLoginUrl: (document.getElementById("web-login-url")?.value || "").trim(),
+        webUser: (document.getElementById("web-user")?.value || "").trim(),
+        webPassword: document.getElementById("web-password")?.value || "",
       }));
       if (model) sessionStorage.setItem(MODEL_KEY, model);
       window.location.href = "engagement.html";
@@ -1613,6 +1616,9 @@ async function bootEngagement() {
       adDomain: run.adDomain || "",
       adUser: run.adUser || "",
       adPassword: run.adPassword || "",
+      webLoginUrl: run.webLoginUrl || "",
+      webUser: run.webUser || "",
+      webPassword: run.webPassword || "",
       onStep: (step) => {
         appendStep(step);
         // Notificar en la campana cuando el playbook termina las 4 fases —
