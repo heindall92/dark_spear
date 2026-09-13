@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { xssFormProbeSteps, sqliFormProbeSteps, XSS_REFLECTION_PAYLOAD } from "../backend/js/vuln-kb.js";
+import { xssFormProbeSteps, sqliFormProbeSteps, XSS_REFLECTION_PAYLOAD, buildFormBody } from "../backend/js/vuln-kb.js";
 
 let fails = 0;
 function check(label, ok) {
@@ -20,7 +20,7 @@ const form = {
 const xssSteps = xssFormProbeSteps(fakeStep, "p2-formxss", "https://x", form, "/tmp/c.txt");
 check("XSS: genera 1 step (1 campo de texto)", xssSteps.length === 1);
 check("XSS: apunta al action del form", xssSteps[0].args.includes("https://x/products/28/comments"));
-check("XSS: incluye el payload de XSS reflejado en el body", xssSteps[0].args.some((a) => a.includes(XSS_REFLECTION_PAYLOAD)));
+check("XSS: incluye el payload de XSS reflejado en el body (URL-encodeado)", xssSteps[0].args.some((a) => a.includes(encodeURIComponent(XSS_REFLECTION_PAYLOAD))));
 check("XSS: reusa la cookie jar", xssSteps[0].args.includes("/tmp/c.txt"));
 
 const sqliSteps = sqliFormProbeSteps(fakeStep, "p2-formsqli", "https://x", form, "/tmp/c.txt");
@@ -40,6 +40,34 @@ check("XSS: 1 step por campo (2 campos -> 2 steps)", multiXss.length === 2);
 check(
   "XSS: cada step rellena los OTROS campos con valor benigno",
   multiXss[0].args.some((a) => a.includes("category=x")),
+);
+
+// form.action absoluto (ej. formulario que postea a otro dominio/puerto):
+// debe usarse tal cual, NUNCA concatenado con baseUrl (produciría una URL
+// malformada tipo "https://targethttps://otro/x").
+const absoluteActionForm = {
+  action: "https://otro-dominio.com/endpoint",
+  method: "POST",
+  fields: [{ name: "content", type: "text" }],
+};
+const absoluteSteps = xssFormProbeSteps(fakeStep, "p2-formxss", "https://x", absoluteActionForm, "/tmp/c.txt");
+check(
+  "action absoluto: usa la URL tal cual, no la concatena con baseUrl",
+  absoluteSteps[0].args.includes("https://otro-dominio.com/endpoint"),
+);
+check(
+  "action absoluto: NO produce una URL malformada (baseUrl + action)",
+  !absoluteSteps[0].args.some((a) => a.includes("https://xhttps://")),
+);
+
+// buildFormBody debe URL-encodear valores (campo o payload) que contengan
+// & o = — de lo contrario un payload futuro con esos caracteres rompería
+// el body POST al insertar pares clave=valor espurios.
+const specialCharForm = { fields: [{ name: "q", type: "text" }] };
+const specialBody = buildFormBody(specialCharForm, "q", "a=b&c=d");
+check(
+  "buildFormBody: URL-encodea & y = dentro del valor del payload",
+  specialBody === "q=a%3Db%26c%3Dd",
 );
 
 console.log("");

@@ -4476,9 +4476,9 @@ export function adCollectionFindings(kind, stdout) {
  */
 const SQLI_GENERIC_PAYLOAD = "x' OR '1'='1";
 
-function buildFormBody(form, targetField, payload) {
+export function buildFormBody(form, targetField, payload) {
   return form.fields
-    .map((f) => `${f.name}=${f.name === targetField ? payload : "x"}`)
+    .map((f) => `${f.name}=${encodeURIComponent(f.name === targetField ? payload : "x")}`)
     .join("&");
 }
 
@@ -4486,7 +4486,10 @@ function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, 
   const textFields = form.fields.filter((f) => f.type !== "checkbox" && f.type !== "radio");
   return textFields.map((field) => {
     const body = buildFormBody(form, field.name, payload);
-    const url = baseUrl + form.action;
+    // form.action puede ser una URL absoluta (form que postea a otro
+    // dominio/puerto) — concatenarla ciegamente con baseUrl produce una
+    // URL malformada.
+    const url = /^https?:\/\//i.test(form.action) ? form.action : baseUrl + form.action;
     if (form.method === "GET") {
       const dataArgs = form.fields.flatMap((f) => [
         "--data-urlencode",
