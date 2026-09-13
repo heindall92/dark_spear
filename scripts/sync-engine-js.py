@@ -16,11 +16,13 @@ FILES = [
     "bridge_client.js",
     "db.js",
     "finding-heuristics.js",
+    "form-discovery.js",
     "main.js",
     "ollama.js",
     "playbook.js",
     "ui.js",
     "vuln-kb.js",
+    "web-auth.js",
 ]
 
 
