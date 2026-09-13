@@ -6,21 +6,40 @@
  */
 
 const CSRF_META_RE = /<meta\s+name=["']csrf-token["']\s+content=["']([^"']+)["']/i;
-const CSRF_INPUT_RE = /<input[^>]*name=["']_token["'][^>]*value=["']([^"']+)["']/i;
+const INPUT_TAG_RE = /<input\b[^>]*>/gi;
+
+// Extrae el valor de un atributo dentro de un tag ya aislado, tolerante a
+// que aparezca en cualquier posición (Laravel siempre pone name antes que
+// value/type, pero otros stacks no lo garantizan).
+function attrValue(tag, attr) {
+  const m = new RegExp(`${attr}=["']([^"']*)["']`, "i").exec(tag);
+  return m ? m[1] : null;
+}
 
 export function detectCsrfToken(html) {
   const meta = CSRF_META_RE.exec(html);
   if (meta) return meta[1];
-  const input = CSRF_INPUT_RE.exec(html);
-  if (input) return input[1];
+  const tags = html.match(INPUT_TAG_RE) || [];
+  for (const tag of tags) {
+    if (attrValue(tag, "name") === "_token") {
+      const value = attrValue(tag, "value");
+      if (value) return value;
+    }
+  }
   return null;
 }
 
-const USER_FIELD_RE = /<input[^>]*type=["'](?:email|text)["'][^>]*name=["'](email|username|user|login)["']/i;
+const USER_FIELD_NAMES = new Set(["email", "username", "user", "login"]);
+const USER_FIELD_TYPES = new Set(["email", "text"]);
 
 export function detectUserField(html) {
-  const match = USER_FIELD_RE.exec(html);
-  return match ? match[1] : "email";
+  const tags = html.match(INPUT_TAG_RE) || [];
+  for (const tag of tags) {
+    const type = attrValue(tag, "type");
+    const name = attrValue(tag, "name");
+    if (USER_FIELD_TYPES.has(type) && USER_FIELD_NAMES.has(name)) return name;
+  }
+  return "email";
 }
 
 export function buildLoginSteps(step, loginUrl, user, password, cookieFile) {
