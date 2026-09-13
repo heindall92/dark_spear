@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { detectCsrfToken, detectUserField, buildLoginSteps } from "../backend/js/web-auth.js";
+import { detectCsrfToken, detectUserField, buildLoginSteps, detectSubmitFields, hasPasswordForm, looksLikeJuiceShop } from "../backend/js/web-auth.js";
 
 let fails = 0;
 function check(label, ok) {
@@ -15,6 +15,10 @@ check(
 check(
   "detecta token en input hidden",
   detectCsrfToken('<input type="hidden" name="_token" value="xyz789">') === "xyz789",
+);
+check(
+  "detecta user_token de DVWA",
+  detectCsrfToken("<input type='hidden' name='user_token' value='d312c2e10b4d62deb8b3ec60602f4919' />") === "d312c2e10b4d62deb8b3ec60602f4919",
 );
 check(
   "sin token retorna null",
@@ -52,6 +56,34 @@ const stepsWithToken = buildLoginSteps(fakeStep, "https://x/login", "u@x.com", "
 check("con token: genera 2 steps (GET + POST)", stepsWithToken.length === 2);
 check("con token: el GET apunta a la URL de login", stepsWithToken[0].args.includes("https://x/login"));
 check("con token: el GET guarda cookies en cookieFile", stepsWithToken[0].args.includes("/tmp/c.txt"));
+
+function fakeStepKeep(id, tool, args, when, meta) {
+  return { id, tool, args, when, meta };
+}
+
+const dvwaHtml = `<form action="login.php" method="post">
+<input type="text" name="username">
+<input type="password" name="password">
+<input type="submit" value="Login" name="Login">
+<input type='hidden' name='user_token' value='abc' />
+</form>`;
+check("DVWA: detectSubmitFields Login", detectSubmitFields(dvwaHtml).some((s) => s.name === "Login" && s.value === "Login"));
+check("DVWA: hasPasswordForm", hasPasswordForm(dvwaHtml) === true);
+const dvwaPost = buildLoginSteps(fakeStepKeep, "http://127.0.0.1:8888/login.php", "admin", "password", "/tmp/c.txt");
+const dvwaArgs = dvwaPost[1].args({ webLoginPageHtml: dvwaHtml });
+const dvwaBody = dvwaArgs[dvwaArgs.indexOf("-d") + 1] || "";
+check("DVWA POST incluye user_token", /user_token=abc/.test(dvwaBody));
+check("DVWA POST incluye Login=Login", /Login=Login/.test(dvwaBody));
+check("DVWA POST incluye username=admin", /username=admin/.test(dvwaBody));
+
+const juiceHtml = "<!-- OWASP Juice Shop --><html><body></body></html>";
+check("Juice: sin password form", hasPasswordForm(juiceHtml) === false);
+check("Juice: looksLikeJuiceShop", looksLikeJuiceShop(juiceHtml, "http://127.0.0.1:3000/#/login") === true);
+const juicePost = buildLoginSteps(fakeStepKeep, "http://127.0.0.1:3000/#/login", "a@b.com", "pass", "/tmp/c.txt");
+const juiceArgs = juicePost[1].args({ webLoginPageHtml: juiceHtml });
+check("Juice POST es JSON", juiceArgs.includes("Content-Type: application/json"));
+check("Juice POST apunta a /rest/user/login", juiceArgs.some((a) => /\/rest\/user\/login$/.test(String(a))));
+check("Juice POST body email", (juiceArgs[juiceArgs.indexOf("-d") + 1] || "").includes('"email":"a@b.com"'));
 
 console.log("");
 console.log(fails === 0 ? "RESULTADO: OK — todas pasaron" : `RESULTADO: FAIL — ${fails} fallo(s)`);

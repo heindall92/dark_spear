@@ -313,6 +313,7 @@
 <hr class="border-t border-surface-variant/50 w-full"/>
 
 <div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
+<div class="flex items-start justify-between gap-md">
 <div class="min-w-0">
 <p class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
 <i data-lucide="network" class="text-secondary"></i>
@@ -320,6 +321,13 @@
 </p>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.adLead">Credenciales de dominio para Fase 2+ (SPN, Certipy, WinRM check). Solo en esta sesión del navegador; no se guardan en disco. Sin ellas: AS-REP -no-pass si Fase 1 enumeró usuarios.</p>
 </div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0" for="use-ad">
+<input id="use-ad" type="checkbox" class="sr-only peer" role="switch" aria-checked="false" data-i18n-aria="start.adToggleAria"/>
+<span class="w-11 h-6 bg-surface-variant peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/40 rounded-full peer peer-checked:bg-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></span>
+</label>
+</div>
+<p id="ad-mode-hint" class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="start.adOffHint">Desactivado: collection AD sin credenciales de dominio (null session / AS-REP -no-pass).</p>
+<div id="ad-fields-block" class="hidden flex flex-col gap-md" hidden style="display:none">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="ad-domain" data-i18n="start.adDomain">Dominio</label>
@@ -335,8 +343,10 @@
 </div>
 </div>
 </div>
+</div>
 
 <div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
+<div class="flex items-start justify-between gap-md">
 <div class="min-w-0">
 <p class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
 <i data-lucide="log-in" class="text-secondary"></i>
@@ -344,6 +354,13 @@
 </p>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.webLoginLead">Credenciales de aplicación web para autenticar antes de Fase 1 (detección de form de login + CSRF). Solo en esta sesión del navegador; no se guardan en disco.</p>
 </div>
+<label class="relative inline-flex items-center cursor-pointer shrink-0" for="use-web-login">
+<input id="use-web-login" type="checkbox" class="sr-only peer" role="switch" aria-checked="false" data-i18n-aria="start.webToggleAria"/>
+<span class="w-11 h-6 bg-surface-variant peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/40 rounded-full peer peer-checked:bg-primary-container after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></span>
+</label>
+</div>
+<p id="web-login-mode-hint" class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="start.webOffHint">Desactivado: el playbook no intentará autenticarse en la app web.</p>
+<div id="web-login-fields-block" class="hidden flex flex-col gap-md" hidden style="display:none">
 <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="web-login-url" data-i18n="start.webLoginUrl">URL de login</label>
@@ -356,6 +373,7 @@
 <div class="flex flex-col gap-base">
 <label class="font-label-md text-label-md text-on-surface-variant" for="web-password" data-i18n="start.webPassword">Contraseña</label>
 <input id="web-password" name="web-password" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" type="password" autocomplete="off"/>
+</div>
 </div>
 </div>
 </div>
