@@ -57,7 +57,14 @@ import {
   detectDomainController,
   extractAdDomain,
   extractAdUsersFromBlob,
+  adPortScanArgs,
+  adFollowupPortScanArgs,
+  hydraAdUserSteps,
+  xssFormProbeSteps,
+  sqliFormProbeSteps,
 } from "./vuln-kb.js";
+import { buildLoginSteps } from "./web-auth.js";
+import { extractForms } from "./form-discovery.js";
 
 const WL = {
   common: "/usr/share/seclists/Discovery/Web-Content/common.txt",
@@ -269,6 +276,13 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
     s3BucketHost: ctx.s3BucketHost || extractS3BucketHost(rawBlob),
     azureBlobContainer: ctx.azureBlobContainer || extractAzureBlobContainer(rawBlob),
     gcsBucketName: ctx.gcsBucketName || extractGcsBucket(rawBlob),
+    webLoginUrl: String(ctx.webLoginUrl || "").trim(),
+    webUser: String(ctx.webUser || "").trim(),
+    webPassword: ctx.webPassword != null ? String(ctx.webPassword) : "",
+    webLoginPageHtml: ctx.webLoginPageHtml || rawBlob,
+    discoveredForms: (ctx.discoveredForms && ctx.discoveredForms.length)
+      ? ctx.discoveredForms
+      : extractForms(rawBlob),
   };
 }
 
@@ -345,8 +359,25 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
   const needsAuthProbe = (c) => c.isDvwa || c.hasLogin;
 
   const steps = [
+    ...(ctx.webLoginUrl ? buildLoginSteps(step, ctx.webLoginUrl, ctx.webUser, ctx.webPassword, cookie) : []),
     step("p1-nmap-sV", "nmap", ["-sV", "-p", portSpec(target), host], null, {
       desc: "Detección de servicios en puertos del target",
+    }),
+    // Corre siempre, independiente del puerto que haya puesto el operador:
+    // sin esto detectAdSignals nunca ve 445/389/88 en un target dado como
+    // IP/host pelado (el caso más común en un engagement de red real), y la
+    // rama de collection AD entera queda huérfana. Se omite en loopback
+    // (mismo motivo que el perímetro: contra 127.0.0.1 vería el Kali local).
+    step("p1-ad-nmap-fingerprint", "nmap", adPortScanArgs(host), null, {
+      desc: "Fingerprint de puertos AD (53/88/135/389/445/636/3268-9/5985-6/3389) — siempre corre",
+      skipIf: (c) => isLoopbackHost(c.host) || isLoopbackHost(host),
+    }),
+    // Una vez confirmado AD por el fingerprint de arriba (misma fase, ctx ya
+    // actualizado), sweep de seguimiento a Global Catalog/AD Web Services/
+    // WinRM que el fingerprint no cubre.
+    step("p1-ad-nmap-followup", "nmap", (c) => (c.isAdTarget ? adFollowupPortScanArgs(host) : null), null, {
+      desc: "Sweep AD de seguimiento: Global Catalog, AD Web Services, WinRM",
+      skipIf: (c) => !c.isAdTarget || isLoopbackHost(c.host) || isLoopbackHost(host),
     }),
     // Caja negra: open vs filtered en un set curado de puertos de gestión/BD.
     // Se omite en loopback: nmap 127.0.0.1 listaría ssh/cups de Kali, no del
@@ -589,6 +620,36 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
     }));
   }
 
+  // Cruce AD → OSINT web: si la collection AD reveló el dominio real (p. ej.
+  // corp.empresa.com) pero el target original era una IP pelada, ese
+  // dominio se pierde para subfinder/testssl a menos que se reataque
+  // explícitamente contra él. subfinder reusa el MISMO pipeline de
+  // ctx.subfinderHosts→httpx (extractSubfinderHosts escanea todo el blob
+  // acumulado, no solo la salida de un step fijo) — no hace falta más
+  // wireado para que sus hallazgos lleguen a httpx.
+  steps.push(step("p1-ad-osint-subfinder", "subfinder", (c) => (
+    c.adDomain && c.adDomain !== root ? subfinderArgs(c.adDomain) : null
+  ), null, {
+    desc: "Enumeración pasiva de subdominios del dominio AD real (no el IP/host original)",
+    skipIf: (c) => !c.adDomain || c.adDomain === root,
+  }));
+  steps.push(step("p1-ad-testssl", "testssl.sh", (c) => (
+    c.adDomain && c.adDomain !== root ? testsslArgs(c.adDomain, "443") : null
+  ), null, {
+    desc: "TLS del dominio AD real (LDAPS/ADCS/ADFS suelen exponer 443/636)",
+    skipIf: (c) => !c.adDomain || c.adDomain === root,
+  }));
+
+  return steps;
+}
+
+function phase2FormProbeSteps(baseUrl, ctx) {
+  const forms = ctx.discoveredForms || [];
+  const steps = [];
+  forms.forEach((form, i) => {
+    steps.push(...xssFormProbeSteps(step, `p2-formxss-${i}`, baseUrl, form, ctx.cookieFile));
+    steps.push(...sqliFormProbeSteps(step, `p2-formsqli-${i}`, baseUrl, form, ctx.cookieFile));
+  });
   return steps;
 }
 
@@ -693,6 +754,7 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
   }
 
   steps.push(...adAuthCollectionSteps(step, host));
+  steps.push(...phase2FormProbeSteps(baseUrl, ctx));
   return steps;
 }
 
@@ -706,6 +768,14 @@ function phase3Steps(baseUrl, host, cookie, ctx) {
     ...hydraDefCredsSteps(step, "p3-hydra-defcreds", baseUrl).map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
+    })),
+    // Cruce AD → web: si la collection AD (fase 1/2) ya encontró usuarios
+    // reales (netexec/GetNPUsers/lookupsid/samrdump), probarlos contra el
+    // mismo login web en vez de solo el diccionario genérico — cubre
+    // ADFS/OWA/apps propias sirviendo en el mismo host que el DC.
+    ...hydraAdUserSteps(step, "p3-hydra-aduser", baseUrl, ctx.adUsers).map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack || !(c.adUsers || []).length,
     })),
     // sqlmap descubre y prueba sus propios formularios (--forms --crawl):
     // más fiable que intentar capturar el formulario a mano en el motor.

