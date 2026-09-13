@@ -2643,6 +2643,61 @@ export function httpxFindings(stdout, root) {
 }
 
 /* ------------------------------------------------------------------------ *
+ * katana — crawling ACTIVO con Chromium headless. form-discovery.js solo
+ * parsea HTML ya visitado por casualidad por otras sondas (pasivo); katana
+ * sigue links/JS renderizado real, encuentra rutas que un SPA solo genera
+ * en runtime (ej. /rest/products/search en Juice Shop, invisible al parseo
+ * pasivo del HTML estático).
+ * ------------------------------------------------------------------------ */
+const MAX_KATANA_URLS = 30;
+
+export function katanaArgs(baseUrl, depth = "2") {
+  return ["-u", baseUrl, "-hl", "-no-sandbox", "-d", depth, "-silent"];
+}
+
+/** Un URL por línea en modo -silent; conserva solo mismo host que baseUrl. */
+export function extractKatanaUrls(stdout, baseUrl) {
+  let baseHost;
+  try {
+    baseHost = new URL(baseUrl).host;
+  } catch {
+    return [];
+  }
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const seen = new Set();
+  const out = [];
+  for (const line of lines) {
+    let u;
+    try {
+      u = new URL(line);
+    } catch {
+      continue;
+    }
+    if (u.host !== baseHost || seen.has(u.href)) continue;
+    seen.add(u.href);
+    out.push(u.href);
+    if (out.length >= MAX_KATANA_URLS) break;
+  }
+  return out;
+}
+
+/**
+ * Inventario consolidado (1 finding Info, no vulnerabilidad) — mismo
+ * criterio que httpxFindings: superficie de ataque descubierta, no un
+ * hallazgo explotable por sí solo.
+ */
+export function katanaFindings(stdout, baseUrl) {
+  const urls = extractKatanaUrls(stdout, baseUrl);
+  if (!urls.length) return [];
+  return [{
+    title: `${urls.length} endpoint(s) descubiertos por crawling activo (katana)`,
+    severity: "Info",
+    description: `Crawling con Chromium headless (JS renderizado, no solo HTML estático) sobre ${baseUrl} encontró: ${urls.slice(0, 15).join("; ")}${urls.length > 15 ? "; ..." : ""}. Incluye rutas que un SPA solo genera en runtime (llamadas API/rest), invisibles al parseo pasivo de HTML.`,
+    remediation: "Ninguna por sí sola: es inventario de superficie de ataque. Revisar manualmente cada endpoint nuevo — especialmente rutas /api/, /rest/, /admin/ — como candidatos para las sondas de XSS/SQLi/IDOR existentes.",
+  }];
+}
+
+/* ------------------------------------------------------------------------ *
  * testssl.sh — hueco total previo: cero verificación de TLS/cipher/cert.
  * Se parsea el output de texto plano (por defecto, sin --json*): cada
  * check imprime una línea "<nombre>  <resultado>", formato estable entre

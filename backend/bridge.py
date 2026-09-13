@@ -64,6 +64,7 @@ CORS_ORIGINS = {
 
 ALLOWED_TOOLS = {
     "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "nuclei", "subfinder", "httpx", "testssl.sh", "semgrep", "hydra", "sqlmap",
+    "katana",
     "wpscan",
     "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
@@ -91,7 +92,7 @@ PHASE_NAMES = {
 PHASE_TOOLS = {
     1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
         "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"},
-    2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "GetNPUsers.py",
+    2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
         "searchsploit", "adscan", "certipy", "findDelegation.py"},
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
@@ -1212,7 +1213,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
 
             cmd = [resolved] + [str(a) for a in args]
-            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan") else 120
+            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana") else 120
             run_cwd = None
             if tool == "bloodhound-python" and CURRENT_ENGAGEMENT_DIR is not None:
                 # JSON/zip del ingestor → evidence del engagement (no cwd del bridge).

@@ -48,6 +48,7 @@ import {
   subfinderArgs,
   extractSubfinderHosts,
   httpxArgsForHosts,
+  katanaArgs,
   testsslArgs,
   dnsreconArgs,
   detectAdSignals,
@@ -716,6 +717,14 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
       "-mc", "200,301,302,403", "-fs", "0", "-s", "-maxtime", "60",
     ], null, { skipIf: skipHeavy }),
     step("p2-feroxbuster", "feroxbuster", ["-u", baseUrl, "-w", WL.common, "-q", "--no-state", "-t", "10", "--timeout", "10"], null, {
+      skipIf: skipHeavy,
+    }),
+    // Crawling ACTIVO con Chromium headless (katana) — descubre rutas que
+    // un SPA solo genera al renderizar JS, invisibles al parseo pasivo de
+    // form-discovery.js. Mismo criterio skipHeavy que el resto de la
+    // enumeración pesada de Fase 2.
+    step("p2-katana", "katana", katanaArgs(baseUrl), null, {
+      desc: "Crawling activo (Chromium headless) — descubre endpoints renderizados por JS",
       skipIf: skipHeavy,
     }),
     // Sigue hasta 3 rutas que gobuster/ffuf/ferox confirmaron de verdad.
