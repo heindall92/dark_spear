@@ -379,6 +379,39 @@ async function main() {
     !securityLowCrossContamFindings.some((f) => /DVWA con nivel de seguridad/i.test(f.title)),
   );
 
+  // Soft-404 Altoro / demo.testfire.net: 200 con chrome genérico en
+  // /vulnerabilities/* y rutas /dvwa/ en gobuster NO deben activar isDvwa
+  // ni confirmar módulos DVWA (antes saltaba katana vía skipHeavy).
+  const altoroShell = `<!DOCTYPE html><html><head><title>Altoro Mutual</title></head><body><h1>Altoro Mutual</h1><a href="/login.jsp">Login</a></body></html>`;
+  const gobusterDvwaPath = "http://demo.testfire.net/dvwa/ (Status: 200)\nhttp://demo.testfire.net/vulnerabilities/sqli_blind/ (Status: 200)";
+  const softCtx = buildPlaybookContext([gobusterDvwaPath, altoroShell], {
+    host: "demo.testfire.net",
+    scope: "http://demo.testfire.net",
+  });
+  check(
+    "dirbust /dvwa/ + soft-404 Altoro NO marca isDvwa (katana no se salta)",
+    softCtx.isDvwa !== true,
+  );
+  const softFindings = collectHeuristicFindings(
+    gobusterDvwaPath + "\n" + altoroShell,
+    "http://demo.testfire.net",
+    softCtx,
+    [
+      { id: "p2-dvwa-sqli-blind", text: altoroShell },
+      { id: "p2-dvwa-sqli", text: altoroShell },
+      { id: "p2-curl-vulns-index", text: altoroShell },
+    ],
+  );
+  check(
+    "soft-404 Altoro NO genera módulos DVWA falsos",
+    !softFindings.some((f) => /Módulo .+ DVWA|Panel de módulos vulnerables/i.test(f.title)),
+  );
+  const softSteps = stepsForPhase(2, "http://demo.testfire.net", softCtx);
+  check(
+    "sin isDvwa falso, Fase 2 incluye p2-katana",
+    softSteps.some((s) => s.id === "p2-katana"),
+  );
+
   console.log("");
   console.log(unitFail ? "RESULTADO: FAIL — hay regresiones en el aislamiento por-paso" : "RESULTADO: OK — todas las verificaciones pasaron");
 

@@ -11,7 +11,9 @@ function check(label, ok) {
 // katanaArgs
 const args = katanaArgs("https://x.com");
 check("incluye -u con el target", args.includes("https://x.com"));
-check("headless + no-sandbox activados", args.includes("-hl") && args.includes("-no-sandbox"));
+check("sin headless (evita cuelgues Chromium)", !args.includes("-hl") && !args.includes("-no-sandbox"));
+check("acota duración con -ct", args.includes("-ct") && args.includes("90"));
+check("js-crawl activado", args.includes("-jc"));
 check("modo -silent (un URL por línea)", args.includes("-silent"));
 
 // extractKatanaUrls
