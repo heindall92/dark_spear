@@ -55,6 +55,20 @@ check(
   !noLoginFindings.some((f) => /Login web/i.test(f.title) || /CAPTCHA/i.test(f.title)),
 );
 
+// Login intentado pero SIN respuesta (timeout/conexión rechazada): texto
+// vacío en el paso propio. Debe generar un finding específico de
+// "inalcanzable", distinto del genérico de "no confirmado".
+const unreachableRecords = [{ id: "p1-webauth-post", text: "" }];
+const unreachableFindings = collectHeuristicFindings("", asset, {}, unreachableRecords);
+check(
+  "login inalcanzable (sin respuesta) genera finding específico",
+  unreachableFindings.some((f) => /Login web inalcanzable/i.test(f.title)),
+);
+check(
+  "login inalcanzable NO genera también el finding genérico de no confirmado",
+  !unreachableFindings.some((f) => /Login web no confirmado/i.test(f.title)),
+);
+
 console.log("");
 console.log(fails === 0 ? "RESULTADO: OK — todas pasaron" : `RESULTADO: FAIL — ${fails} fallo(s)`);
 process.exit(fails === 0 ? 0 : 1);

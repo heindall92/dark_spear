@@ -328,29 +328,44 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     );
   }
 
-  const webauthText = probeIdx["webauth-post"] || "";
-  if (webauthText) {
-    const hasCaptcha = /recaptcha|hcaptcha|g-recaptcha/i.test(webauthText);
-    const hasRedirect = /^HTTP\/[\d.]+\s+30[123]\b/im.test(webauthText);
-    const hasNewSessionCookie = /set-cookie:/i.test(webauthText);
-    const loginConfirmed = hasRedirect || hasNewSessionCookie;
+  if ("webauth-post" in probeIdx) {
+    const webauthText = probeIdx["webauth-post"] || "";
 
-    if (hasCaptcha) {
+    if (!webauthText) {
+      // Step corrió (hay registro) pero sin ninguna salida — timeout o
+      // conexión rechazada, distinto de "corrió y respondió pero no
+      // confirmó login". Sin esto, un target inalcanzable quedaba en
+      // silencio total (ver Global Constraints de esta corrección).
       add(
-        "Login web bloqueado por CAPTCHA/2FA — requiere intervención manual",
+        "Login web inalcanzable — no se recibió respuesta del servidor",
         "Info",
-        "El POST de login devolvió una página con CAPTCHA (recaptcha/hcaptcha) o un segundo factor. El motor no reintenta ni intenta bypasear controles de este tipo.",
-        "Completar el login manualmente y reusar la cookie de sesión resultante si se necesita continuar el escaneo autenticado.",
+        "El POST de login (paso p1-webauth-post) no devolvió ninguna respuesta (timeout o conexión rechazada). El resto del engagement corre sin sesión autenticada.",
+        "Verificar que la URL de login sea correcta y que el target esté accesible desde donde corre el motor.",
         ["p1-webauth-post"],
       );
-    } else if (!loginConfirmed) {
-      add(
-        "Login web no confirmado — descubrimiento de formularios corre sin sesión autenticada",
-        "Info",
-        "El POST de login no devolvió un redirect (302/303) ni una cookie de sesión nueva. El resto del engagement corre como si no se hubiera logueado.",
-        "Verificar usuario/contraseña, o que la URL de login sea la correcta. Revisar la evidencia cruda del paso p1-webauth-post.",
-        ["p1-webauth-post"],
-      );
+    } else {
+      const hasCaptcha = /recaptcha|hcaptcha|g-recaptcha/i.test(webauthText);
+      const hasRedirect = /^HTTP\/[\d.]+\s+30[123]\b/im.test(webauthText);
+      const hasNewSessionCookie = /set-cookie:/i.test(webauthText);
+      const loginConfirmed = hasRedirect || hasNewSessionCookie;
+
+      if (hasCaptcha) {
+        add(
+          "Login web bloqueado por CAPTCHA/2FA — requiere intervención manual",
+          "Info",
+          "El POST de login devolvió una página con CAPTCHA (recaptcha/hcaptcha) o un segundo factor. El motor no reintenta ni intenta bypasear controles de este tipo.",
+          "Completar el login manualmente y reusar la cookie de sesión resultante si se necesita continuar el escaneo autenticado.",
+          ["p1-webauth-post"],
+        );
+      } else if (!loginConfirmed) {
+        add(
+          "Login web no confirmado — descubrimiento de formularios corre sin sesión autenticada",
+          "Info",
+          "El POST de login no devolvió un redirect (302/303) ni una cookie de sesión nueva. El resto del engagement corre como si no se hubiera logueado.",
+          "Verificar usuario/contraseña, o que la URL de login sea la correcta. Revisar la evidencia cruda del paso p1-webauth-post.",
+          ["p1-webauth-post"],
+        );
+      }
     }
   }
 
