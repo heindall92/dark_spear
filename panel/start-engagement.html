@@ -336,6 +336,30 @@
 </div>
 </div>
 
+<div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
+<div class="min-w-0">
+<p class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">
+<i data-lucide="log-in" class="text-secondary"></i>
+<span data-i18n="start.webLoginTitle">Login web (opcional)</span>
+</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="start.webLoginLead">Credenciales de aplicación web para autenticar antes de Fase 1 (detección de form de login + CSRF). Solo en esta sesión del navegador; no se guardan en disco.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="web-login-url" data-i18n="start.webLoginUrl">URL de login</label>
+<input id="web-login-url" name="web-login-url" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="https://target.com/login" type="text" autocomplete="off"/>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="web-user" data-i18n="start.webUser">Usuario</label>
+<input id="web-user" name="web-user" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" placeholder="usuario@target.com" type="text" autocomplete="off"/>
+</div>
+<div class="flex flex-col gap-base">
+<label class="font-label-md text-label-md text-on-surface-variant" for="web-password" data-i18n="start.webPassword">Contraseña</label>
+<input id="web-password" name="web-password" class="fluent-input bg-surface-container-lowest rounded px-md py-sm font-body-md text-body-md text-on-surface w-full" type="password" autocomplete="off"/>
+</div>
+</div>
+</div>
+
 <hr class="border-t border-surface-variant/50 w-full"/>
 
 <div class="flex flex-col gap-md rounded-lg border border-outline-variant/40 bg-surface-container-low/40 p-md">
