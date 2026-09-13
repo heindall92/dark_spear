@@ -59,6 +59,22 @@ check(
   !stepsFase2SinForm.some((s) => s.id.startsWith("p2-formxss-") || s.id.startsWith("p2-formsqli-")),
 );
 
+// Cap de formularios: muchos forms descubiertos (ej. app con 20 páginas
+// distintas visitadas) no deben explotar el conteo de pasos de Fase 2 —
+// mismo criterio que hydraAdUserSteps (tope 3 usuarios).
+const manyForms = Array.from({ length: 20 }, (_, i) => ({
+  action: `/form-${i}`,
+  method: "POST",
+  fields: [{ name: "x", type: "text" }],
+}));
+const ctxManyForms = buildPlaybookContext([], { host: "x.com", scope: "https://x.com", discoveredForms: manyForms });
+const stepsFase2Many = stepsForPhase(2, "https://x.com", ctxManyForms);
+const formStepCount = stepsFase2Many.filter((s) => s.id.startsWith("p2-formxss-") || s.id.startsWith("p2-formsqli-")).length;
+check(
+  "cap de formularios: 20 forms descubiertos generan steps acotados (<=10, no 40)",
+  formStepCount <= 10,
+);
+
 console.log("");
 console.log(fails === 0 ? "RESULTADO: OK — todas pasaron" : `RESULTADO: FAIL — ${fails} fallo(s)`);
 process.exit(fails === 0 ? 0 : 1);
