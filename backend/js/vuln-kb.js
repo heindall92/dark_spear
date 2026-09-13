@@ -2643,16 +2643,24 @@ export function httpxFindings(stdout, root) {
 }
 
 /* ------------------------------------------------------------------------ *
- * katana — crawling ACTIVO con Chromium headless. form-discovery.js solo
- * parsea HTML ya visitado por casualidad por otras sondas (pasivo); katana
- * sigue links/JS renderizado real, encuentra rutas que un SPA solo genera
- * en runtime (ej. /rest/products/search en Juice Shop, invisible al parseo
- * pasivo del HTML estático).
+ * katana — crawling ACTIVO. form-discovery.js solo parsea HTML ya visitado
+ * por casualidad (pasivo); katana sigue links y, con -jc, endpoints en JS.
+ * No usamos -hl (headless Chromium experimental): en labs cuelga o supera
+ * el timeout del bridge y el motor descartaba el stdout parcial → cero
+ * finding y tarjeta fantasma. -ct acota la duración para salir limpio.
  * ------------------------------------------------------------------------ */
 const MAX_KATANA_URLS = 30;
 
 export function katanaArgs(baseUrl, depth = "2") {
-  return ["-u", baseUrl, "-hl", "-no-sandbox", "-d", depth, "-silent"];
+  return [
+    "-u", baseUrl,
+    "-d", depth,
+    "-jc",
+    "-ct", "90",
+    "-iqp",
+    "-fsu",
+    "-silent",
+  ];
 }
 
 /** Un URL por línea en modo -silent; conserva solo mismo host que baseUrl. */
@@ -2692,9 +2700,170 @@ export function katanaFindings(stdout, baseUrl) {
   return [{
     title: `${urls.length} endpoint(s) descubiertos por crawling activo (katana)`,
     severity: "Info",
-    description: `Crawling con Chromium headless (JS renderizado, no solo HTML estático) sobre ${baseUrl} encontró: ${urls.slice(0, 15).join("; ")}${urls.length > 15 ? "; ..." : ""}. Incluye rutas que un SPA solo genera en runtime (llamadas API/rest), invisibles al parseo pasivo de HTML.`,
+    description: `Crawling activo (katana, links + parseo JS) sobre ${baseUrl} encontró: ${urls.slice(0, 15).join("; ")}${urls.length > 15 ? "; ..." : ""}. Inventario de superficie; rutas /api/, /rest/, /admin/ son candidatas a sondas XSS/SQLi/IDOR.`,
     remediation: "Ninguna por sí sola: es inventario de superficie de ataque. Revisar manualmente cada endpoint nuevo — especialmente rutas /api/, /rest/, /admin/ — como candidatos para las sondas de XSS/SQLi/IDOR existentes.",
   }];
+}
+
+/* ------------------------------------------------------------------------ *
+ * wapiti — scanner de vulnerabilidades web activo (XSS/SQLi/CSRF/exec/
+ * traversal/upload/redirect/backup). -v 0 deja stdout limpio de banner y
+ * logs de progreso (solo así -o /dev/stdout produce JSON parseable). El
+ * JSON tiene 4 secciones: vulnerabilities (hallazgos reales), anomalies
+ * (timeouts/errores, poco valor), additionals (info del target, no vulns)
+ * y classifications (descripción/solución por categoría). Solo se
+ * consumen vulnerabilities + classifications.
+ * ------------------------------------------------------------------------ */
+const WAPITI_MODULES = "xss,sql,csrf,exec,file,upload,redirect,backup";
+
+// level confirmado por captura real (XSS reflejado real -> level=2 -> Medium
+// en la UI de wapiti). Escala estándar de wapitiCore: 1..4.
+const WAPITI_LEVEL_SEVERITY = { 1: "Low", 2: "Medium", 3: "High", 4: "Critical" };
+
+export function wapitiArgs(baseUrl, maxScanTime = "150") {
+  return [
+    "-u", baseUrl,
+    "--scope", "folder",
+    "-m", WAPITI_MODULES,
+    "-f", "json",
+    "-o", "/dev/stdout",
+    "-v", "0",
+    "--max-scan-time", maxScanTime,
+  ];
+}
+
+export function wapitiFindings(stdout) {
+  let report;
+  try {
+    report = JSON.parse(stdout);
+  } catch {
+    return [];
+  }
+  const vulns = report?.vulnerabilities || {};
+  const classifications = report?.classifications || {};
+  const out = [];
+  for (const [category, items] of Object.entries(vulns)) {
+    if (!Array.isArray(items) || !items.length) continue;
+    const maxLevel = Math.max(...items.map((i) => Number(i.level) || 0));
+    const severity = WAPITI_LEVEL_SEVERITY[maxLevel] || "Medium";
+    const details = items.slice(0, 5).map((i) =>
+      `${i.method || "GET"} ${i.path || "?"}${i.parameter ? ` (parámetro: ${i.parameter})` : ""}: ${i.info || category}`
+    ).join("; ");
+    out.push({
+      title: `${items.length} hallazgo(s) de "${category}" (wapiti)`,
+      severity,
+      description: `Wapiti confirmó ${items.length} instancia(s) de "${category}": ${details}${items.length > 5 ? "; ..." : ""}.`,
+      remediation: classifications[category]?.sol
+        || "Revisar la categoría reportada por wapiti y aplicar la corrección correspondiente al tipo de vulnerabilidad.",
+    });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
+ * arjun — descubrimiento de parámetros ocultos (GET). -oJ /dev/stdout con
+ * -q deja stdout como JSON puro (sort_keys=True, indent=4, fijo en el
+ * propio arjun — no configurable, por eso el parser de línea puede confiar
+ * en la indentación). Wordlist small.txt (835 palabras): rapidez en labs,
+ * mismo criterio que -ct 90 en katana. Alimenta a dalfox (params reales,
+ * no adivinados) en vez de que dalfox dependa de discovery propio (lento,
+ * duplicaría trabajo).
+ * ------------------------------------------------------------------------ */
+const ARJUN_WORDLIST = "/usr/lib/python3/dist-packages/arjun/db/small.txt";
+
+export function arjunArgs(baseUrl, wordlist = ARJUN_WORDLIST) {
+  return ["-u", baseUrl, "-m", "GET", "-w", wordlist, "-oJ", "/dev/stdout", "-q", "-T", "10"];
+}
+
+/**
+ * Extrae {url, params[]} del JSON pretty-printed de arjun aunque esté
+ * mezclado en un blob con salida de otros steps (nmap, HTML crawleado,
+ * etc.) — por eso NO se hace JSON.parse(stdout) directo, sino un escaneo
+ * por línea anclado a la indentación fija de arjun (4/8/12 espacios).
+ */
+export function extractArjunParams(rawBlob) {
+  const lines = String(rawBlob || "").split("\n");
+  const results = [];
+  let currentUrl = null;
+  let currentParams = [];
+  let inParams = false;
+
+  const flush = () => {
+    if (currentUrl && currentParams.length) results.push({ url: currentUrl, params: currentParams });
+  };
+
+  for (const line of lines) {
+    const urlMatch = line.match(/^ {4}"(https?:\/\/[^"]+)":\s*\{$/);
+    if (urlMatch) {
+      flush();
+      currentUrl = urlMatch[1];
+      currentParams = [];
+      inParams = false;
+      continue;
+    }
+    if (currentUrl && /^ {8}"params":\s*\[$/.test(line)) {
+      inParams = true;
+      continue;
+    }
+    if (inParams) {
+      if (/^ {8}\]/.test(line)) {
+        inParams = false;
+        continue;
+      }
+      const paramMatch = line.match(/^ {12}"([^"]*)"/);
+      if (paramMatch) currentParams.push(paramMatch[1]);
+    }
+  }
+  flush();
+  return results;
+}
+
+export function arjunFindings(stdout, baseUrl) {
+  const found = extractArjunParams(stdout);
+  if (!found.length) return [];
+  const list = found.map((f) => `${f.url} [${f.params.join(", ")}]`).join("; ");
+  return [{
+    title: `${found.reduce((n, f) => n + f.params.length, 0)} parámetro(s) oculto(s) descubiertos (arjun)`,
+    severity: "Info",
+    description: `Fuzzing de nombres de parámetros GET sobre ${baseUrl} (arjun) reveló: ${list}. Superficie de ataque para XSS/SQLi/IDOR no visible en el HTML/JS ya crawleado.`,
+    remediation: "Ninguna por sí sola: es inventario de superficie. Auditar manualmente cada parámetro descubierto — especialmente si controla lógica de negocio o consultas — con las sondas de XSS/SQLi/IDOR existentes.",
+  }];
+}
+
+/* ------------------------------------------------------------------------ *
+ * dalfox — confirmación activa de XSS sobre parámetros ya conocidos
+ * (típicamente los que descubre arjun). --skip-bav evita ruido de checks
+ * "basic another vulnerability" fuera de alcance de XSS. -S + --format
+ * jsonl -> stdout es JSONL puro, un hallazgo confirmado/reflejado por
+ * línea, sin logs de progreso mezclados.
+ * ------------------------------------------------------------------------ */
+export function dalfoxArgs(url, params = []) {
+  const args = ["url", url, "--skip-bav", "-S", "--format", "jsonl", "--no-color", "--no-spinner"];
+  for (const p of params) args.push("-p", p);
+  return args;
+}
+
+export function dalfoxFindings(stdout, baseUrl) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  for (const line of lines) {
+    if (!line.startsWith("{")) continue;
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!hit.param) continue;
+    const verified = hit.type === "V";
+    out.push({
+      title: `XSS ${verified ? "confirmado" : "reflejado"} en parámetro "${hit.param}" (dalfox)`,
+      severity: hit.severity || (verified ? "High" : "Medium"),
+      description: `Dalfox ${verified ? "disparó y verificó" : "reflejó"} un payload XSS en el parámetro "${hit.param}" de ${baseUrl}. PoC: ${hit.data || "N/D"}. Payload: ${hit.payload || "N/D"}.`,
+      remediation: "Escapar/codificar (output encoding) el valor del parámetro según el contexto de salida (HTML, atributo, JS) antes de reflejarlo en la respuesta. Aplicar CSP como defensa en profundidad.",
+    });
+  }
+  return out;
 }
 
 /* ------------------------------------------------------------------------ *
@@ -2855,7 +3024,52 @@ export function semgrepFindings(stdout, filename) {
  * con ruta/CVE cuando Nikto las deja, sin inventar exploits.
  * ------------------------------------------------------------------------ */
 const NIKTO_SKIP_RE = /no cgi directories|item\(s\) reported|start time|end time|target ip|target hostname|target port|^server:\s|retrieved x-powered-by|multiple i(?:ndex )?files|uncommon header|cookie .+ flag|allowed http methods|0 host\(s\) tested/i;
-const NIKTO_HEADER_DUP_RE = /x-frame-options|x-content-type-options|strict-transport-security|content-security-policy|x-xss-protection|header is not present|header is not set|anti-clickjacking/i;
+// Cabeceras HTTP ya cubiertas por heurísticas propias; Nikto suele pegar
+// la URL de MDN tras "See:", que el path-matcher antiguo tomaba como ruta.
+const NIKTO_HEADER_DUP_RE = /x-frame-options|x-content-type-options|strict-transport-security|content-security-policy|x-xss-protection|referrer-policy|permissions-policy|cross-origin-(?:opener|embedder|resource)-policy|header is not present|header is not set|anti-clickjacking|suggested security header missing/i;
+
+/** Ruta del check Nikto (inicio de línea), nunca la URL de documentación. */
+function niktoExtractPath(line) {
+  const cleaned = String(line || "")
+    .replace(/\bSee:\s*https?:\/\/\S+/gi, "")
+    .replace(/https?:\/\/\S+/gi, "");
+  const m = cleaned.match(
+    /^(?:OSVDB-\d+:\s*|CVE-\d{4}-\d+:\s*|\[\d+\]\s*)?(\/[A-Za-z0-9._~-][A-Za-z0-9._~/-]{0,80})/,
+  );
+  if (!m) return "";
+  const p = m[1].replace(/[),.;:]+$/, "");
+  if (/^\/\//.test(p)) return "";
+  if (/mozilla\.org|github\.com|cirt\.net|owasp\.org|w3\.org/i.test(p)) return "";
+  return p;
+}
+
+/** Título corto en ES; la línea cruda de Nikto queda en description. */
+function niktoShortTitle(line, path, cveM, osvdbM) {
+  const p = path || "";
+  const cve = cveM ? cveM[0].toUpperCase() : "";
+  const osvdb = osvdbM ? osvdbM[0].toUpperCase() : "";
+  if (cve) return p ? `Nikto: ${cve} en ${p}` : `Nikto: ${cve}`;
+  if (/phpinfo/i.test(line)) return p ? `Nikto: phpinfo() en ${p}` : "Nikto: phpinfo() expuesto";
+  if (/directory indexing|index of/i.test(line)) {
+    return p ? `Nikto: listado de directorio en ${p}` : "Nikto: listado de directorio";
+  }
+  if (/config\.(inc|php)|wp-config|database IDs and passwords/i.test(line)) {
+    return p ? `Nikto: configuración expuesta en ${p}` : "Nikto: configuración expuesta";
+  }
+  if (/\.bak|backup/i.test(line)) return p ? `Nikto: backup accesible en ${p}` : "Nikto: backup accesible";
+  if (/\.git/i.test(line)) return p ? `Nikto: .git expuesto en ${p}` : "Nikto: .git expuesto";
+  if (/passwd/i.test(line)) return p ? `Nikto: passwd en ${p}` : "Nikto: passwd expuesto";
+  if (/default file|README/i.test(line)) {
+    return p ? `Nikto: fichero por defecto en ${p}` : "Nikto: fichero por defecto";
+  }
+  if (/might be interesting/i.test(line)) {
+    return p ? `Nikto: ruta interesante ${p}` : "Nikto: ruta interesante";
+  }
+  if (osvdb && p) return `Nikto: ${osvdb} en ${p}`;
+  if (p && p !== "/") return `Nikto: superficie en ${p}`;
+  if (osvdb) return `Nikto: ${osvdb}`;
+  return "Nikto: check confirmado";
+}
 
 export function niktoFindings(stdout) {
   const out = [];
@@ -2865,20 +3079,15 @@ export function niktoFindings(stdout) {
     if (!line || NIKTO_SKIP_RE.test(line) || NIKTO_HEADER_DUP_RE.test(line)) continue;
     const cveM = line.match(/CVE-\d{4}-\d+/i);
     const osvdbM = line.match(/OSVDB-\d+/i);
-    const pathM = line.match(/(\/[A-Za-z0-9._~/?#\[\]@!$&'()*+,;=%-]{1,80})/);
-    const path = pathM ? pathM[1].replace(/[),.;]+$/, "") : "";
+    const path = niktoExtractPath(line);
     if (!path && !cveM && !osvdbM) continue;
     let severity = "Low";
     if (cveM) severity = "High";
     else if (/phpinfo|config\.(inc|php)|wp-config|\.bak|\.git|passwd|backup/i.test(line)) severity = "High";
     else if (/directory indexing|index of/i.test(line)) severity = "Medium";
     else if (osvdbM && path) severity = "Medium";
-    const rest = line
-      .replace(/^OSVDB-\d+:\s*/i, "")
-      .replace(/^CVE-\d{4}-\d+:\s*/i, "")
-      .slice(0, 110);
-    const title = `Nikto: ${path ? `${path} — ` : ""}${rest}`;
-    const key = title.toLowerCase();
+    const title = niktoShortTitle(line, path, cveM, osvdbM);
+    const key = `${severity}|${(path || cveM?.[0] || osvdbM?.[0] || title).toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
     const refs = [cveM && cveM[0], osvdbM && osvdbM[0]].filter(Boolean).join(", ");

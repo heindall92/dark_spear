@@ -49,6 +49,10 @@ import {
   extractSubfinderHosts,
   httpxArgsForHosts,
   katanaArgs,
+  wapitiArgs,
+  arjunArgs,
+  extractArjunParams,
+  dalfoxArgs,
   testsslArgs,
   dnsreconArgs,
   detectAdSignals,
@@ -70,7 +74,9 @@ import { extractForms } from "./form-discovery.js";
 const WL = {
   common: "/usr/share/seclists/Discovery/Web-Content/common.txt",
   dirb: "/usr/share/wordlists/dirb/common.txt",
-  small: "/usr/share/wordlists/dirbuster/directory-list-2.3-small.txt",
+  // Kali empaqueta DirBuster dentro de SecLists; la ruta legacy
+  // /usr/share/wordlists/dirbuster/… ya no existe en installs recientes.
+  small: "/usr/share/seclists/Discovery/Web-Content/DirBuster-2007_directory-list-2.3-small.txt",
   rockyou: "/usr/share/wordlists/rockyou.txt",
 };
 
@@ -235,7 +241,12 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
     scope: ctx.scope || "",
     host: ctx.host || "",
     isIpTarget: ctx.isIpTarget ?? isIpHost(root),
-    isDvwa: /dvwa|damn vulnerable web application/.test(blob) || ctx.isDvwa === true,
+    // Soft-404 / dirbust: apps como Altoro (demo.testfire.net) responden 200
+    // a /dvwa/ y /vulnerabilities/* con el shell genérico. La palabra "dvwa"
+    // en una URL de gobuster NO es fingerprint. Exigir firma de página real
+    // (mismo criterio que isWordpress).
+    isDvwa: /damn vulnerable web application|login\s*::\s*damn vulnerable|<title>[^<]*\bdvwa\b|\$_DVWA\b/i.test(rawBlob)
+      || ctx.isDvwa === true,
     // Requiere ruta real (con "/") o firma explícita, no la palabra suelta:
     // gobuster/ffuf contra un SPA que responde 200 en todo vuelca su wordlist
     // completa como "coincidencias", y esas listas traen "wordpress",
@@ -258,6 +269,9 @@ export function buildPlaybookContext(stepOutputs, ctx = {}) {
     bruteDiscovered: ctx.bruteDiscovered && ctx.bruteDiscovered.length
       ? ctx.bruteDiscovered
       : extractBruteDiscoveredPaths(rawBlob),
+    arjunParams: (ctx.arjunParams && ctx.arjunParams.length)
+      ? ctx.arjunParams
+      : extractArjunParams(rawBlob),
     capturedJwt: ctx.capturedJwt || extractCapturedJwt(rawBlob),
     capturedSecrets: (ctx.capturedSecrets && ctx.capturedSecrets.length)
       ? ctx.capturedSecrets
@@ -709,12 +723,12 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
       skipIf: skipHeavy,
     }),
     step("p2-ffuf-dirs", "ffuf", [
-      "-u", baseUrl + "/FUZZ", "-w", WL.small,
-      "-mc", "200,301,302,403", "-fs", "0", "-s", "-maxtime", "60",
+      "-u", baseUrl + "/FUZZ", "-w", WL.small, "-ic",
+      "-mc", "200,301,302,403", "-fs", "0", "-s", "-noninteractive", "-maxtime", "60",
     ], null, { skipIf: skipHeavy }),
     step("p2-ffuf-common", "ffuf", [
-      "-u", baseUrl + "/FUZZ", "-w", WL.common,
-      "-mc", "200,301,302,403", "-fs", "0", "-s", "-maxtime", "60",
+      "-u", baseUrl + "/FUZZ", "-w", WL.common, "-ic",
+      "-mc", "200,301,302,403", "-fs", "0", "-s", "-noninteractive", "-maxtime", "60",
     ], null, { skipIf: skipHeavy }),
     step("p2-feroxbuster", "feroxbuster", ["-u", baseUrl, "-w", WL.common, "-q", "--no-state", "-t", "10", "--timeout", "10"], null, {
       skipIf: skipHeavy,
@@ -724,8 +738,31 @@ function phase2Steps(baseUrl, host, target, cookie, ctx) {
     // form-discovery.js. Mismo criterio skipHeavy que el resto de la
     // enumeración pesada de Fase 2.
     step("p2-katana", "katana", katanaArgs(baseUrl), null, {
-      desc: "Crawling activo (Chromium headless) — descubre endpoints renderizados por JS",
+      desc: "Crawling activo (katana: links + JS crawl, máx. 90s) — inventario de endpoints",
       skipIf: skipHeavy,
+    }),
+    // wapiti: scanner de vulnerabilidades activo (XSS/SQLi/CSRF/exec/
+    // traversal/upload/redirect/backup). Mismo criterio skipHeavy que
+    // nikto/gobuster: puede tardar minutos, se salta en DVWA (ya cubierto
+    // por sondas de módulo específicas).
+    step("p2-wapiti", "wapiti", wapitiArgs(baseUrl), null, {
+      desc: "Wapiti (scan activo XSS/SQLi/CSRF/exec/traversal, máx. 150s)",
+      skipIf: skipHeavy,
+    }),
+    // arjun: descubre parámetros GET ocultos no visibles en el HTML/JS ya
+    // crawleado. Alimenta a p2-dalfox-1 vía ctx.arjunParams.
+    step("p2-arjun", "arjun", arjunArgs(baseUrl), null, {
+      desc: "Arjun (fuzzing de parámetros GET ocultos, wordlist small)",
+      skipIf: skipHeavy,
+    }),
+    // dalfox confirma XSS sobre el primer par (url, param) que arjun
+    // descubrió de verdad — igual criterio que p2-brute-follow-*: solo
+    // corre si hay algo real que sondear, evita steps fantasma.
+    step("p2-dalfox-1", "dalfox", (c) => (c.arjunParams?.[0]
+      ? dalfoxArgs(c.arjunParams[0].url, c.arjunParams[0].params)
+      : null), null, {
+      desc: "Dalfox: confirma XSS sobre el 1er param descubierto por arjun",
+      skipIf: (c) => !c.arjunParams?.[0] || skipHeavy(c),
     }),
     // Sigue hasta 3 rutas que gobuster/ffuf/ferox confirmaron de verdad.
     step("p2-brute-follow-1", "curl", (c) => (c.bruteDiscovered?.[0]

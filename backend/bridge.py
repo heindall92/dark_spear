@@ -65,6 +65,7 @@ CORS_ORIGINS = {
 ALLOWED_TOOLS = {
     "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "nuclei", "subfinder", "httpx", "testssl.sh", "semgrep", "hydra", "sqlmap",
     "katana",
+    "wapiti", "arjun", "dalfox",
     "wpscan",
     "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
@@ -92,7 +93,7 @@ PHASE_NAMES = {
 PHASE_TOOLS = {
     1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
         "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"},
-    2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "GetNPUsers.py",
+    2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "wapiti", "arjun", "dalfox", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
         "searchsploit", "adscan", "certipy", "findDelegation.py"},
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
@@ -143,6 +144,48 @@ def resolve_tool_path(tool: str) -> str | None:
         if path:
             return path
     return None
+
+
+# wapiti (-o) y arjun (-oJ) solo saben escribir JSON en un archivo real:
+# abren el destino en modo "w+" (lectura+escritura), y un pipe real (lo que
+# subprocess.run usa, a diferencia de un pty interactivo) no soporta eso ->
+# OSError: [Errno 6] No such device or address. Los args builders de
+# vuln-kb.js siguen usando el literal "/dev/stdout" (simple, testeable);
+# aquí se sustituye por un tempfile real antes de ejecutar.
+STDOUT_REDIRECT_FLAGS = {
+    "wapiti": "-o",
+    "arjun": "-oJ",
+}
+
+
+def rewrite_stdout_placeholder(args: list, tool: str) -> tuple[list, str | None]:
+    flag = STDOUT_REDIRECT_FLAGS.get(tool)
+    if not flag:
+        return args, None
+    try:
+        idx = args.index(flag)
+    except ValueError:
+        return args, None
+    if idx + 1 >= len(args) or args[idx + 1] != "/dev/stdout":
+        return args, None
+    fd, tmp_path = tempfile.mkstemp(suffix=".json", prefix=f"ds-{tool}-")
+    os.close(fd)
+    new_args = list(args)
+    new_args[idx + 1] = tmp_path
+    return new_args, tmp_path
+
+
+def read_and_cleanup_tempfile(path: str) -> str:
+    try:
+        content = Path(path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+    finally:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+    return content
 
 
 def cumulative_phase_tools(phase: int) -> set[str]:
@@ -1212,8 +1255,9 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(200, result)
                 return
 
-            cmd = [resolved] + [str(a) for a in args]
-            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana") else 120
+            exec_args, stdout_tmp_path = rewrite_stdout_placeholder([str(a) for a in args], tool)
+            cmd = [resolved] + exec_args
+            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti") else 120
             run_cwd = None
             if tool == "bloodhound-python" and CURRENT_ENGAGEMENT_DIR is not None:
                 # JSON/zip del ingestor → evidence del engagement (no cwd del bridge).
@@ -1234,15 +1278,38 @@ class Handler(BaseHTTPRequestHandler):
                           "exit_code": proc.returncode, "verdict": "ok"}
                 if run_cwd:
                     result["cwd"] = run_cwd
-            except subprocess.TimeoutExpired:
-                result = {"stdout": "", "stderr": f"timeout after {timeout_s}s",
-                          "exit_code": -1, "verdict": "timeout"}
+            except subprocess.TimeoutExpired as exc:
+                # Conservar stdout parcial (p. ej. katana ya listó URLs antes
+                # del corte): sin esto el playbook marca timeout vacío y no
+                # emite finding ni tarjeta útil en el feed.
+                partial_out = exc.stdout if isinstance(exc.stdout, str) else (
+                    exc.stdout.decode("utf-8", errors="replace") if exc.stdout else ""
+                )
+                partial_err = exc.stderr if isinstance(exc.stderr, str) else (
+                    exc.stderr.decode("utf-8", errors="replace") if exc.stderr else ""
+                )
+                err_bits = [partial_err.strip(), f"timeout after {timeout_s}s"]
+                result = {
+                    "stdout": _truncate_output(partial_out),
+                    "stderr": _truncate_output("\n".join(b for b in err_bits if b)),
+                    "exit_code": -1,
+                    "verdict": "timeout",
+                }
+                if run_cwd:
+                    result["cwd"] = run_cwd
             except FileNotFoundError:
                 result = {"stdout": "", "stderr": f"{tool}: command not found",
                           "exit_code": -1, "verdict": "error"}
             except OSError as e:
                 result = {"stdout": "", "stderr": str(e),
                           "exit_code": -1, "verdict": "error"}
+            if stdout_tmp_path:
+                # wapiti/arjun escribieron su JSON real en el tempfile (ver
+                # rewrite_stdout_placeholder); su stdout de proceso queda
+                # vacío/con logs, así que el contenido útil se agrega aquí.
+                file_content = _truncate_output(read_and_cleanup_tempfile(stdout_tmp_path))
+                if file_content:
+                    result["stdout"] = f"{result['stdout']}\n{file_content}".strip() if result.get("stdout") else file_content
             audit_log({"event": "exec", "tool": tool, "resolved_path": resolved,
                        "args": redact_args(args), "target": target,
                        "cwd": run_cwd,

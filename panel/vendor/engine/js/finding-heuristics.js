@@ -49,6 +49,9 @@ import {
   sqlmapFindings,
   httpxFindings,
   katanaFindings,
+  wapitiFindings,
+  arjunFindings,
+  dalfoxFindings,
   testsslFindings,
   niktoFindings,
   dnsreconFindings,
@@ -163,6 +166,10 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
     if (r.id === "p2-katana") push("katana", text);
+    if (r.id === "p2-wapiti") push("wapiti", text);
+    if (r.id === "p2-arjun") push("arjun", text);
+    m = /^p2-dalfox-(\d+)$/.exec(r.id);
+    if (m) push(`dalfox:${m[1]}`, text);
     if (r.id === "p1-testssl") push("testssl", text);
     if (r.id === "p1-ad-testssl") push("ad-testssl", text);
     if (r.id === "p2-nikto") push("nikto", text);
@@ -222,6 +229,17 @@ function isDvwaNegativePage(text) {
     || /<title>[^<]*Not Found<\/title>/i.test(text)
     || /<title>[^<]*Forbidden<\/title>/i.test(text)
   );
+}
+
+/**
+ * Soft-404 / catch-all (Altoro, algunos SPA): 200 con el chrome genérico del
+ * sitio, sin UI de módulo DVWA. Sin esta guarda, /vulnerabilities/sqli_blind/
+ * en demo.testfire.net "confirma" todos los módulos DVWA.
+ */
+function isDvwaModulePage(text) {
+  const t = String(text || "");
+  if (!t.trim() || isDvwaNegativePage(t)) return false;
+  return /Damn Vulnerable Web Application|\bDVWA\b|Vulnerability:\s*|security\.php|hackable\/uploads|\$_DVWA/i.test(t);
 }
 
 /**
@@ -285,8 +303,8 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   // completo como antes.
   const rootOwnText = probeIdx["head-root"] || "";
   const dvwaOnRoot = hasRecords
-    ? Boolean(rootOwnText) && /dvwa|damn vulnerable web application/i.test(rootOwnText)
-    : /dvwa|damn vulnerable web application/i.test(b);
+    ? Boolean(rootOwnText) && /damn vulnerable web application|login\s*::\s*damn vulnerable|<title>[^<]*\bdvwa\b/i.test(rootOwnText)
+    : /damn vulnerable web application|login\s*::\s*damn vulnerable|<title>[^<]*\bdvwa\b/i.test(b);
 
   if (dvwaOnRoot) {
     add(
@@ -438,7 +456,7 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     );
   }
 
-  if (/EVIDENCE:.*\/vulnerabilities\//i.test(b) || ((ctx.isDvwa || /dvwa/i.test(b)) && /vulnerabilities\//i.test(b))) {
+  if (/EVIDENCE:.*\/vulnerabilities\//i.test(b) || (ctx.isDvwa && /vulnerabilities\//i.test(b) && (hasRecords ? Object.keys(probeIdx).some((k) => k.startsWith("dvwa:") && isDvwaModulePage(probeIdx[k])) : /Damn Vulnerable|Vulnerability:/i.test(b)))) {
     add(
       "Panel de módulos vulnerables accesible tras login",
       "High",
@@ -447,18 +465,14 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     );
   }
 
-  if (ctx.isDvwa || /dvwa|damn vulnerable web application/i.test(b)) {
+  if (ctx.isDvwa || /damn vulnerable web application|login\s*::\s*damn vulnerable|<title>[^<]*\bdvwa\b/i.test(b)) {
     DVWA_MODULES.forEach(function (m) {
       const own = probeIdx[`dvwa:${m.stepId}`];
-      // Con registro por-paso: confirmar contra la respuesta real de ESE
-      // módulo (no vacía, no redirigida a login ni un 40x genérico). No
-      // exigimos que coincida con `m.detect`: esas cadenas suelen requerir
-      // provocar el error (p. ej. inyectar), no aparecen en un GET simple.
-      // Sin registro (compat hacia atrás, p. ej. llamadas antiguas sin
-      // stepRecords): heurística previa sobre el blob completo.
+      // Con registro por-paso: la respuesta propia debe parecer UI DVWA real,
+      // no un soft-404 200 del target (Altoro Mutual, etc.).
       const confirmed = hasRecords
-        ? own != null && Boolean(own.trim()) && !isDvwaNegativePage(own)
-        : modulePathRe(m.path).test(b);
+        ? own != null && isDvwaModulePage(own)
+        : modulePathRe(m.path).test(b) && /Damn Vulnerable|\bDVWA\b|Vulnerability:/i.test(b);
       if (confirmed) add(m.title, m.severity, m.description, m.remediation);
     });
   }
@@ -756,6 +770,28 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const katanaText = probeIdx["katana"];
   if (katanaText) {
     katanaFindings(katanaText, asset).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // wapiti: scan activo XSS/SQLi/CSRF/exec/traversal, 1 finding por categoría con hallazgos.
+  const wapitiText = probeIdx["wapiti"];
+  if (wapitiText) {
+    wapitiFindings(wapitiText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // arjun: parámetros GET ocultos, inventario consolidado (1 finding).
+  const arjunText = probeIdx["arjun"];
+  if (arjunText) {
+    arjunFindings(arjunText, asset).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // dalfox: confirma XSS sobre el/los param(s) que arjun descubrió.
+  for (let i = 0; ; i++) {
+    const dalfoxText = probeIdx[`dalfox:${i + 1}`];
+    if (!dalfoxText) break;
+    dalfoxFindings(dalfoxText, asset).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

@@ -40,7 +40,7 @@ export const PHASE_NAMES = {
 const PHASE_TOOLS = {
   1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
       "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"],
-  2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "GetNPUsers.py",
+  2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "wapiti", "arjun", "dalfox", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
       "searchsploit", "adscan", "certipy", "findDelegation.py"],
   3: ["sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
@@ -357,7 +357,7 @@ async function runPlaybookSteps({
       let result;
       if (spec.id === "p1-login-post") {
         result = await execDvwaLoginPost(target, cookieFile);
-      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python"].includes(spec.tool)) {
+      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python", "katana", "wapiti", "arjun", "dalfox"].includes(spec.tool)) {
         onStep(normalizeStep(null, engagementId, {
           tool: "(agent)", args: [spec.id],
           stderr: `${spec.tool} en curso (puede tardar 1–2 min)…`,
@@ -378,6 +378,10 @@ async function runPlaybookSteps({
       if (errOut) outputs.push(errOut);
       stepRecords.push({ id: spec.id, text: [out, errOut].filter(Boolean).join("\n") });
       playbookCtx = buildPlaybookContext(outputs, playbookCtx);
+      if (spec.id === "p1-webauth-get" && out) {
+        playbookCtx.webLoginPageHtml = out;
+        if (sharedState?.ctx) sharedState.ctx.webLoginPageHtml = out;
+      }
       if (looksLikeSourceCode(out)) {
         await maybeScanLeakedSource({
           db, engagementId, target, phase, spec, sourceText: out,
