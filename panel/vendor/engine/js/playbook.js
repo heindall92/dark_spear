@@ -33,6 +33,8 @@ import {
   azureBlobCheckStep,
   gcsBucketCheckStep,
   ssrfImdsCurlSteps,
+  ssrfGcpImdsCurlSteps,
+  ssrfAzureImdsCurlSteps,
   perimeterNmapArgs,
   ipRdapCheckStep,
   idpDiscoveryCurlSteps,
@@ -509,6 +511,14 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       skipIf: (c) => !c.hasWebStack,
     })),
     ...ssrfImdsCurlSteps(step, "p1-ssrf-imds", baseUrl, "10").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...ssrfGcpImdsCurlSteps(step, "p1-ssrf-gcp", baseUrl, "10").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...ssrfAzureImdsCurlSteps(step, "p1-ssrf-azure", baseUrl, "10").map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
