@@ -446,13 +446,13 @@ Ocultar ruido
 
 <div id="engine-live-body" class="flex flex-col lg:flex-row gap-lg items-start">
 <div id="engine-feed" class="grid grid-cols-1 gap-md min-w-0 flex-1 w-full"></div>
-<aside id="engine-findings" class="w-full lg:w-[24rem] shrink-0 lg:sticky lg:top-20 max-h-[calc(100vh-6rem)] overflow-y-auto glass-panel rounded-xl p-lg border border-primary-container/30" hidden>
+<aside id="engine-findings" class="w-full lg:w-[24rem] shrink-0 lg:sticky lg:top-20 max-h-[calc(100vh-6rem)] overflow-y-auto overflow-x-hidden glass-panel rounded-xl p-lg border border-primary-container/30 min-w-0" hidden>
 <div class="flex items-center justify-between mb-md gap-sm">
 <h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="bug" class="icon-md text-primary"></i> Hallazgos</h3>
 <button type="button" id="engine-findings-close" class="p-sm rounded hover:bg-surface-container-low" aria-label="Cerrar"><i data-lucide="x"></i></button>
 </div>
 <p class="font-body-sm text-on-surface-variant mb-md">Revisa cada hallazgo: acepta para el informe o rechaza falsos positivos.</p>
-<div id="engine-findings-list" class="flex flex-col gap-sm"></div>
+<div id="engine-findings-list" class="flex flex-col gap-sm min-w-0"></div>
 </aside>
 </div>
 </div>

@@ -505,12 +505,18 @@ function isIpOsintNoise(step) {
 }
 
 /** Solo se muestran tarjetas con un resultado real (hallazgo, salida, error con mensaje).
- * Las tarjetas con info en blanco se consideran ruido y se descartan del feed. */
+ * Las tarjetas con info en blanco se consideran ruido y se descartan del feed.
+ * Timeout/error/rejected siempre cuentan: si no, katana/nuclei “parpadean”
+ * en last-activity y no dejan rastro cuando el cuerpo viene vacío. */
 function shouldShowStepInFeed(step) {
   if (step.tool === "(finding)") return true;
   const verdict = step.verdict || "";
+  if (verdict === "done") return true;
   if (step.tool === "(agent)" && AGENT_NOISE_VERDICTS.has(verdict)) return false;
   if (isIpOsintNoise(step)) return false;
+  if (["timeout", "error", "rejected", "scope_violation", "phase_locked", "agent_error"].includes(verdict)) {
+    return true;
+  }
   return isMeaningfulOutput(stepDetailText(step));
 }
 
@@ -562,6 +568,46 @@ function severityBadgeClass(sev) {
 
 function appendStepCard(step) {
   if (!shouldShowStepInFeed(step)) return;
+  if (step.verdict === "done") {
+    const feed = document.getElementById("engine-feed");
+    if (!feed) return;
+    if (feed.querySelector("[data-feed-audit-done]")) return;
+    const card = document.createElement("div");
+    card.className = "glass-panel rounded-lg p-lg border-l-4 border-tertiary-container bg-tertiary-container/10 flex items-start gap-md";
+    card.dataset.feedCategory = "other";
+    card.dataset.feedAuditDone = "1";
+    card.setAttribute("data-feed-audit-done", "1");
+    const detail = String(step.output || step.stderr || "").trim();
+    const title = (typeof t === "function"
+      ? t("eng.auditComplete", "Auditoría finalizada")
+      : "Auditoría finalizada");
+    const lead = (typeof t === "function"
+      ? t("eng.auditCompleteLead", "El playbook terminó las 4 fases. Revisa hallazgos e informe.")
+      : "El playbook terminó las 4 fases. Revisa hallazgos e informe.");
+    card.innerHTML = `
+<div class="w-12 h-12 rounded-full bg-tertiary-container/30 text-tertiary flex items-center justify-center shrink-0">
+  <i data-lucide="circle-check" class="icon-lg"></i>
+</div>
+<div class="min-w-0 flex-1">
+  <h3 class="font-headline-lg text-on-surface">${title}</h3>
+  <p class="font-body-md text-on-surface-variant mt-xs">${lead}</p>
+  ${detail && detail !== title && detail !== lead
+    ? `<p class="font-body-sm text-on-surface-variant mt-sm ds-break">${detail.replace(/</g, "&lt;")}</p>`
+    : ""}
+  <div class="flex flex-wrap gap-sm mt-md">
+    <a href="vulnerabilities.html" class="inline-flex items-center gap-xs px-md py-sm rounded-lg bg-primary text-on-primary font-label-md hover:opacity-90">
+      <i data-lucide="bug" class="icon-sm"></i> Ver hallazgos
+    </a>
+    <a href="reporting.html" class="inline-flex items-center gap-xs px-md py-sm rounded-lg border border-outline-variant font-label-md text-secondary hover:bg-surface-container-low">
+      <i data-lucide="file-text" class="icon-sm"></i> Informe
+    </a>
+  </div>
+</div>`;
+    feed.appendChild(card);
+    feed.scrollTop = feed.scrollHeight;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
   if (step.verdict === "agent_error") {
     const msg = String(step.stderr || "");
     if (msg.length > 400 && /ollama_|invalid_json|empty_content|missing_tool/.test(msg)) return;
@@ -795,6 +841,12 @@ async function bootStart() {
   const useAiInput = document.getElementById("use-ai");
   const aiBlock = document.getElementById("ai-required-block");
   const aiHint = document.getElementById("ai-mode-hint");
+  const useAdInput = document.getElementById("use-ad");
+  const adFieldsBlock = document.getElementById("ad-fields-block");
+  const adHint = document.getElementById("ad-mode-hint");
+  const useWebLoginInput = document.getElementById("use-web-login");
+  const webLoginFieldsBlock = document.getElementById("web-login-fields-block");
+  const webLoginHint = document.getElementById("web-login-mode-hint");
   const keyValueInput = document.getElementById("key-value");
   const keyLabelInput = document.getElementById("key-label");
   const keyWindowInput = document.getElementById("key-window");
@@ -820,22 +872,24 @@ async function bootStart() {
 
   const isUseAi = () => !!(useAiInput && useAiInput.checked);
 
+  const syncExpandBlock = (on, inputEl, blockEl) => {
+    if (inputEl) inputEl.setAttribute("aria-checked", on ? "true" : "false");
+    if (!blockEl) return;
+    blockEl.hidden = !on;
+    if (on) {
+      blockEl.removeAttribute("hidden");
+      blockEl.classList.remove("hidden");
+      blockEl.style.display = "";
+    } else {
+      blockEl.setAttribute("hidden", "");
+      blockEl.classList.add("hidden");
+      blockEl.style.display = "none";
+    }
+  };
+
   const syncAiUi = () => {
     const on = isUseAi();
-    if (useAiInput) useAiInput.setAttribute("aria-checked", on ? "true" : "false");
-    if (aiBlock) {
-      // Tailwind `flex` overrides native [hidden] { display:none } — force visibility.
-      aiBlock.hidden = !on;
-      if (on) {
-        aiBlock.removeAttribute("hidden");
-        aiBlock.classList.remove("hidden");
-        aiBlock.style.display = "";
-      } else {
-        aiBlock.setAttribute("hidden", "");
-        aiBlock.classList.add("hidden");
-        aiBlock.style.display = "none";
-      }
-    }
+    syncExpandBlock(on, useAiInput, aiBlock);
     if (aiHint) {
       aiHint.textContent = on
         ? t("start.aiOnHint", "Modo IA: cada paso del agente consume tokens de Ollama Cloud.")
@@ -844,7 +898,32 @@ async function bootStart() {
     if (modelInput) modelInput.required = on;
   };
 
+  const isUseAd = () => !!(useAdInput && useAdInput.checked);
+  const isUseWebLogin = () => !!(useWebLoginInput && useWebLoginInput.checked);
+
+  const syncAdUi = () => {
+    const on = isUseAd();
+    syncExpandBlock(on, useAdInput, adFieldsBlock);
+    if (adHint) {
+      adHint.textContent = on
+        ? t("start.adOnHint", "Activo: se usarán dominio/usuario/contraseña solo en esta sesión del navegador.")
+        : t("start.adOffHint", "Desactivado: collection AD sin credenciales de dominio (null session / AS-REP -no-pass).");
+    }
+  };
+
+  const syncWebLoginUi = () => {
+    const on = isUseWebLogin();
+    syncExpandBlock(on, useWebLoginInput, webLoginFieldsBlock);
+    if (webLoginHint) {
+      webLoginHint.textContent = on
+        ? t("start.webOnHint", "Activo: el playbook intentará login web antes de Fase 1.")
+        : t("start.webOffHint", "Desactivado: el playbook no intentará autenticarse en la app web.");
+    }
+  };
+
   syncAiUi();
+  syncAdUi();
+  syncWebLoginUi();
 
   useAiInput?.addEventListener("change", async () => {
     if (aiToggleSilent) return;
@@ -858,6 +937,9 @@ async function bootStart() {
     }
     syncAiUi();
   });
+
+  useAdInput?.addEventListener("change", () => { syncAdUi(); });
+  useWebLoginInput?.addEventListener("change", () => { syncWebLoginUi(); });
 
   const renderKeys = (keys, pending = null) => {
     const list = Array.isArray(keys) ? keys : [];
@@ -1132,12 +1214,12 @@ async function bootStart() {
         endpoint: OLLAMA_CHAT_ENDPOINT,
         startedAt: Date.now(),
         engagementDir,
-        adDomain: (document.getElementById("ad-domain")?.value || "").trim(),
-        adUser: (document.getElementById("ad-user")?.value || "").trim(),
-        adPassword: document.getElementById("ad-password")?.value || "",
-        webLoginUrl: (document.getElementById("web-login-url")?.value || "").trim(),
-        webUser: (document.getElementById("web-user")?.value || "").trim(),
-        webPassword: document.getElementById("web-password")?.value || "",
+        adDomain: isUseAd() ? (document.getElementById("ad-domain")?.value || "").trim() : "",
+        adUser: isUseAd() ? (document.getElementById("ad-user")?.value || "").trim() : "",
+        adPassword: isUseAd() ? (document.getElementById("ad-password")?.value || "") : "",
+        webLoginUrl: isUseWebLogin() ? (document.getElementById("web-login-url")?.value || "").trim() : "",
+        webUser: isUseWebLogin() ? (document.getElementById("web-user")?.value || "").trim() : "",
+        webPassword: isUseWebLogin() ? (document.getElementById("web-password")?.value || "") : "",
       }));
       if (model) sessionStorage.setItem(MODEL_KEY, model);
       window.location.href = "engagement.html";
@@ -1412,8 +1494,23 @@ async function bootEngagement() {
       await callEngagementControl(api, "finish", currentEngId);
       syncScanControlButtons({ paused: false, active: false, finished: true });
       releaseAgentOwnership();
-      banner(note, t("eng.finished", "Escaneo finalizado"), false);
-      appendStep({ tool: "(agent)", args: [], verdict: "status", stderr: t("eng.finished", "Escaneo finalizado") });
+      banner(note, t("eng.auditComplete", "Auditoría finalizada"), false);
+      appendStep({
+        tool: "(agent)",
+        args: [],
+        verdict: "done",
+        output: t("eng.auditCompleteLead", "El playbook terminó las 4 fases. Revisa hallazgos e informe."),
+      });
+      if (window.DarkSpearFindings?.push) {
+        DarkSpearFindings.push({
+          id: `scan-done-${currentEngId}`,
+          title: `${t("eng.scanDoneTitle", "Escaneo completado")} · ${currentEngId}`,
+          description: t("eng.auditCompleteLead", "El playbook terminó las 4 fases. Revisa hallazgos e informe."),
+          severity: "info",
+          asset: "",
+          created_at: Date.now() / 1000,
+        });
+      }
     } catch (err) {
       forceStop = false;
       banner(note, bridgeErrorMessage(err, String(err.message || err)), true);
@@ -1494,7 +1591,7 @@ async function bootEngagement() {
       for (const f of list) {
         const card = document.createElement("div");
         const isPending = f.status === "proposed" || f.status === "edited";
-        card.className = "rounded-lg p-md flex flex-col gap-sm border border-outline-variant/30 bg-surface-container-lowest";
+        card.className = "rounded-lg p-md flex flex-col gap-sm border border-outline-variant/30 bg-surface-container-lowest min-w-0 overflow-hidden";
         const detailHref = f.id
           ? `finding-detail.html?id=${encodeURIComponent(f.id)}${currentEngId ? `&scan=${encodeURIComponent(currentEngId)}` : ""}`
           : "finding-detail.html";
@@ -1502,9 +1599,9 @@ async function bootEngagement() {
         card.innerHTML = `<div class="flex items-center justify-between gap-sm">
             <span class="px-sm py-xs rounded font-label-md text-label-md ${severityBadgeClass(sev)}">${sev.replace(/</g, "&lt;")} · ${String(f.status || "").replace(/</g, "&lt;")}</span>
           </div>
-          <strong class="font-headline-md text-on-surface">${String(f.title || "").replace(/</g, "&lt;")}</strong>
-          <p class="font-body-sm text-on-surface-variant whitespace-pre-wrap">${String(f.description || "").replace(/</g, "&lt;")}</p>
-          ${f.remediation ? `<p class="font-body-sm text-on-surface"><span class="text-on-surface-variant">Remediación:</span> ${String(f.remediation).replace(/</g, "&lt;")}</p>` : ""}
+          <strong class="font-headline-md text-on-surface ds-break">${String(f.title || "").replace(/</g, "&lt;")}</strong>
+          <p class="font-body-sm text-on-surface-variant whitespace-pre-wrap ds-break">${String(f.description || "").replace(/</g, "&lt;")}</p>
+          ${f.remediation ? `<p class="font-body-sm text-on-surface ds-break"><span class="text-on-surface-variant">Remediación:</span> ${String(f.remediation).replace(/</g, "&lt;")}</p>` : ""}
           <a href="${detailHref}" class="text-primary font-label-md text-sm hover:underline">Ver informe →</a>`;
         if (isPending) {
           const row = document.createElement("div");
@@ -1621,18 +1718,24 @@ async function bootEngagement() {
       webPassword: run.webPassword || "",
       onStep: (step) => {
         appendStep(step);
-        // Notificar en la campana cuando el playbook termina las 4 fases —
-        // antes el fin de escaneo solo quedaba como una tarjeta más en el
-        // feed y era fácil perdérselo si no se estaba mirando esa pestaña.
-        if (step.tool === "(agent)" && step.verdict === "done" && window.DarkSpearFindings?.push) {
-          DarkSpearFindings.push({
-            id: `scan-done-${engagementId}`,
-            title: `${t("eng.scanDoneTitle", "Escaneo completado")} · ${displayName}`,
-            description: t("eng.scanDoneDesc", "El playbook terminó las 4 fases para {target}. Revisa los hallazgos pendientes.").replace("{target}", run.target || ""),
-            severity: "info",
-            asset: run.target || "",
-            created_at: Date.now() / 1000,
-          });
+        // Fin natural del playbook (4/4): tarjeta visible + campana + cerrar engagement.
+        if (step.tool === "(agent)" && step.verdict === "done") {
+          forceStop = true;
+          syncScanControlButtons({ paused: false, active: false, finished: true });
+          banner(note, t("eng.auditComplete", "Auditoría finalizada"), false);
+          if (window.DarkSpearFindings?.push) {
+            DarkSpearFindings.push({
+              id: `scan-done-${engagementId}`,
+              title: `${t("eng.scanDoneTitle", "Escaneo completado")} · ${displayName}`,
+              description: t("eng.scanDoneDesc", "El playbook terminó las 4 fases para {target}. Revisa los hallazgos pendientes.").replace("{target}", run.target || ""),
+              severity: "info",
+              asset: run.target || "",
+              created_at: Date.now() / 1000,
+            });
+          }
+          if (currentEngId) {
+            callEngagementControl(api, "finish", currentEngId).catch(() => {});
+          }
         }
       },
       onPauseForConfirmation: (decision, resolve) => {

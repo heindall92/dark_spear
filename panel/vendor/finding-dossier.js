@@ -3153,7 +3153,7 @@
     if (param) {
       bits.push(L("Parámetro confirmado por sqlmap: «" + param[1] + "». Eso ya es explotación de laboratorio, no una sospecha.", "Parameter confirmed by sqlmap: «" + param[1] + "». That is already lab exploitation, not a suspicion."));
     }
-    var niktoPath = title.match(/^Nikto:\s*(\/\S+)/);
+    var niktoPath = title.match(/Nikto:.*?\s(\/\S+)\s*$/) || title.match(/^Nikto:\s*(\/\S+)/);
     if (niktoPath) {
       bits.push(L("Ruta señalada por Nikto: " + niktoPath[1] + ". Trátala como superficie concreta, no como un aviso genérico de scanner.", "Path flagged by Nikto: " + niktoPath[1] + ". Treat it as concrete surface, not as a generic scanner notice."));
     }
@@ -3494,20 +3494,20 @@
       "</nav></header>" +
       '<section id="' + sid("exec") + '" class="glass-panel rounded-xl p-lg mb-md">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="briefcase" class="text-primary"></i> ' + L("Resumen ejecutivo", "Executive summary") + "</h2>" +
-      '<p class="font-body-lg text-on-surface leading-relaxed">' + esc(d.exec) + "</p>" +
+      '<p class="font-body-lg text-on-surface leading-relaxed ds-break">' + esc(d.exec) + "</p>" +
       '<p class="font-body-md text-on-surface-variant mt-md leading-relaxed">' +
       execSla +
       "</p></section>" +
-      '<div class="grid grid-cols-1 lg:grid-cols-3 gap-md mb-md">' +
-      '<section id="' + sid("cvss") + '" class="glass-panel rounded-xl p-lg lg:col-span-1">' +
+      '<div class="grid grid-cols-1 lg:grid-cols-3 gap-md mb-md min-w-0">' +
+      '<section id="' + sid("cvss") + '" class="glass-panel rounded-xl p-lg lg:col-span-1 min-w-0">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="gauge" class="' + (fair ? "text-tertiary" : "text-error") + '"></i> ' + L("Criticidad", "Criticality") + "</h2>" +
       criticidadInner +
       "</section>" +
-      '<section id="' + sid("tech") + '" class="glass-panel rounded-xl p-lg lg:col-span-2">' +
+      '<section id="' + sid("tech") + '" class="glass-panel rounded-xl p-lg lg:col-span-2 min-w-0 overflow-hidden">' +
       '<h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md"><i data-lucide="file-text" class="text-primary"></i> ' + L("Análisis técnico argumentado", "Technical analysis") + "</h2>" +
-      '<p class="font-body-md text-on-surface leading-relaxed whitespace-pre-wrap">' + esc(d.narrative) + "</p>" +
+      '<p class="font-body-md text-on-surface leading-relaxed whitespace-pre-wrap ds-break">' + esc(d.narrative) + "</p>" +
       (d.engineDescription && !fair
-        ? '<div class="mt-md p-md rounded-lg bg-surface-container-low"><p class="font-label-md text-secondary uppercase mb-xs">' + L("Evidencia del motor", "Engine evidence") + "</p><p class=\"font-body-sm text-on-surface-variant whitespace-pre-wrap\">" + esc(d.engineDescription) + "</p></div>"
+        ? '<div class="mt-md p-md rounded-lg bg-surface-container-low min-w-0 overflow-hidden"><p class="font-label-md text-secondary uppercase mb-xs">' + L("Evidencia del motor", "Engine evidence") + "</p><p class=\"font-body-sm text-on-surface-variant whitespace-pre-wrap ds-break\">" + esc(d.engineDescription) + "</p></div>"
         : "") +
       '<div class="flex flex-wrap gap-xs mt-md">' + cweHtml + chip(d.owasp) + "</div>" +
       (d.refs && d.refs.length

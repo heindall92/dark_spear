@@ -96,6 +96,18 @@ html.dark {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid #d8e3f0;
+  min-width: 0;
+}
+
+/* URLs / hashes / paths sin espacios: no deben romper el ancho de las tarjetas */
+.ds-break,
+.glass-panel .font-body-md,
+.glass-panel .font-body-sm,
+.glass-panel .font-body-lg,
+.glass-panel .font-mono-md {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 html.dark .glass-panel,
