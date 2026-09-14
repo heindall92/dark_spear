@@ -1863,6 +1863,49 @@ export const SSRF_IMDS_STRONG_RE = /"AccessKeyId"\s*:|"SecretAccessKey"\s*:/i;
 export const SSRF_IMDS_WEAK_RE = /\bami-id\b|\binstance-id\b|\bsecurity-credentials\b|\blocal-ipv4\b/i;
 
 /* ------------------------------------------------------------------------ *
+ * SSRF multi-cloud: GCP y Azure exponen metadata en la MISMA IP link-local
+ * (169.254.169.254) que AWS, pero ambos EXIGEN un header propio
+ * (Metadata-Flavor: Google / Metadata: true) para responder — algo que un
+ * SSRF ciego no puede forjar (la app vulnerable hace el fetch con SU
+ * propio HTTP client, no con headers que nosotros controlemos). Por eso
+ * la señal "fuerte" (metadata real filtrada) solo aplica si la app
+ * reenvía headers arbitrarios además de la URL; la señal realista es que
+ * la petición SÍ llegó al servicio de metadata real y fue rechazada POR
+ * LA NUBE (no por timeout/red) — eso ya confirma SSRF real hacia
+ * superficie interna, solo que este endpoint puntual está bien defendido.
+ * ------------------------------------------------------------------------ */
+export const SSRF_CLOUD_METADATA = {
+  aws: { url: SSRF_IMDS_TEST_URL, label: "AWS" },
+  gcp: { url: "http://169.254.169.254/computeMetadata/v1/project/project-id", label: "GCP" },
+  azure: { url: "http://169.254.169.254/metadata/instance?api-version=2021-02-01", label: "Azure" },
+};
+
+function ssrfCloudCurlSteps(step, prefix, baseUrl, testUrl, label, maxTime) {
+  return SSRF_IMDS_PARAMS.map((param) =>
+    step(`${prefix}-${param}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-G", "--data-urlencode", `${param}=${testUrl}`,
+      baseUrl,
+    ], null, {
+      desc: `Sonda SSRF: ¿${param}= reenvía la petición a metadata ${label}?`,
+    }),
+  );
+}
+
+export function ssrfGcpImdsCurlSteps(step, prefix, baseUrl, maxTime = "10") {
+  return ssrfCloudCurlSteps(step, prefix, baseUrl, SSRF_CLOUD_METADATA.gcp.url, "GCP", maxTime);
+}
+
+export function ssrfAzureImdsCurlSteps(step, prefix, baseUrl, maxTime = "10") {
+  return ssrfCloudCurlSteps(step, prefix, baseUrl, SSRF_CLOUD_METADATA.azure.url, "Azure", maxTime);
+}
+
+export const SSRF_GCP_STRONG_RE = /"numericProjectId"\s*:|"serviceAccounts"\s*:/i;
+export const SSRF_GCP_BLOCKED_RE = /Metadata-Flavor/i;
+export const SSRF_AZURE_STRONG_RE = /"subscriptionId"\s*:|"resourceGroupName"\s*:|"osProfile"\s*:/i;
+export const SSRF_AZURE_BLOCKED_RE = /Required metadata header not specified|invalid Metadata header/i;
+
+/* ------------------------------------------------------------------------ *
  * Cortafuegos — dos capas:
  *
  * 1) Caja negra (lo que el informe muestra siempre): nmap de perímetro

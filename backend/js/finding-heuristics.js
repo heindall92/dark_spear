@@ -36,6 +36,10 @@ import {
   SSRF_IMDS_PARAMS,
   SSRF_IMDS_STRONG_RE,
   SSRF_IMDS_WEAK_RE,
+  SSRF_GCP_STRONG_RE,
+  SSRF_GCP_BLOCKED_RE,
+  SSRF_AZURE_STRONG_RE,
+  SSRF_AZURE_BLOCKED_RE,
   perimeterFirewallFindings,
   wafTriggerFindings,
   missingWafFinding,
@@ -146,6 +150,10 @@ function buildProbeIndex(stepRecords) {
     if (m) push(`jssecrets:${m[1]}`, text);
     m = /^p1-ssrf-imds-(.+)$/.exec(r.id);
     if (m) push(`ssrf-imds:${m[1]}`, text);
+    m = /^p1-ssrf-gcp-(.+)$/.exec(r.id);
+    if (m) push(`ssrf-gcp:${m[1]}`, text);
+    m = /^p1-ssrf-azure-(.+)$/.exec(r.id);
+    if (m) push(`ssrf-azure:${m[1]}`, text);
     if (r.id === "p1-s3-bucket-check") push("s3-bucket", text);
     if (r.id === "p1-azureblob-check") push("azureblob", text);
     if (r.id === "p1-gcs-bucket-check") push("gcs-bucket", text);
@@ -1032,6 +1040,49 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
         `El parámetro ?${param}= devolvió contenido con forma de listado de categorías IMDS (ami-id/instance-id/security-credentials) al apuntarlo a 169.254.169.254 (CWE-918). No se vio una credencial completa en esta respuesta; confirmar a mano si el servidor reenvía la petición de verdad o si es solo un eco del parámetro.`,
         "Bloquear el fetch de URLs arbitrarias del lado servidor hacia rangos de metadata (169.254.169.254, fd00:ec2::254); forzar IMDSv2.",
       );
+    }
+  });
+
+  // SSRF genérico → metadata GCP/Azure: ambos exigen un header propio que
+  // un SSRF ciego no puede forjar, así que la señal realista es "la
+  // petición llegó al servicio de metadata real y fue rechazada por la
+  // nube" (no por timeout/red) — confirma SSRF interno real igual.
+  SSRF_IMDS_PARAMS.forEach(function (param) {
+    const gcpText = probeIdx[`ssrf-gcp:${param}`];
+    if (gcpText) {
+      if (SSRF_GCP_STRONG_RE.test(gcpText)) {
+        add(
+          `SSRF confirmado hacia metadata GCP vía ?${param}= (metadata real filtrada)`,
+          "Critical",
+          `El parámetro ?${param}= hizo que el servidor solicitara por sí mismo la metadata de Compute Engine (project-id/service accounts) y la app reenvió el header Metadata-Flavor sin querer (CWE-918): un atacante puede obtener tokens de la service account de la instancia.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor (allow-list de hosts); nunca reenviar headers de la petición original a un fetch server-side.",
+        );
+      } else if (SSRF_GCP_BLOCKED_RE.test(gcpText)) {
+        add(
+          `Posible SSRF hacia metadata GCP vía ?${param}= (bloqueado por falta de header, confirma alcance interno)`,
+          "Medium",
+          `El parámetro ?${param}= alcanzó el servicio real de metadata de GCP (169.254.169.254): la respuesta es el rechazo propio de GCP por falta del header Metadata-Flavor, no un timeout de red (CWE-918). Esto confirma que la app hace SSRF real hacia direcciones internas; este endpoint puntual está defendido por GCP, pero cualquier otro servicio interno sin ese mismo control queda expuesto por la misma vía.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor hacia rangos internos/link-local (169.254.169.254, metadata.google.internal).",
+        );
+      }
+    }
+    const azureText = probeIdx[`ssrf-azure:${param}`];
+    if (azureText) {
+      if (SSRF_AZURE_STRONG_RE.test(azureText)) {
+        add(
+          `SSRF confirmado hacia metadata Azure vía ?${param}= (metadata real filtrada)`,
+          "Critical",
+          `El parámetro ?${param}= hizo que el servidor solicitara por sí mismo el Instance Metadata Service de Azure y la app reenvió el header Metadata:true sin querer (CWE-918): expone suscripción, resource group y detalles de la VM.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor; nunca reenviar headers de la petición original a un fetch server-side.",
+        );
+      } else if (SSRF_AZURE_BLOCKED_RE.test(azureText)) {
+        add(
+          `Posible SSRF hacia metadata Azure vía ?${param}= (bloqueado por falta de header, confirma alcance interno)`,
+          "Medium",
+          `El parámetro ?${param}= alcanzó el IMDS real de Azure (169.254.169.254): el rechazo es el mensaje propio de Azure por falta del header Metadata:true, no un timeout de red (CWE-918). Confirma SSRF real hacia direcciones internas; este endpoint puntual está defendido, pero otro servicio interno sin ese control queda expuesto igual.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor hacia rangos internos/link-local (169.254.169.254).",
+        );
+      }
     }
   });
 
