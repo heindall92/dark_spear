@@ -2079,8 +2079,9 @@
       });
       document.querySelectorAll(".vuln-tab").forEach(function (btn) {
         var key = btn.getAttribute("data-sev");
-        var label = key.charAt(0).toUpperCase() + key.slice(1);
-        if (key === "all") label = "All";
+        var label = key === "all" ? "All"
+          : key === "info" ? "Info"
+          : key.charAt(0).toUpperCase() + key.slice(1);
         btn.textContent = label + " (" + (counts[key] || 0) + ")";
         btn.classList.toggle("active", state.sev === key);
         btn.classList.toggle("text-on-surface", state.sev === key);
@@ -3108,19 +3109,276 @@
     return { domain: domain, users: users, shares: shares, posture: posture, auth: auth, other: other };
   }
 
+  function adEnrich(f) {
+    if (window.DarkSpearDossier && typeof DarkSpearDossier.enrich === "function") {
+      try { return DarkSpearDossier.enrich(f || {}); } catch (e) { /* fall through */ }
+    }
+    return null;
+  }
+
+  function adSevRank(sev) {
+    var s = String(sev || "").toLowerCase();
+    if (s === "critical") return 4;
+    if (s === "high") return 3;
+    if (s === "medium") return 2;
+    if (s === "low") return 1;
+    return 0;
+  }
+
+  function adHealthScore(items) {
+    var score = 100;
+    (items || []).forEach(function (f) {
+      var s = String(f.severity || "").toLowerCase();
+      if (s === "critical") score -= 18;
+      else if (s === "high") score -= 12;
+      else if (s === "medium") score -= 6;
+      else if (s === "low") score -= 2;
+      else score -= 1;
+    });
+    return Math.max(0, Math.min(100, score));
+  }
+
+  function adRiskLabel(score, critN) {
+    if (critN > 0 || score < 45) return { key: "ad.riskHigh", fallback: "Riesgo alto", cls: "bg-error-container text-on-error-container", show: true };
+    if (score < 70) return { key: "ad.riskMed", fallback: "Riesgo medio", cls: "bg-[#fef08a] text-[#854d0e]", show: true };
+    if ((score || 0) < 100) return { key: "ad.riskLow", fallback: "Riesgo bajo", cls: "bg-secondary-container text-on-secondary-container", show: true };
+    return { key: "ad.riskOk", fallback: "Sin señales AD", cls: "bg-surface-container text-on-surface-variant", show: false };
+  }
+
+  function adProtocolTags(items) {
+    var tags = [];
+    var blob = (items || []).map(function (f) { return String(f.title || ""); }).join("\n");
+    if (/Kerberoastable|SPN/i.test(blob)) tags.push("Kerberoast");
+    if (/AS-REP/i.test(blob)) tags.push("AS-REP");
+    if (/SMB signing/i.test(blob)) tags.push("SMB signing");
+    if (/ADCS|ESC[0-9]/i.test(blob)) tags.push("ADCS");
+    if (/Print Spooler|PetitPotam|coercion/i.test(blob)) tags.push("Spooler");
+    if (/GPP /i.test(blob)) tags.push("GPP");
+    if (/NTLM|relay/i.test(blob)) tags.push("NTLM");
+    if (/delegaci[oó]n|TRUSTED_FOR_DELEGATION/i.test(blob)) tags.push("Delegation");
+    if (/LAPS /i.test(blob)) tags.push("LAPS");
+    if (/MachineAccountQuota/i.test(blob)) tags.push("MAQ");
+    return tags.slice(0, 6);
+  }
+
+  function adExtractDomain(findings, meta) {
+    var m;
+    for (var i = 0; i < (findings || []).length; i++) {
+      var blob = String((findings[i].title || "") + " " + (findings[i].description || "") + " " + (findings[i].asset || ""));
+      m = blob.match(/\b([a-z0-9][a-z0-9-]{0,62}(?:\.[a-z0-9][a-z0-9-]{0,62}){1,})\b/i);
+      if (m && /\./.test(m[1]) && !/^\d+\.\d+\.\d+\.\d+$/.test(m[1])) return m[1];
+    }
+    var t = String((meta && meta.target) || "").replace(/^https?:\/\//, "").split("/")[0].split(":")[0];
+    return t || "—";
+  }
+
+  function adCountFromTitles(items, re) {
+    var max = 0;
+    (items || []).forEach(function (f) {
+      var m = String(f.title || "").match(re);
+      if (m) max = Math.max(max, parseInt(m[1], 10) || 0);
+    });
+    return max;
+  }
+
+  function adTabBucket(f) {
+    var t = String((f && f.title) || "");
+    if (/trust\(s\)|trusts de dominio/i.test(t)) return "trusts";
+    if (/Domain Controller|GPO|GPP |Print Spooler|--dc-list|fingerprint|SMB signing|bind LDAP/i.test(t)) return "dcs";
+    if (/usuario|RPC null|RID|samrdump|netexec --users|adminCount|PASSWD_NOTREQD|grupos privilegiados|WinRM|LAPS /i.test(t)) return "accounts";
+    return "vectors";
+  }
+
+  function adFindingMetaRow(f, d) {
+    var bits = [];
+    if (f.asset) bits.push('<div class="flex items-center gap-xs"><span class="text-on-surface-variant">' +
+      escapeHtml(tKey("ad.colAsset", "Activo")) + ':</span><span class="text-primary font-semibold">' +
+      escapeHtml(f.asset) + "</span></div>");
+    var desc = String(f.description || "");
+    var spn = desc.match(/SPN[:=\s]+([^\s,;]+)/i) || String(f.title || "").match(/(MSSQLSvc\/[^\s]+|HTTP\/[^\s]+)/i);
+    if (spn) bits.push('<div class="flex items-center gap-xs"><span class="text-on-surface-variant">SPN:</span><span class="text-primary font-semibold">' +
+      escapeHtml(spn[1]) + "</span></div>");
+    if (/TRUSTED_FOR_DELEGATION|delegaci[oó]n/i.test(f.title || "")) {
+      bits.push('<div class="flex items-center gap-xs"><span class="text-on-surface-variant">UAC:</span><span class="text-error font-semibold">TRUSTED_FOR_DELEGATION</span></div>');
+    }
+    if (d && d.kill) {
+      bits.push('<div class="flex items-center gap-xs"><span class="text-on-surface-variant">Kill:</span><span class="text-on-surface font-semibold">' +
+        escapeHtml(d.kill) + "</span></div>");
+    }
+    if (!bits.length) return "";
+    return '<div class="ml-xs p-sm bg-surface-container-low rounded-lg flex flex-wrap items-center gap-md font-mono-md text-mono-md">' +
+      bits.join("") + "</div>";
+  }
+
+  function adFindingCard(f, scanId) {
+    var d = adEnrich(f);
+    var sp = sevPill(f.severity);
+    var sev = String(f.severity || "info").toLowerCase();
+    var barCls = sev === "critical" || sev === "high" ? "bg-error"
+      : sev === "medium" ? "bg-tertiary-container" : "bg-secondary";
+    var mitre = (d && d.mitre && d.mitre[0]) || (mitreForFinding(f)[0] || null);
+    var mitreLbl = mitre ? (mitre.id + (mitre.name ? " (" + mitre.name + ")" : "")) : "";
+    var narrative = (d && d.exec) || f.description || "";
+    if (narrative.length > 280) narrative = narrative.slice(0, 277) + "…";
+    var remedHref = "remediation-detail.html?finding=" + encodeURIComponent(f.id || "") +
+      (scanId ? "&scan=" + encodeURIComponent(scanId) : "");
+    var graphHref = scanId
+      ? "attack-graph.html?scan=" + encodeURIComponent(scanId)
+      : "attack-graph.html";
+    var mitreHref = scanId
+      ? "mitre.html?scan=" + encodeURIComponent(scanId)
+      : "mitre.html?scan=program";
+    var hasSteps = d && Array.isArray(d.steps) && d.steps.length;
+
+    return (
+      '<article class="bg-surface-container-lowest p-md rounded-xl shadow-sm hover:shadow-md transition-all flex flex-col gap-sm relative overflow-hidden group">' +
+      '<div class="absolute left-0 top-0 bottom-0 w-1.5 ' + barCls + '"></div>' +
+      '<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-xs pl-xs">' +
+      '<div class="flex items-center gap-sm flex-wrap">' +
+      '<span class="' + sp.badge + ' font-label-md text-label-md px-sm py-0.5 rounded uppercase">' + escapeHtml(sp.label) + "</span>" +
+      (mitreLbl ? '<span class="font-mono-md text-mono-md text-on-surface-variant">' + escapeHtml(mitreLbl) + "</span>" : "") +
+      "</div>" +
+      '<span class="font-mono-md text-mono-md text-outline">' + escapeHtml(f.asset || "—") + "</span></div>" +
+      '<div class="pl-xs">' +
+      '<h3 class="font-headline-md text-headline-md text-on-surface font-semibold group-hover:text-primary transition-colors">' +
+      escapeHtml(f.title || "—") + "</h3>" +
+      (narrative ? '<p class="font-body-md text-body-md text-on-surface-variant mt-xs">' + escapeHtml(narrative) + "</p>" : "") +
+      "</div>" +
+      adFindingMetaRow(f, d) +
+      '<div class="flex items-center justify-between pt-xs pl-xs mt-xs gap-sm flex-wrap">' +
+      '<span class="text-body-sm font-body-sm text-on-surface-variant flex items-center gap-xs">' +
+      (hasSteps
+        ? '<i data-lucide="circle-check" class="icon-sm text-tertiary"></i>' + escapeHtml(tKey("ad.fixAvailable", "Mitigación documentada"))
+        : '<i data-lucide="info" class="icon-sm text-outline"></i>' + escapeHtml(tKey("ad.collectionOnly", "Collection read-only"))) +
+      "</span>" +
+      '<div class="flex items-center gap-xs flex-wrap">' +
+      '<a href="' + mitreHref + '" class="px-sm py-xs bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg font-label-md text-label-md transition-colors flex items-center gap-xs">' +
+      '<i data-lucide="swords" class="icon-sm"></i><span>MITRE</span></a>' +
+      '<a href="' + graphHref + '" class="px-sm py-xs bg-surface-container hover:bg-surface-container-high text-on-surface rounded-lg font-label-md text-label-md transition-colors flex items-center gap-xs">' +
+      '<i data-lucide="share-2" class="icon-sm"></i><span>' + escapeHtml(tKey("ad.openGraph", "Abrir en grafo")) + "</span></a>" +
+      '<a href="' + remedHref + '" class="px-sm py-xs bg-primary-container text-on-primary-container hover:bg-primary rounded-lg font-label-md text-label-md transition-colors flex items-center gap-xs">' +
+      '<span>' + escapeHtml(tKey("ad.investigate", "Investigar vector")) + '</span><i data-lucide="arrow-right" class="icon-sm"></i></a>' +
+      "</div></div></article>"
+    );
+  }
+
+  function adKillChainHtml(items, scanId) {
+    var ranked = (items || []).slice().sort(function (a, b) {
+      return adSevRank(b.severity) - adSevRank(a.severity);
+    });
+    var pick = ranked[0];
+    var graphHref = scanId
+      ? "attack-graph.html?scan=" + encodeURIComponent(scanId)
+      : "attack-graph.html";
+    if (!pick) {
+      return '<p class="font-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.killEmpty", "Sin ruta crítica todavía. Cuando haya hallazgos AD High/Critical, la cadena aparece aquí.")) +
+        "</p>" +
+        '<a href="' + graphHref + '" class="w-full mt-xs py-sm px-md rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center justify-center gap-xs">' +
+        '<i data-lucide="git-branch" class="icon-sm"></i><span>' + escapeHtml(tKey("ad.viewGraph", "Ver Attack Graph")) + "</span></a>";
+    }
+    var d = adEnrich(pick);
+    var entry = escapeHtml((pick.asset || tKey("ad.entryNode", "Entrada")).toString().slice(0, 40));
+    var mid = escapeHtml((d && d.kill) || tKey("ad.vectorNode", "Vector AD"));
+    var titleShort = String(pick.title || "").replace(/^AD:\s*/i, "");
+    if (titleShort.length > 42) titleShort = titleShort.slice(0, 40) + "…";
+    return (
+      '<p class="font-body-sm text-body-sm text-on-surface-variant">' +
+      escapeHtml(tKey("ad.killLead", "Ruta de escalada priorizada según severidad del engagement:")) + "</p>" +
+      '<div class="bg-surface-container-low p-sm rounded-lg flex flex-col gap-xs">' +
+      '<div class="flex items-center justify-between bg-surface-container-lowest p-xs rounded font-mono-md text-mono-md">' +
+      '<div class="flex items-center gap-xs"><i data-lucide="user" class="icon-sm text-on-surface-variant"></i><span class="text-on-surface">' + entry + "</span></div>" +
+      '<span class="text-[11px] text-outline">' + escapeHtml(tKey("ad.entryRole", "Superficie")) + "</span></div>" +
+      '<div class="flex items-center justify-center py-0.5 text-error font-mono-md text-[11px] gap-1">' +
+      '<i data-lucide="arrow-down" class="icon-sm"></i> ' + mid + "</div>" +
+      '<div class="flex items-center justify-between bg-surface-container-lowest p-xs rounded font-mono-md text-mono-md">' +
+      '<div class="flex items-center gap-xs"><i data-lucide="shield-alert" class="icon-sm text-primary"></i><span class="text-on-surface font-semibold">' +
+      escapeHtml(titleShort) + "</span></div>" +
+      '<span class="text-[11px] text-error font-semibold">Tier-0</span></div>' +
+      '<div class="flex items-center justify-center py-0.5 text-error font-mono-md text-[11px] gap-1">' +
+      '<i data-lucide="arrow-down" class="icon-sm"></i> ' + escapeHtml(tKey("ad.impactStep", "Impacto dominio")) + "</div>" +
+      '<div class="flex items-center justify-between bg-error-container/40 p-xs rounded font-mono-md text-mono-md text-on-error-container">' +
+      '<div class="flex items-center gap-xs"><i data-lucide="key-round" class="icon-sm text-error"></i><span class="font-bold">' +
+      escapeHtml(tKey("ad.impactNode", "Control de dominio")) + "</span></div>" +
+      '<span class="text-[11px] font-bold">' + escapeHtml(String(pick.severity || "high").toUpperCase()) + "</span></div>" +
+      "</div>" +
+      '<a href="' + graphHref + '" class="w-full mt-xs py-sm px-md rounded-lg bg-surface-container text-on-surface hover:bg-surface-container-high transition-colors font-label-md text-label-md flex items-center justify-center gap-xs">' +
+      '<i data-lucide="git-branch" class="icon-sm"></i><span>' + escapeHtml(tKey("ad.viewFullGraph", "Ver en grafo de ataque")) + "</span></a>"
+    );
+  }
+
+  function adMitigationsHtml(items) {
+    var seen = {};
+    var rows = [];
+    (items || []).slice().sort(function (a, b) {
+      return adSevRank(b.severity) - adSevRank(a.severity);
+    }).forEach(function (f) {
+      if (rows.length >= 3) return;
+      var d = adEnrich(f);
+      var step = d && d.steps && d.steps[0];
+      if (!step || seen[step]) return;
+      seen[step] = true;
+      var label = String(f.title || "").replace(/^AD:\s*/i, "");
+      if (label.length > 48) label = label.slice(0, 46) + "…";
+      rows.push(
+        '<div class="p-sm bg-surface-container-low rounded-lg flex items-start justify-between gap-sm">' +
+        '<div class="flex flex-col min-w-0">' +
+        '<span class="font-label-md text-label-md text-on-surface font-semibold">' + escapeHtml(label) + "</span>" +
+        '<span class="font-body-sm text-body-sm text-outline">' + escapeHtml(step) + "</span></div>" +
+        '<i data-lucide="shield-check" class="icon-sm text-tertiary shrink-0"></i></div>'
+      );
+    });
+    if (!rows.length) {
+      return '<p class="font-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.mitEmpty", "Las mitigaciones priorizadas salen del dossier cuando hay hallazgos AD.")) +
+        "</p>";
+    }
+    return '<div class="flex flex-col gap-xs mt-xs">' + rows.join("") + "</div>" +
+      '<a href="remediation-plan.html" class="w-full mt-sm py-sm px-md rounded-lg bg-primary-container text-on-primary-container hover:bg-primary transition-colors font-label-md text-label-md flex items-center justify-center gap-xs">' +
+      '<i data-lucide="list-checks" class="icon-sm"></i><span>' +
+      escapeHtml(tKey("ad.openRemPlan", "Abrir plan de remediación")) + "</span></a>";
+  }
+
   function bootAdAssessment() {
     var body = document.getElementById("panel-ad-body");
     if (!body) return;
     var hub = null;
+    var activeTab = "vectors";
 
     function renderAd(findings, meta, scanId) {
       var target = (meta && meta.target) || "—";
       var groups = adClassifyFindings(findings);
       var all = groups.domain.concat(groups.users, groups.shares, groups.posture, groups.auth, groups.other);
+      all.sort(function (a, b) { return adSevRank(b.severity) - adSevRank(a.severity); });
       var dcN = all.filter(function (f) { return /Domain Controller probable/i.test(f.title || ""); }).length;
+      var critN = all.filter(function (f) {
+        var s = String(f.severity || "").toLowerCase();
+        return s === "critical" || s === "high";
+      }).length;
+      var health = adHealthScore(all);
+      var risk = adRiskLabel(health, critN);
+      var protocolItems = groups.auth.concat(groups.posture);
+      var tags = adProtocolTags(protocolItems);
+      var fqdn = adExtractDomain(all, meta);
+      var userHint = adCountFromTitles(all, /(\d+)\s+usuario/i);
+      var privN = all.filter(function (f) {
+        return /adminCount|grupos privilegiados|Domain Admins|Enterprise Admins|WinRM|LAPS |PASSWD_NOTREQD/i.test(f.title || "");
+      }).length;
+      var pathN = all.filter(function (f) {
+        return /BloodHound|delegaci[oó]n|WriteDacl|Kerberoastable|AS-REP|ADCS|GPP |MachineAccountQuota|TRUSTED_FOR_DELEGATION/i.test(f.title || "");
+      }).length;
+      var trustN = all.filter(function (f) { return adTabBucket(f) === "trusts"; }).length;
+      var acctN = all.filter(function (f) { return adTabBucket(f) === "accounts"; }).length;
+      var dcTabN = all.filter(function (f) { return adTabBucket(f) === "dcs"; }).length;
+      var vecN = all.filter(function (f) { return adTabBucket(f) === "vectors"; }).length;
+
       var crumb = document.getElementById("ad-detail-crumb");
       var scanBtn = document.getElementById("ad-btn-scan-target");
       var mitreBtn = document.getElementById("ad-btn-mitre");
+      var graphBtn = document.getElementById("ad-btn-graph");
+      var riskBadge = document.getElementById("ad-risk-badge");
+      var syncLbl = document.getElementById("ad-sync-label");
+      var syncDot = document.getElementById("ad-sync-dot");
       if (crumb) crumb.textContent = target;
       if (scanBtn) scanBtn.href = scanEngagementUrl(meta);
       if (mitreBtn) {
@@ -3128,64 +3386,213 @@
           ? "mitre.html?scan=" + encodeURIComponent(scanId)
           : "mitre.html?scan=program";
       }
-      var graphBtn = document.getElementById("ad-btn-graph");
       if (graphBtn) {
         graphBtn.href = scanId
           ? "attack-graph.html?scan=" + encodeURIComponent(scanId)
           : "attack-graph.html";
       }
+      if (riskBadge) {
+        riskBadge.className = risk.cls + " font-label-md text-label-md px-sm py-0.5 rounded-full uppercase tracking-wider";
+        riskBadge.textContent = tKey(risk.key, risk.fallback);
+        riskBadge.classList.toggle("hidden", !all.length && !risk.show);
+        if (all.length) riskBadge.classList.remove("hidden");
+        else if (!risk.show) riskBadge.classList.add("hidden");
+      }
+      if (syncLbl) {
+        syncLbl.textContent = all.length
+          ? tKey("ad.syncOk", "Último análisis sincronizado") + " · " + fqdn
+          : tKey("ad.syncEmpty", "Sin inventario AD todavía");
+      }
+      if (syncDot) {
+        syncDot.className = "w-2 h-2 rounded-full shrink-0 " + (critN ? "bg-error animate-pulse" : all.length ? "bg-tertiary" : "bg-outline");
+      }
 
-      function adTable(items) {
-        if (!items.length) {
-          return '<div class="ds-empty py-lg"><div class="ds-empty-icon"><i data-lucide="network" class="icon-lg"></i></div>' +
-            '<p class="font-body-md text-on-surface-variant">' + escapeHtml(tKey("ad.noSignal",
-              "Sin señales AD en este análisis. El playbook solo corre collection si nmap ve 445/389/88/636 o un banner SMB/AD.")) +
-            "</p></div>";
-        }
-        return '<div class="overflow-x-auto"><table class="w-full text-left border-collapse">' +
-          '<thead><tr class="border-b border-outline-variant/40 font-label-md text-label-md text-on-surface-variant uppercase">' +
-          "<th class=\"py-sm pr-md\">" + escapeHtml(tKey("ad.colFinding", "Hallazgo")) + "</th>" +
-          "<th class=\"py-sm pr-md\">" + escapeHtml(tKey("ad.colAsset", "Activo")) + "</th>" +
-          "<th class=\"py-sm\">" + escapeHtml(tKey("ad.colSeverity", "Severidad")) + "</th></tr></thead><tbody>" +
-          items.slice(0, 20).map(function (f) {
-            var sp = sevPill(f.severity);
-            return "<tr class=\"border-b border-outline-variant/20 font-body-sm\">" +
-              "<td class=\"py-sm pr-md text-on-surface\">" + escapeHtml(f.title || "—") + "</td>" +
-              "<td class=\"py-sm pr-md font-mono-md text-secondary\">" + escapeHtml(f.asset || "—") + "</td>" +
-              "<td class=\"py-sm\"><span class=\"" + sp.badge + " px-sm py-xs rounded font-label-md text-label-md\">" +
-              escapeHtml(sp.label) + "</span></td></tr>";
-          }).join("") +
-          "</tbody></table></div>";
+      var healthTone = health < 45 ? "text-error" : health < 70 ? "text-[#854d0e]" : "text-tertiary";
+      var healthBar = health < 45 ? "bg-error" : health < 70 ? "bg-[#eab308]" : "bg-tertiary";
+      var tagHtml = tags.length
+        ? tags.map(function (t) {
+            var hot = /Spooler|AS-REP|Kerberoast|ADCS|GPP/i.test(t);
+            return '<span class="bg-surface-container px-xs py-0.5 rounded text-[11px] font-mono-md ' +
+              (hot ? "text-error font-semibold" : "text-on-surface-variant") + '">' + escapeHtml(t) + "</span>";
+          }).join("")
+        : '<span class="font-body-sm text-on-surface-variant">' + escapeHtml(tKey("ad.noProto", "Sin vectores de protocolo")) + "</span>";
+
+      function tabBtn(id, icon, label, count) {
+        var on = activeTab === id;
+        return (
+          '<button type="button" data-ad-tab="' + id + '" class="tab-btn min-h-10 px-md py-sm rounded-lg font-label-md text-label-md inline-flex items-center gap-sm whitespace-nowrap transition-all ' +
+          (on ? "bg-surface-container-lowest text-on-surface shadow-sm" : "text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high") + '">' +
+          '<i data-lucide="' + icon + '" class="icon-md shrink-0' + (on ? " text-primary" : "") + '"></i>' +
+          "<span>" + escapeHtml(label) + "</span>" +
+          '<span class="inline-flex items-center justify-center min-w-[1.5rem] h-5 px-sm rounded-full text-[11px] font-mono-md leading-none ' +
+          (on && count ? "bg-error-container text-on-error-container" : "bg-surface-container text-on-surface-variant") +
+          '">' + escapeHtml(String(count)) + "</span></button>"
+        );
+      }
+
+      var filtered = all.filter(function (f) { return adTabBucket(f) === activeTab; });
+      if (activeTab === "vectors" && !filtered.length && all.length) filtered = all.slice(0, 12);
+
+      var listHtml = !all.length
+        ? '<div class="ds-empty py-lg"><div class="ds-empty-icon"><i data-lucide="network" class="icon-lg"></i></div>' +
+          '<p class="font-body-md text-on-surface-variant">' + escapeHtml(tKey("ad.noSignal",
+            "Sin señales AD en este análisis. El playbook solo corre collection si nmap ve 445/389/88/636 o un banner SMB/AD.")) +
+          "</p></div>"
+        : !filtered.length
+          ? '<p class="font-body-md text-on-surface-variant p-md">' + escapeHtml(tKey("ad.tabEmpty", "No hay hallazgos en esta pestaña.")) + "</p>"
+          : filtered.slice(0, 25).map(function (f) { return adFindingCard(f, scanId); }).join("");
+
+      var dcRows = "";
+      if (dcN || /Domain Controller/i.test(all.map(function (f) { return f.title; }).join(" "))) {
+        dcRows =
+          '<div class="flex items-center justify-between p-xs bg-surface-container-low rounded-lg font-mono-md text-mono-md">' +
+          '<div class="flex items-center gap-xs"><span class="w-2 h-2 rounded-full bg-tertiary"></span>' +
+          '<span class="text-on-surface font-semibold">' + escapeHtml(target) + "</span>" +
+          '<span class="text-[10px] bg-primary-fixed text-on-primary-fixed px-1 rounded">DC?</span></div>' +
+          '<span class="text-outline">' + escapeHtml(fqdn) + "</span></div>";
+      } else {
+        dcRows = '<p class="font-body-sm text-on-surface-variant">' +
+          escapeHtml(tKey("ad.noDc", "Sin fingerprint de DC todavía.")) + "</p>";
       }
 
       body.innerHTML =
-        '<div class="glass-panel rounded-xl p-md flex items-start gap-sm border-l-4 border-l-primary">' +
-        '<i data-lucide="info" class="icon-md text-primary shrink-0 mt-xs"></i>' +
-        '<p class="font-body-sm text-on-surface">' + escapeHtml(tKey("ad.banner",
-          "Hallazgos AD (collection + enum). Kerberoast con -request, relay y shells requieren aprobación humana fuera del playbook automático.")) +
-        "</p></div>" +
         (groups.auth.some(function (f) { return /BloodHound/i.test(f.title || ""); })
-          ? '<div class="glass-panel rounded-xl p-md flex items-start gap-sm border-l-4 border-l-secondary">' +
+          ? '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex items-start gap-sm border-l-4 border-l-secondary">' +
             '<i data-lucide="share-2" class="icon-md text-secondary shrink-0 mt-xs"></i>' +
             '<p class="font-body-sm text-on-surface">' + escapeHtml(tKey("ad.bhHint",
-              "BloodHound DCOnly dejó un zip en ~/.auditor/engagements/<id>/evidence/bloodhound/. Ábrelo en BloodHound CE offline; el Attack Graph del panel usa los hallazgos AD (no importa el zip todavía).")) +
+              "BloodHound DCOnly dejó un zip en evidence/bloodhound/. Ábrelo en BloodHound CE; el grafo del panel usa hallazgos AD.")) +
             ' <a class="text-primary hover:underline font-label-md" href="' +
             (scanId ? "attack-graph.html?scan=" + encodeURIComponent(scanId) : "attack-graph.html") +
             '">' + escapeHtml(tKey("ad.viewGraph", "Ver Attack Graph")) + "</a></p></div>"
           : "") +
-        '<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-md">' +
-        osintKpiCard("network", tKey("ad.kpiDomain", "Dominio / fingerprint"), groups.domain.length + dcN, (groups.domain.length || dcN) ? "warn" : "neutral") +
-        osintKpiCard("users", tKey("ad.kpiUsers", "Usuarios enumerados"), groups.users.length, groups.users.length ? "warn" : "neutral") +
-        osintKpiCard("folder-open", tKey("ad.kpiShares", "Shares / null session"), groups.shares.length, groups.shares.length ? "warn" : "neutral") +
-        osintKpiCard("shield-alert", tKey("ad.kpiPosture", "Postura (signing / LDAP / DC)"), groups.posture.length + dcN, (groups.posture.length || dcN) ? "warn" : "neutral") +
-        osintKpiCard("key-round", tKey("ad.kpiAuth", "Auth (AS-REP / SPN / ADCS / WinRM)"), groups.auth.length, groups.auth.length ? "warn" : "neutral") +
+        '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-md">' +
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col justify-between relative overflow-hidden">' +
+        '<div class="absolute -right-6 -bottom-6 w-24 h-24 bg-error-container/20 rounded-full blur-xl pointer-events-none"></div>' +
+        '<div class="flex items-start justify-between"><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">' +
+        escapeHtml(tKey("ad.kpiHealth", "Salud de seguridad AD")) +
+        '</span><span class="p-xs bg-error-container rounded-lg text-error flex items-center justify-center"><i data-lucide="shield-alert" class="icon-md"></i></span></div>' +
+        '<div class="flex items-baseline gap-xs my-sm"><span class="font-headline-xl text-headline-xl text-on-surface font-bold ' + healthTone + '">' +
+        health + '</span><span class="font-headline-md text-headline-md text-outline">/100</span></div>' +
+        '<div class="w-full bg-surface-container rounded-full h-1.5 overflow-hidden"><div class="' + healthBar +
+        ' h-full rounded-full" style="width:' + health + '%"></div></div>' +
+        '<span class="font-body-sm text-body-sm mt-xs flex items-center gap-1 ' + (health < 70 ? "text-error" : "text-on-surface-variant") + '">' +
+        '<i data-lucide="triangle-alert" class="icon-sm"></i> ' +
+        escapeHtml(health < 70 ? tKey("ad.healthWarn", "Requiere remediación prioritaria") : tKey("ad.healthOk", "Postura aceptable / sin señales graves")) +
+        "</span></div>" +
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col justify-between">' +
+        '<div class="flex items-start justify-between"><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">' +
+        escapeHtml(tKey("ad.kpiPriv", "Cuentas / privilegio")) +
+        '</span><span class="p-xs bg-secondary-container rounded-lg text-primary flex items-center justify-center"><i data-lucide="shield-user" class="icon-md"></i></span></div>' +
+        '<div class="flex items-baseline gap-xs my-sm"><span class="font-headline-xl text-headline-xl text-on-surface font-bold">' +
+        Math.max(privN, userHint, groups.users.length) +
+        '</span><span class="font-body-sm text-body-sm text-outline">' +
+        escapeHtml(tKey("ad.kpiPrivSub", "señales privilegiadas / usuarios")) + "</span></div>" +
+        '<span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.kpiUsers", "Usuarios enumerados") + ": " + groups.users.length) +
+        "</span></div>" +
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col justify-between">' +
+        '<div class="flex items-start justify-between"><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">' +
+        escapeHtml(tKey("ad.kpiPaths", "Rutas a Domain Admin")) +
+        '</span><span class="p-xs bg-error-container rounded-lg text-error flex items-center justify-center"><i data-lucide="git-fork" class="icon-md"></i></span></div>' +
+        '<div class="flex items-baseline gap-xs my-sm"><span class="font-headline-xl text-headline-xl text-on-surface font-bold">' +
+        pathN + '</span><span class="font-body-sm text-body-sm ' + (pathN ? "text-error font-semibold" : "text-on-surface-variant") + '">' +
+        escapeHtml(tKey("ad.kpiPathsSub", "Vectores críticos")) + "</span></div>" +
+        '<span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(critN ? (critN + " " + tKey("ad.critPending", "críticos/altos pendientes")) : tKey("ad.noCrit", "Sin High/Critical AD")) +
+        "</span></div>" +
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col justify-between">' +
+        '<div class="flex items-start justify-between"><span class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">' +
+        escapeHtml(tKey("ad.kpiProto", "Vulnerabilidades de protocolo")) +
+        '</span><span class="p-xs bg-secondary-container rounded-lg text-tertiary flex items-center justify-center"><i data-lucide="key-round" class="icon-md"></i></span></div>' +
+        '<div class="flex items-baseline gap-xs my-sm"><span class="font-headline-xl text-headline-xl text-on-surface font-bold">' +
+        protocolItems.length + '</span><span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.kpiProtoSub", "Configuraciones débiles")) + "</span></div>" +
+        '<div class="flex flex-wrap gap-xs">' + tagHtml + "</div></div></div>" +
+
+        '<div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-sm bg-surface-container-low p-sm rounded-xl">' +
+        '<div class="flex items-center gap-sm flex-wrap">' +
+        tabBtn("vectors", "route", tKey("ad.tabVectors", "Vectores de ataque"), vecN || all.length) +
+        tabBtn("accounts", "users", tKey("ad.tabAccounts", "Cuentas y grupos"), acctN) +
+        tabBtn("dcs", "server", tKey("ad.tabDcs", "DCs & GPO"), dcTabN || dcN) +
+        tabBtn("trusts", "arrow-left-right", tKey("ad.tabTrusts", "Trusts"), trustN) +
         "</div>" +
-        '<div class="acrylic-panel rounded-xl p-lg ambient-shadow flex flex-col gap-md">' +
-        '<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-sm">' +
-        '<i data-lucide="network" class="icon-md text-primary"></i>' +
-        '<span>' + escapeHtml(tKey("ad.tableTitle", "Inventario Active Directory")) + "</span></h3>" +
-        adTable(all) +
-        "</div>";
+        '<div class="flex items-center gap-sm px-sm py-xs text-on-surface-variant font-body-sm text-body-sm shrink-0">' +
+        '<i data-lucide="funnel" class="icon-sm shrink-0"></i><span>' +
+        escapeHtml(tKey("ad.filterAll", "Filtro: hallazgos AD del engagement")) +
+        "</span></div></div>" +
+
+        '<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg items-start">' +
+        '<div class="lg:col-span-8 flex flex-col gap-md">' +
+        '<div class="flex items-center justify-between flex-wrap gap-sm">' +
+        '<div class="flex items-center gap-sm flex-wrap">' +
+        '<span class="font-headline-md text-headline-md text-on-surface">' +
+        escapeHtml(tKey("ad.vectorsTitle", "Vectores de ataque identificados")) + "</span>" +
+        '<span class="bg-surface-container px-sm py-0.5 rounded-full font-mono-md text-mono-md text-on-surface-variant">' +
+        escapeHtml(String(critN) + " " + tKey("ad.critPending", "críticos/altos pendientes")) +
+        "</span></div>" +
+        '<span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.sortSev", "Orden: severidad ↓")) + "</span></div>" +
+        listHtml +
+        "</div>" +
+
+        '<div class="lg:col-span-4 flex flex-col gap-md">' +
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col gap-md">' +
+        '<div class="flex items-center justify-between">' +
+        '<div class="flex items-center gap-xs"><i data-lucide="globe" class="icon-md text-primary"></i>' +
+        '<span class="font-headline-md text-headline-md text-on-surface font-semibold">' +
+        escapeHtml(tKey("ad.forestTitle", "Resumen del bosque")) + "</span></div>" +
+        '<span class="font-mono-md text-mono-md flex items-center gap-1 bg-surface-container-low px-xs py-0.5 rounded ' +
+        (all.length ? "text-tertiary" : "text-outline") + '">' +
+        '<span class="w-1.5 h-1.5 rounded-full ' + (all.length ? "bg-tertiary" : "bg-outline") + '"></span>' +
+        (all.length ? "Online" : "—") + "</span></div>" +
+        '<div class="flex flex-col gap-xs font-body-sm text-body-sm">' +
+        '<div class="flex items-center justify-between py-xs border-b border-surface-container"><span class="text-on-surface-variant">' +
+        escapeHtml(tKey("ad.fqdn", "FQDN / target")) +
+        '</span><span class="font-mono-md text-mono-md text-on-surface font-semibold">' + escapeHtml(fqdn) + "</span></div>" +
+        '<div class="flex items-center justify-between py-xs border-b border-surface-container"><span class="text-on-surface-variant">' +
+        escapeHtml(tKey("ad.scope", "Scope")) +
+        '</span><span class="font-mono-md text-mono-md text-on-surface">' + escapeHtml((meta && meta.scope) || "—") + "</span></div>" +
+        '<div class="flex items-center justify-between py-xs border-b border-surface-container"><span class="text-on-surface-variant">' +
+        escapeHtml(tKey("ad.kpiShares", "Shares / null session")) +
+        '</span><span class="font-mono-md text-mono-md text-on-surface">' + groups.shares.length + "</span></div>" +
+        '<div class="flex items-center justify-between py-xs"><span class="text-on-surface-variant">' +
+        escapeHtml(tKey("ad.kpiAuth", "Auth surface")) +
+        '</span><span class="font-mono-md text-mono-md text-on-surface">' + groups.auth.length + "</span></div></div>" +
+        '<div class="flex flex-col gap-xs mt-xs"><span class="font-label-md text-label-md text-on-surface uppercase tracking-wider">' +
+        escapeHtml(tKey("ad.dcList", "Controladores de dominio")) + "</span>" + dcRows + "</div>" +
+        '<div class="grid grid-cols-3 gap-xs pt-xs bg-surface-container-low p-sm rounded-xl text-center">' +
+        '<div class="flex flex-col"><span class="font-headline-md text-headline-md text-on-surface font-bold">' +
+        Math.max(userHint, groups.users.length) + '</span><span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.statUsers", "Usuarios")) + "</span></div>" +
+        '<div class="flex flex-col"><span class="font-headline-md text-headline-md text-on-surface font-bold">' +
+        groups.shares.length + '</span><span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.statShares", "Shares")) + "</span></div>" +
+        '<div class="flex flex-col"><span class="font-headline-md text-headline-md text-on-surface font-bold">' +
+        (dcN || groups.domain.length) + '</span><span class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.statDomain", "Dominio")) + "</span></div></div></div>" +
+
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col gap-sm">' +
+        '<div class="flex items-center justify-between"><span class="font-headline-md text-headline-md text-on-surface font-semibold">' +
+        escapeHtml(tKey("ad.killTitle", "Simulador de cadena")) +
+        '</span><i data-lucide="share-2" class="icon-sm text-primary"></i></div>' +
+        adKillChainHtml(all.filter(function (f) { return adSevRank(f.severity) >= 2; }), scanId) +
+        "</div>" +
+
+        '<div class="bg-surface-container-lowest p-md rounded-xl shadow-sm flex flex-col gap-sm">' +
+        '<div class="flex items-center justify-between"><span class="font-headline-md text-headline-md text-on-surface font-semibold">' +
+        escapeHtml(tKey("ad.mitTitle", "Mitigaciones prioritarias")) +
+        '</span><i data-lucide="zap" class="icon-sm text-tertiary"></i></div>' +
+        '<p class="font-body-sm text-body-sm text-on-surface-variant">' +
+        escapeHtml(tKey("ad.mitLead", "Pasos del dossier alineados a hallazgos AD del engagement (sin scripts ofensivos).")) +
+        "</p>" + adMitigationsHtml(all) +
+        "</div></div></div>";
+
+      body.querySelectorAll("[data-ad-tab]").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          activeTab = btn.getAttribute("data-ad-tab") || "vectors";
+          renderAd(findings, meta, scanId);
+        });
+      });
 
       if (window.lucide) lucide.createIcons();
       if (window.DarkSpearI18n && DarkSpearI18n.apply) DarkSpearI18n.apply(body);
@@ -3236,6 +3643,7 @@
               (meta.scope ? " · Scope: " + meta.scope : "") +
               " · " + count + " " + tKey("scan.findings", "hallazgos") + " AD";
           }
+          activeTab = "vectors";
           renderAd(findings, meta, id);
         },
       });
@@ -5251,19 +5659,19 @@
         '<div class="flex gap-sm w-full md:w-auto">' +
         '<a href="remediation-detail.html?finding=' + encodeURIComponent(f.id || "") + '" class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-primary transition-colors font-label-md">Remediar</a>' +
         "</div></header>" +
-        '<div class="grid grid-cols-1 lg:grid-cols-3 gap-md">' +
-        '<div class="lg:col-span-2 space-y-md">' +
-        '<section class="glass-panel rounded-xl p-lg"><h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md border-b border-outline-variant/30 pb-sm">' +
+        '<div class="grid grid-cols-1 lg:grid-cols-3 gap-md min-w-0">' +
+        '<div class="lg:col-span-2 space-y-md min-w-0">' +
+        '<section class="glass-panel rounded-xl p-lg min-w-0 overflow-hidden"><h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md border-b border-outline-variant/30 pb-sm">' +
         '<i data-lucide="file-text" class="text-primary"></i> Descripción técnica</h2>' +
-        '<p class="font-body-md text-on-surface-variant leading-relaxed whitespace-pre-wrap">' + escapeHtml(f.description || "—") + "</p></section>" +
-        '<section class="glass-panel rounded-xl p-lg border-l-4 border-l-tertiary"><h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md border-b border-outline-variant/30 pb-sm">' +
+        '<p class="font-body-md text-on-surface-variant leading-relaxed whitespace-pre-wrap ds-break">' + escapeHtml(f.description || "—") + "</p></section>" +
+        '<section class="glass-panel rounded-xl p-lg border-l-4 border-l-tertiary min-w-0 overflow-hidden"><h2 class="font-headline-md text-on-surface flex items-center gap-xs mb-md border-b border-outline-variant/30 pb-sm">' +
         '<i data-lucide="wrench" class="text-tertiary"></i> Remediación</h2>' +
-        '<p class="font-body-md text-on-surface-variant leading-relaxed whitespace-pre-wrap">' + escapeHtml(f.remediation || "—") + "</p></section>" +
+        '<p class="font-body-md text-on-surface-variant leading-relaxed whitespace-pre-wrap ds-break">' + escapeHtml(f.remediation || "—") + "</p></section>" +
         "</div>" +
-        '<div class="space-y-md">' +
-        '<section class="glass-panel rounded-xl p-lg"><h3 class="font-label-md text-secondary uppercase tracking-wider mb-md border-b border-outline-variant/30 pb-sm">Información</h3>' +
+        '<div class="space-y-md min-w-0">' +
+        '<section class="glass-panel rounded-xl p-lg min-w-0 overflow-hidden"><h3 class="font-label-md text-secondary uppercase tracking-wider mb-md border-b border-outline-variant/30 pb-sm">Información</h3>' +
         '<dl class="space-y-sm font-body-sm">' +
-        '<div><dt class="text-on-surface-variant">Asset</dt><dd class="font-mono-md text-on-surface mt-xs">' + escapeHtml(f.asset || "—") + "</dd></div>" +
+        '<div><dt class="text-on-surface-variant">Asset</dt><dd class="font-mono-md text-on-surface mt-xs ds-break">' + escapeHtml(f.asset || "—") + "</dd></div>" +
         '<div><dt class="text-on-surface-variant">Estado</dt><dd class="mt-xs">' + escapeHtml(f.status || "proposed") + "</dd></div>" +
         '<div><dt class="text-on-surface-variant">Detectado</dt><dd class="mt-xs">' + escapeHtml(relativeTime(f.created_at)) + "</dd></div>" +
         "</dl></section>" +
@@ -5283,13 +5691,23 @@
       return f || null;
     }
 
-    function renderScopeBar(alts, scanId) {
-      if (!alts || alts.length < 2 || !root) return;
+    function renderScopeBar(alts, scanId, finding) {
+      // f-11 en dos engagements distintos NO es el mismo hallazgo: los ids son
+      // ordinales por escaneo. Solo avisar si fingerprint/título coinciden.
+      var meaningful = (alts || []).filter(function (h) {
+        if (!finding || !h || !h.finding) return false;
+        if (finding.fingerprint && h.finding.fingerprint
+            && finding.fingerprint === h.finding.fingerprint) return true;
+        var a = String(finding.title || "").trim().toLowerCase();
+        var b = String(h.finding.title || "").trim().toLowerCase();
+        return !!(a && b && a === b);
+      });
+      if (meaningful.length < 2 || !root) return;
       var bar = document.createElement("div");
       bar.className = "glass-panel rounded-lg p-sm font-body-sm text-on-surface-variant flex flex-wrap items-center gap-sm";
       bar.innerHTML =
         '<span>' + escapeHtml(tKey("finding.multiScope", "Este id aparece en varios análisis. Abre el scope correcto:")) + "</span> " +
-        alts.map(function (h) {
+        meaningful.map(function (h) {
           var label = (h.scan && (h.scan.name || h.scan.target || h.scan.id)) || "—";
           var href = "finding-detail.html?id=" + encodeURIComponent(id || "") +
             "&scan=" + encodeURIComponent(h.scan.id);
@@ -5319,7 +5737,7 @@
             "</p></div>";
         }
       }
-      renderScopeBar(alts, scanId);
+      renderScopeBar(alts, scanId, finding);
     }
 
     if (id || fp) {

@@ -5,7 +5,7 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Dark Spear — Active Directory</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
 <script src="vendor/lucide.min.js"></script>
 <link rel="icon" type="image/png" href="vendor/logo.png"/>
 <link rel="apple-touch-icon" href="vendor/logo.png"/>
@@ -14,6 +14,7 @@
 <script src="vendor/prefs-boot.js"></script>
 <script src="vendor/i18n.js" defer></script>
 <script src="vendor/findings-inbox.js" defer></script>
+<script src="vendor/finding-dossier.js" defer></script>
 <script src="vendor/export.js" defer></script>
 <script src="vendor/panel-live.js" defer></script>
 <script src="vendor/splash.js" defer></script>
@@ -42,7 +43,7 @@
               },
               borderRadius: { DEFAULT: "0.25rem", lg: "0.5rem", xl: "0.75rem", full: "9999px" },
               spacing: { base: "4px", lg: "24px", "container-max": "1440px", sm: "8px", md: "16px", xs: "4px", gutter: "16px", xl: "32px" },
-              fontFamily: { "headline-xl": ["Public Sans"], "mono-md": ["JetBrains Mono"], "label-md": ["Public Sans"], "body-md": ["Public Sans"], "headline-md": ["Public Sans"], "body-lg": ["Public Sans"], "body-sm": ["Public Sans"], "headline-lg": ["Public Sans"] },
+              fontFamily: { "headline-xl": ["Inter", "system-ui", "sans-serif"], "mono-md": ["JetBrains Mono", "monospace"], "label-md": ["Inter", "system-ui", "sans-serif"], "body-md": ["Inter", "system-ui", "sans-serif"], "headline-md": ["Inter", "system-ui", "sans-serif"], "body-lg": ["Inter", "system-ui", "sans-serif"], "body-sm": ["Inter", "system-ui", "sans-serif"], "headline-lg": ["Inter", "system-ui", "sans-serif"] },
               fontSize: {
                 "headline-xl": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }],
                 "mono-md": ["13px", { lineHeight: "20px", fontWeight: "400" }],
@@ -189,37 +190,48 @@
 
 <section id="ad-detail-view" class="flex-1 flex flex-col gap-lg min-h-0 overflow-y-auto pb-lg" hidden>
 <div class="shrink-0 flex flex-col gap-md">
+<div class="flex items-center justify-between gap-sm flex-wrap">
 <nav class="font-body-sm text-on-surface-variant flex items-center gap-xs flex-wrap" aria-label="Breadcrumb">
-<a href="ad-assessment.html" class="text-primary hover:underline" data-i18n="nav.ad">Active Directory</a>
+<span data-i18n="ad.crumbGov">Identidad &amp; Gobernanza</span>
+<i data-lucide="chevron-right" class="icon-sm"></i>
+<a href="ad-assessment.html" class="text-primary hover:underline" data-i18n="ad.crumbAd">Active Directory &amp; Dominio</a>
 <span aria-hidden="true">/</span>
 <span id="ad-detail-crumb" class="text-on-surface truncate max-w-[16rem]">—</span>
 </nav>
+<div id="ad-last-sync" class="flex items-center gap-sm bg-surface-container-low px-sm py-xs rounded-full shadow-sm font-mono-md text-mono-md text-on-surface-variant">
+<span class="w-2 h-2 rounded-full bg-outline shrink-0" id="ad-sync-dot"></span>
+<span id="ad-sync-label">—</span>
+</div>
+</div>
 <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-md">
-<div class="min-w-0 flex-1">
-<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="ad.detailTitle">Assessment Active Directory</h2>
-<p class="font-body-md text-on-surface-variant mt-xs max-w-3xl" data-i18n="ad.detailLead">Collection read-only: fingerprint SMB/LDAP, sesión nula, rootDSE y usuarios enumerables. Sin explotación ni relay — map before you exploit.</p>
-<p id="ad-detail-subtitle" class="font-mono-md text-mono-md text-secondary mt-sm truncate">—</p>
+<div class="min-w-0 flex-1 flex flex-col gap-xs max-w-3xl">
+<div class="flex items-center gap-sm flex-wrap">
+<h2 class="font-headline-xl text-headline-xl text-on-surface tracking-tight" data-i18n="ad.detailTitle">Active Directory &amp; Dominio</h2>
+<span id="ad-risk-badge" class="hidden bg-error-container text-on-error-container font-label-md text-label-md px-sm py-0.5 rounded-full uppercase tracking-wider" data-i18n="ad.riskHigh">Riesgo alto</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant" data-i18n="ad.detailLead">Auditoría de bosques, identidades privilegiadas, vectores tipo BloodHound y superficie AD (collection read-only).</p>
+<p id="ad-detail-subtitle" class="font-mono-md text-mono-md text-secondary truncate">—</p>
 </div>
 <div class="flex flex-wrap items-center gap-sm shrink-0">
-<button type="button" id="ad-btn-export" class="px-md py-sm rounded-lg border border-outline-variant/50 bg-surface-container-lowest text-on-surface font-label-md flex items-center gap-xs hover:bg-surface-container-low transition-colors">
-<i data-lucide="download" class="icon-sm"></i>
-<span data-i18n="ad.exportReport">Exportar inventario</span>
+<button type="button" id="ad-btn-export" class="px-md py-sm rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm font-label-md flex items-center gap-xs transition-colors">
+<i data-lucide="download" class="icon-sm text-secondary"></i>
+<span data-i18n="ad.exportReport">Exportar informe AD</span>
 </button>
-<button type="button" id="ad-btn-refresh" class="px-md py-sm rounded-lg border border-outline-variant/50 bg-surface-container-lowest text-on-surface font-label-md flex items-center gap-xs hover:bg-surface-container-low transition-colors">
+<button type="button" id="ad-btn-refresh" class="px-md py-sm rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm font-label-md flex items-center gap-xs transition-colors">
 <i data-lucide="refresh-cw" class="icon-sm"></i>
-<span data-i18n="ad.refresh">Actualizar datos</span>
+<span data-i18n="ad.refresh">Actualizar</span>
 </button>
-<a id="ad-btn-mitre" href="mitre.html" class="px-md py-sm rounded-lg border border-outline-variant/50 bg-surface-container-lowest text-on-surface font-label-md flex items-center gap-xs hover:bg-surface-container-low transition-colors">
+<a id="ad-btn-mitre" href="mitre.html" class="px-md py-sm rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm font-label-md flex items-center gap-xs transition-colors">
 <i data-lucide="swords" class="icon-sm"></i>
-<span data-i18n="ad.viewMitre">Ver MITRE (Discovery)</span>
+<span data-i18n="ad.viewMitre">MITRE</span>
 </a>
-<a id="ad-btn-graph" href="attack-graph.html" class="px-md py-sm rounded-lg border border-outline-variant/50 bg-surface-container-lowest text-on-surface font-label-md flex items-center gap-xs hover:bg-surface-container-low transition-colors">
+<a id="ad-btn-graph" href="attack-graph.html" class="px-md py-sm rounded-lg bg-surface-container-lowest text-on-surface hover:bg-surface-container shadow-sm font-label-md flex items-center gap-xs transition-colors">
 <i data-lucide="share-2" class="icon-sm"></i>
-<span data-i18n="ad.viewGraph">Ver Attack Graph</span>
+<span data-i18n="ad.viewGraph">Grafo</span>
 </a>
-<a id="ad-btn-scan-target" href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors shadow-sm">
-<i data-lucide="radar" class="icon-sm"></i>
-<span data-i18n="ad.scanTarget">Escanear este target</span>
+<a id="ad-btn-scan-target" href="start-engagement.html" class="px-md py-sm rounded-lg bg-primary-container text-on-primary-container hover:bg-primary shadow-sm font-label-md flex items-center gap-xs transition-colors">
+<i data-lucide="refresh-cw" class="icon-sm" id="ad-scan-icon"></i>
+<span data-i18n="ad.scanTarget">Escanear dominio</span>
 </a>
 </div>
 </div>
