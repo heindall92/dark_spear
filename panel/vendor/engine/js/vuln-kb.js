@@ -2372,27 +2372,37 @@ function combineWeights(weights) {
 /**
  * FAIR-lite 0–100 + A–F sobre hallazgos ya recolectados (sin red).
  * E saturado con K=25; T combina señales de secreto vivo / bucket / SSRF;
- * I por peor caso (secreto/cloud vs contexto).
+ * I por peor caso (crítico confirmado vs correo/contexto).
  */
 export function computeExposureRisk(findings) {
   const list = (findings || []).filter((f) => f && !EXPOSURE_DELTA_SKIP_RE.test(f.title || ""));
   let S = 0;
   let hasCriticalSecret = false;
+  let hasCritical = false;
   const blobOf = (f) => `${f.title || ""} ${f.description || ""}`.toLowerCase();
   for (const f of list) {
     const s = String(f.severity || "").toLowerCase();
     S += SEV_EXPOSURE_W[s] || 0;
-    if (s === "critical" && /secret|credencial|hardcodeada|bucket|listable|ssrf|viva confirmada/i.test(blobOf(f))) {
+    if (s === "critical") hasCritical = true;
+    // Solo secretos/cloud/SSRF reales — NO bastar con la palabra
+    // «credenciales» (un SQLi «sin credenciales» la contiene y disparaba
+    // el suelo E=50 / I=90 como si hubiera un secreto vivo).
+    const blob = blobOf(f);
+    if (
+      s === "critical"
+      && /secreto vivo|viva confirmada|hardcodead[ao] en bundle|access key|bucket listable|ssrf confirmado|listable públicamente/i.test(blob)
+    ) {
       hasCriticalSecret = true;
     }
   }
   let E = Math.min(1 - Math.exp(-S / 25), 1 - 1e-15);
   if (hasCriticalSecret) E = Math.max(E, 0.5);
+  else if (hasCritical) E = Math.max(E, 0.35);
   const threatW = [];
   if (list.some((f) => /viva confirmada|hardcodeada en bundle|access key/i.test(f.title || ""))) threatW.push(0.8);
   if (list.some((f) => /ssrf confirmado|listable públicamente/i.test(f.title || ""))) threatW.push(0.9);
   const T = threatW.length ? combineWeights(threatW) : 0.05;
-  const I = hasCriticalSecret ? 0.9
+  const I = (hasCriticalSecret || hasCritical) ? 0.9
     : list.some((f) => /spf|dmarc|tenant|workspace/i.test((f.title || "").toLowerCase())) ? 0.4
       : 0.2;
   const likelihood = combineWeights([E, T]);
@@ -2406,6 +2416,8 @@ export function computeExposureRisk(findings) {
     threat: Math.round(T * 1000) / 10,
     impact: Math.round(I * 1000) / 10,
     dominant,
+    hasCriticalSecret,
+    hasCritical,
   };
 }
 
@@ -2424,12 +2436,18 @@ export function exposureScoreFindings(findings) {
     .filter(Boolean)
     .slice(0, 5);
   const drivers = worst.length
-    ? `Hallazgos que más empujan el índice: ${worst.join("; ")}.`
+    ? `Hallazgos que más empujan el índice: ${[...new Set(worst)].join("; ")}.`
     : "No hay críticos ni altos: el índice lo marca la higiene (SPF/DMARC/cabeceras) y el recuento de infos.";
+  let floorNote = "";
+  if (score.hasCriticalSecret) {
+    floorNote = " Un crítico de secreto vivo / bucket listable / SSRF eleva el suelo de exposición a 50.";
+  } else if (score.hasCritical) {
+    floorNote = " Un crítico confirmado eleva el suelo de exposición a 35.";
+  }
   return [{
     title: `Índice de exposición OSINT: ${score.risk}/100 (grado ${score.grade})`,
     severity: "Info",
-    description: `Cuantificación FAIR-lite sobre los hallazgos de esta auditoría (sin tráfico extra): exposición ${score.exposure}, amenaza ${score.threat}, impacto ${score.impact}. Motor dominante: ${score.dominant}. Recuento que alimenta el índice: ${bySev.critical} críticos, ${bySev.high} altos, ${bySev.medium} medios, ${bySev.low} bajos, ${bySev.info} infos. ${drivers} Un crítico confirmado (secreto vivo / bucket listable / SSRF) eleva el suelo de exposición a 50. El grado no es comparable entre clientes.`,
+    description: `Cuantificación FAIR-lite sobre los hallazgos de esta auditoría (sin tráfico extra): exposición ${score.exposure}, amenaza ${score.threat}, impacto ${score.impact}. Motor dominante: ${score.dominant}. Recuento que alimenta el índice: ${bySev.critical} críticos, ${bySev.high} altos, ${bySev.medium} medios, ${bySev.low} bajos, ${bySev.info} infos. ${drivers}${floorNote} El grado no es comparable entre clientes.`,
     remediation: "No abras ticket sobre el índice. Cierra primero los hallazgos que alimentan el motor dominante; relanza el análisis para ver si el grado baja. No compares el número entre clientes.",
   }];
 }
@@ -2536,6 +2554,22 @@ export function nucleiFindings(stdout) {
  * ------------------------------------------------------------------------ */
 export function sqlmapCurlArgs(baseUrl) {
   return ["-u", baseUrl, "--forms", "--crawl=2", "--batch",
+    "--level=1", "--risk=1", "--random-agent", "--flush-session"];
+}
+
+/**
+ * sqlmap sobre parámetros GET reales que arjun ya descubrió (Fase 2), no
+ * sobre formularios crawleados a ciegas. Se agrega cada param a la query
+ * string con valor dummy "1" (sqlmap necesita el par nombre=valor en la
+ * URL para saber qué testear) y -p restringe la prueba exactamente a esos
+ * params — evita que sqlmap se ponga a explorar otros que ya haya en la
+ * URL sin que arjun los haya confirmado como reales.
+ */
+export function sqlmapArjunArgs(url, params = []) {
+  const qs = params.map((p) => `${encodeURIComponent(p)}=1`).join("&");
+  const sep = url.includes("?") ? "&" : "?";
+  const targetUrl = qs ? `${url}${sep}${qs}` : url;
+  return ["-u", targetUrl, "-p", params.join(","), "--batch",
     "--level=1", "--risk=1", "--random-agent", "--flush-session"];
 }
 
@@ -2690,17 +2724,33 @@ export function extractKatanaUrls(stdout, baseUrl) {
 }
 
 /**
- * Inventario consolidado (1 finding Info, no vulnerabilidad) — mismo
- * criterio que httpxFindings: superficie de ataque descubierta, no un
- * hallazgo explotable por sí solo.
+ * Inventario consolidado (1 finding Info). Si katana solo devolvió el apex
+ * (/), no hay superficie nueva → no emitir ficha.
  */
 export function katanaFindings(stdout, baseUrl) {
   const urls = extractKatanaUrls(stdout, baseUrl);
   if (!urls.length) return [];
+  let basePath = "/";
+  try {
+    basePath = (new URL(baseUrl).pathname || "/").replace(/\/+$/, "") || "/";
+  } catch {
+    /* keep "/" */
+  }
+  const interesting = urls.filter((href) => {
+    try {
+      const u = new URL(href);
+      const path = (u.pathname || "/").replace(/\/+$/, "") || "/";
+      if (path !== basePath) return true;
+      return Boolean(u.search || u.hash);
+    } catch {
+      return true;
+    }
+  });
+  if (!interesting.length) return [];
   return [{
-    title: `${urls.length} endpoint(s) descubiertos por crawling activo (katana)`,
+    title: `${interesting.length} endpoint(s) descubiertos por crawling activo (katana)`,
     severity: "Info",
-    description: `Crawling activo (katana, links + parseo JS) sobre ${baseUrl} encontró: ${urls.slice(0, 15).join("; ")}${urls.length > 15 ? "; ..." : ""}. Inventario de superficie; rutas /api/, /rest/, /admin/ son candidatas a sondas XSS/SQLi/IDOR.`,
+    description: `Crawling activo (katana, links + parseo JS) sobre ${baseUrl} encontró: ${interesting.slice(0, 15).join("; ")}${interesting.length > 15 ? "; ..." : ""}. Inventario de superficie; rutas /api/, /rest/, /admin/ son candidatas a sondas XSS/SQLi/IDOR.`,
     remediation: "Ninguna por sí sola: es inventario de superficie de ataque. Revisar manualmente cada endpoint nuevo — especialmente rutas /api/, /rest/, /admin/ — como candidatos para las sondas de XSS/SQLi/IDOR existentes.",
   }];
 }
@@ -3080,13 +3130,24 @@ export function niktoFindings(stdout) {
     const cveM = line.match(/CVE-\d{4}-\d+/i);
     const osvdbM = line.match(/OSVDB-\d+/i);
     const path = niktoExtractPath(line);
-    if (!path && !cveM && !osvdbM) continue;
+    // Nikto a veces confirma la ruta Y filtra un secreto real en la misma
+    // línea (p. ej. "/webcgi/: ... The key is: AIza..."); sin esto, un
+    // secreto real quedaba escondido bajo el título/severidad genéricos de
+    // "superficie". Reusa el mismo catálogo que jsSecretFindings.
+    let secretSig = null;
+    for (const sig of JS_SECRET_SIGNATURES) {
+      if (sig.re.test(line)) { secretSig = sig; break; }
+    }
+    if (!path && !cveM && !osvdbM && !secretSig) continue;
     let severity = "Low";
     if (cveM) severity = "High";
     else if (/phpinfo|config\.(inc|php)|wp-config|\.bak|\.git|passwd|backup/i.test(line)) severity = "High";
     else if (/directory indexing|index of/i.test(line)) severity = "Medium";
     else if (osvdbM && path) severity = "Medium";
-    const title = niktoShortTitle(line, path, cveM, osvdbM);
+    if (secretSig) severity = secretSig.severity || "High";
+    const title = secretSig
+      ? (path ? `Nikto: ${secretSig.label} expuesta en ${path}` : `Nikto: ${secretSig.label} expuesta`)
+      : niktoShortTitle(line, path, cveM, osvdbM);
     const key = `${severity}|${(path || cveM?.[0] || osvdbM?.[0] || title).toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -3095,11 +3156,13 @@ export function niktoFindings(stdout) {
       title,
       severity,
       description: `Nikto confirmó este check contra la respuesta real del servicio: ${line}${refs ? ` Referencia ${refs}.` : ""}`,
-      remediation: cveM
-        ? `Revisar ${cveM[0]} y aplicar el parche o el hardening que cierra ese check. Re-ejecutar nikto sobre la misma ruta para verificar el cierre.`
-        : path
-          ? `Revisar ${path}: retirar del document root, autenticar o desactivar el listado. No depender de que la ruta no esté enlazada.`
-          : "Aplicar el control que Nikto señaló y verificar con la misma sonda.",
+      remediation: secretSig
+        ? `Rotar de inmediato esta credencial (${secretSig.label}, ${secretSig.cwe}): quedó expuesta en texto plano en ${path || "una ruta pública"}. Retirar la ruta del document root o autenticarla; no depender de que no esté enlazada.`
+        : cveM
+          ? `Revisar ${cveM[0]} y aplicar el parche o el hardening que cierra ese check. Re-ejecutar nikto sobre la misma ruta para verificar el cierre.`
+          : path
+            ? `Revisar ${path}: retirar del document root, autenticar o desactivar el listado. No depender de que la ruta no esté enlazada.`
+            : "Aplicar el control que Nikto señaló y verificar con la misma sonda.",
     });
     if (out.length >= 8) break;
   }

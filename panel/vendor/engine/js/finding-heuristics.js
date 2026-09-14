@@ -164,6 +164,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-wafw00f") push("wafw00f", text);
     if (r.id === "p2-nuclei") push("nuclei", text);
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
+    if (r.id === "p3-sqlmap-arjun-1") push("sqlmap-arjun-1", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
     if (r.id === "p2-katana") push("katana", text);
     if (r.id === "p2-wapiti") push("wapiti", text);
@@ -756,6 +757,13 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const sqlmapText = probeIdx["sqlmap-forms"];
   if (sqlmapText) {
     sqlmapFindings(sqlmapText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // sqlmap sobre el param GET que arjun descubrió (mismo parser genérico).
+  const sqlmapArjunText = probeIdx["sqlmap-arjun-1"];
+  if (sqlmapArjunText) {
+    sqlmapFindings(sqlmapArjunText).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

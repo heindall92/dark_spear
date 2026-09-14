@@ -45,6 +45,7 @@ import {
   nucleiTagsForContext,
   nucleiCurlArgs,
   sqlmapCurlArgs,
+  sqlmapArjunArgs,
   subfinderArgs,
   extractSubfinderHosts,
   httpxArgsForHosts,
@@ -834,6 +835,16 @@ function phase3Steps(baseUrl, host, cookie, ctx) {
     step("p3-sqlmap-forms", "sqlmap", sqlmapCurlArgs(baseUrl), null, {
       desc: "sqlmap --forms --crawl (descubrimiento + explotación de inyección SQL)",
       skipIf: (c) => !c.hasWebStack,
+    }),
+    // sqlmap sobre el 1er (url, param) real que arjun descubrió en Fase 2
+    // (ctx.arjunParams persiste entre fases) — mismo criterio que
+    // p2-dalfox-1, pero en Fase 3 porque sqlmap es explotación con gate
+    // humano de fase, no enumeración.
+    step("p3-sqlmap-arjun-1", "sqlmap", (c) => (c.arjunParams?.[0]
+      ? sqlmapArjunArgs(c.arjunParams[0].url, c.arjunParams[0].params)
+      : null), null, {
+      desc: "sqlmap: SQLi sobre el 1er param descubierto por arjun",
+      skipIf: (c) => !c.arjunParams?.[0],
     }),
     step("p3-curl-config-bak", "curl", ["-s", "-L", "--max-time", "15", "-H", "X-DS-Playbook: p3-curl-config-bak", baseUrl + "/config/config.inc.php.bak"], null, {
       desc: "Contenido de config.inc.php.bak",
