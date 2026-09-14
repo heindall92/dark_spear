@@ -39,6 +39,7 @@ check("genera 1 finding Info consolidado", findings.length === 1 && findings[0].
 check("el finding lista los endpoints descubiertos", findings[0].description.includes("/rest/products/search"));
 
 check("sin URLs: cero findings", katanaFindings("no-es-una-url", "https://x.com").length === 0);
+check("solo apex/home: cero findings", katanaFindings("https://x.com/\nhttps://x.com", "https://x.com").length === 0);
 
 // Wiring en Fase 2: aparece con args correctos, se salta en DVWA (ya
 // cubierto por sondas de módulo específicas, mismo criterio que

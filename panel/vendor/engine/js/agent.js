@@ -599,12 +599,20 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
       await waitForRunControl(control);
       await runPhasePlaybook();
     }
-    onStep(normalizeStep(null, engagementId, {
-      tool: "(agent)", args: [],
-      output: "Playbook PTES completado (4/4).",
-      verdict: "done",
-      phase: phaseState.current,
-    }));
+    {
+      const doneMsg = "Auditoría finalizada — playbook PTES completado (4/4).";
+      const doneId = await addStep(db, {
+        engagementId, tool: "(agent)", args: [],
+        output: doneMsg, stderr: "", exitCode: 0, verdict: "done",
+        phase: phaseState.current,
+      });
+      onStep(normalizeStep(doneId, engagementId, {
+        tool: "(agent)", args: [],
+        output: doneMsg,
+        verdict: "done",
+        phase: phaseState.current,
+      }));
+    }
     return;
   }
 
@@ -708,12 +716,20 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
         }
         continue;
       }
-      onStep(normalizeStep(null, engagementId, {
-        tool: "(agent)", args: [],
-        output: decision.reasoning || "Playbook PTES completado (4/4).",
-        verdict: "done",
-        phase: phaseState.current,
-      }));
+      {
+        const doneMsg = decision.reasoning || "Auditoría finalizada — playbook PTES completado (4/4).";
+        const doneId = await addStep(db, {
+          engagementId, tool: "(agent)", args: [],
+          output: doneMsg, stderr: "", exitCode: 0, verdict: "done",
+          phase: phaseState.current,
+        });
+        onStep(normalizeStep(doneId, engagementId, {
+          tool: "(agent)", args: [],
+          output: doneMsg,
+          verdict: "done",
+          phase: phaseState.current,
+        }));
+      }
       return;
     }
 

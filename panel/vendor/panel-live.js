@@ -467,11 +467,27 @@
   }
 
   function mergeFindingLists(a, b) {
+    // Colapsar la misma ficha si llega por disco (engagement) y por inbox
+    // en vivo: antes la clave incluía id+engagement_dir y el crítico
+    // SQLi salía dos veces en el dashboard.
     var by = {};
+    function normKey(f) {
+      if (f.fingerprint) return "fp:" + String(f.fingerprint).toLowerCase();
+      return "ta:" + [String(f.title || "").toLowerCase().trim(), String(f.asset || "").toLowerCase().trim()].join("|");
+    }
+    function rank(f) {
+      var s = 0;
+      if (f.engagement_dir || f.scan_id) s += 4;
+      if (f.id && /^f-\d+/i.test(String(f.id))) s += 2;
+      if (String(f.status || "").toLowerCase() === "accepted") s += 1;
+      if (f.created_at) s += 0.001 * (Number(f.created_at) || 0);
+      return s;
+    }
     function add(f) {
       if (!f || !f.title) return;
-      var key = [f.engagement_dir || f.scan_id || "", f.id || "", f.title, f.asset || ""].join("|");
-      if (!by[key]) by[key] = f;
+      var key = normKey(f);
+      var prev = by[key];
+      if (!prev || rank(f) >= rank(prev)) by[key] = f;
     }
     (a || []).forEach(add);
     (b || []).forEach(add);
@@ -1783,6 +1799,14 @@
     if (!list) return;
     var critical = (findings || []).filter(function (f) {
       return String(f.severity || "").toLowerCase() === "critical";
+    });
+    // Defensa extra: por título+asset por si el merge no unificó fingerprints.
+    var seen = {};
+    critical = critical.filter(function (f) {
+      var k = [String(f.title || "").toLowerCase(), String(f.asset || "").toLowerCase()].join("|");
+      if (seen[k]) return false;
+      seen[k] = true;
+      return true;
     }).slice(0, 3);
     if (!critical.length) {
       list.innerHTML = "";
@@ -1793,21 +1817,30 @@
     if (empty) empty.hidden = true;
     if (allLink) {
       allLink.classList.remove("hidden");
-      var critTotal = countBySeverity(findings, ["critical"]);
+      var critTotal = critical.length;
+      // Contar únicos en el set completo, no solo el slice del widget.
+      var allCrit = {};
+      (findings || []).forEach(function (f) {
+        if (String(f.severity || "").toLowerCase() !== "critical") return;
+        var k = [String(f.title || "").toLowerCase(), String(f.asset || "").toLowerCase()].join("|");
+        allCrit[k] = true;
+      });
+      critTotal = Object.keys(allCrit).length;
       allLink.textContent = tKey("dash.viewAllCritical", "Ver todos los críticos") + " (" + critTotal + ")";
     }
-    var engagement = (run && run.label) || status.target || "";
     list.innerHTML = critical.map(function (f) {
       var sev = String(f.severity || "critical").toUpperCase();
+      var scanLabel = f.engagement_dir || f.scan_id || "";
+      if (scanLabel.length > 42) scanLabel = scanLabel.slice(0, 40) + "…";
       return '<a class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-sm hover:border-error/50 transition-colors cursor-pointer group block" href="' +
-        escapeHtml(findingHref(f, status && (status.engagement_dir || status.id))) + '">' +
+        escapeHtml(findingHref(f, f.engagement_dir || f.scan_id || (status && (status.engagement_dir || status.id)))) + '">' +
         '<div class="flex justify-between items-start mb-xs">' +
         '<span class="px-2 py-0.5 bg-error/10 text-error rounded text-[10px] font-bold tracking-wider">' + escapeHtml(sev) + "</span>" +
         '<span class="font-mono-md text-[10px] text-outline">' + escapeHtml(relativeTime(f.created_at)) + "</span></div>" +
         '<h4 class="font-body-md text-body-md font-semibold text-on-surface leading-tight mb-xs group-hover:text-primary transition-colors">' +
         escapeHtml(f.title || "Finding") + "</h4>" +
-        '<p class="font-mono-md text-mono-md text-on-surface-variant truncate">Target: ' + escapeHtml(f.asset || "—") + "</p>" +
-        (engagement ? '<p class="font-body-sm text-[11px] text-secondary mt-xs">' + escapeHtml(engagement) + "</p>" : "") +
+        '<p class="font-mono-md text-mono-md text-on-surface-variant truncate ds-break">Target: ' + escapeHtml(f.asset || "—") + "</p>" +
+        (scanLabel ? '<p class="font-body-sm text-[11px] text-secondary mt-xs truncate">' + escapeHtml(scanLabel) + "</p>" : "") +
         "</a>";
     }).join("");
   }
