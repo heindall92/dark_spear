@@ -931,6 +931,61 @@ export function genericExposureCurlSteps(step, prefix, baseUrl, maxTime = "12") 
 }
 
 /* ------------------------------------------------------------------------ *
+ * GraphQL — descubrimiento de endpoint + introspection. A diferencia de
+ * GENERIC_EXPOSURE_PROBES (GET simple), GraphQL no responde nada útil a un
+ * GET: hace falta POST con Content-Type JSON y una query real. La query de
+ * introspección ({__schema{...}}) es estándar del protocolo (no un
+ * exploit); si el servidor la contesta con el schema completo, es
+ * exposición de superficie de API completa sin autenticar (CWE-200).
+ * ------------------------------------------------------------------------ */
+export const GRAPHQL_PROBES = [
+  { stepId: "graphql", path: "/graphql" },
+  { stepId: "api-graphql", path: "/api/graphql" },
+  { stepId: "graphiql", path: "/graphiql" },
+  { stepId: "v1-graphql", path: "/v1/graphql" },
+  { stepId: "query", path: "/query" },
+];
+
+const GRAPHQL_INTROSPECTION_BODY = JSON.stringify({ query: "{__schema{queryType{name}}}" });
+
+export function graphqlIntrospectionCurlSteps(step, prefix, baseUrl, maxTime = "12") {
+  return GRAPHQL_PROBES.map((p) =>
+    step(`${prefix}-${p.stepId}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-X", "POST", "-H", "Content-Type: application/json",
+      "-d", GRAPHQL_INTROSPECTION_BODY,
+      baseUrl + p.path,
+    ], null, {
+      desc: `Sonda GraphQL: introspection en ${p.path}`,
+    }),
+  );
+}
+
+// Envolvente estándar de respuesta GraphQL (data/errors) — confirma que el
+// endpoint es GraphQL de verdad, no un 404 genérico o un JSON cualquiera.
+const GRAPHQL_ENDPOINT_RE = /"data"\s*:\s*[{[]|"errors"\s*:\s*\[/i;
+const GRAPHQL_SCHEMA_RE = /"__schema"|"queryType"\s*:\s*\{/i;
+
+export function graphqlFindings(text, path) {
+  const t = String(text || "");
+  if (!GRAPHQL_ENDPOINT_RE.test(t)) return [];
+  if (GRAPHQL_SCHEMA_RE.test(t)) {
+    return [{
+      title: `GraphQL introspection habilitada en ${path}`,
+      severity: "Medium",
+      description: `El endpoint GraphQL en ${path} respondió a una query de introspección (__schema) exponiendo el esquema completo: tipos, queries, mutations y sus argumentos (CWE-200). Cualquiera puede mapear toda la superficie de la API sin credenciales, incluidas mutations no documentadas — inventario directo para IDOR/lógica de negocio.`,
+      remediation: "Deshabilitar introspection en producción (introspection: false en Apollo Server, GRAPHIQL=false en la mayoría de frameworks). Si hace falta para debugging, restringirlo a IPs internas o requerir autenticación.",
+    }];
+  }
+  return [{
+    title: `Endpoint GraphQL detectado en ${path} (introspection deshabilitada)`,
+    severity: "Info",
+    description: `${path} responde con el formato estándar de GraphQL (data/errors) pero rechazó la query de introspección: la API existe pero el esquema no es explorable a ciegas. Candidato a sondear manualmente operaciones conocidas por nombre (login, user, admin, createUser).`,
+    remediation: "Ninguna por sí sola: buena práctica ya aplicada (introspection cerrada). Confirmar que tampoco haya un endpoint /graphiql o playground accesible en producción.",
+  }];
+}
+
+/* ------------------------------------------------------------------------ *
  * JWT: crackeo offline de secreto débil (HS256) y bypass alg=none.
  * Solo cómputo local (SHA-256/HMAC puro JS, sin llamada de red para el
  * crackeo) + una petición HTTP activa por endpoint para probar el bypass,

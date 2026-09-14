@@ -16,6 +16,8 @@ import {
   NOSQLI_LOGIN_PROBES,
   XSS_REFLECTION_PAYLOAD,
   sstiEvaluated,
+  GRAPHQL_PROBES,
+  graphqlFindings,
   OPEN_REDIRECT_TEST_URL,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
@@ -126,6 +128,8 @@ function buildProbeIndex(stepRecords) {
     if (m) push(`xss-reflect:${m[1]}`, text);
     m = /^p1-ssti-(.+)$/.exec(r.id);
     if (m) push(`ssti-reflect:${m[1]}`, text);
+    m = /^p1-graphql-(.+)$/.exec(r.id);
+    if (m) push(`graphql:${m[1]}`, text);
     m = /^p1-redirect-(.+)$/.exec(r.id);
     if (m) push(`open-redirect:${m[1]}`, text);
     m = /^p1-idor-(.+)$/.exec(r.id);
@@ -535,6 +539,13 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     const own = probeIdx[`api-surface:${p.stepId}`];
     const matched = hasRecords ? own != null && p.bodyRe.test(own) : p.bodyRe.test(b);
     if (matched) add(p.title, p.severity, p.description, p.remediation);
+  });
+
+  // GraphQL: descubrimiento de endpoint + introspection.
+  GRAPHQL_PROBES.forEach(function (p) {
+    const own = probeIdx[`graphql:${p.stepId}`];
+    if (own == null) return;
+    graphqlFindings(own, p.path).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
   });
 
   // Bypass de login por SQL injection (' OR 1=1--): un login legítimo con
