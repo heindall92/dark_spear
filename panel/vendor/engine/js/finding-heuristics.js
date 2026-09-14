@@ -15,6 +15,7 @@ import {
   SQLI_LOGIN_PROBES,
   NOSQLI_LOGIN_PROBES,
   XSS_REFLECTION_PAYLOAD,
+  sstiEvaluated,
   OPEN_REDIRECT_TEST_URL,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
@@ -123,6 +124,8 @@ function buildProbeIndex(stepRecords) {
     if (m) push(`nosqli-login:${m[1]}`, text);
     m = /^p1-xss-(.+)$/.exec(r.id);
     if (m) push(`xss-reflect:${m[1]}`, text);
+    m = /^p1-ssti-(.+)$/.exec(r.id);
+    if (m) push(`ssti-reflect:${m[1]}`, text);
     m = /^p1-redirect-(.+)$/.exec(r.id);
     if (m) push(`open-redirect:${m[1]}`, text);
     m = /^p1-idor-(.+)$/.exec(r.id);
@@ -588,6 +591,23 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
         "Medium",
         `El valor enviado en ?${param}= (marcador con caracteres de ruptura HTML) vuelve sin escapar en el cuerpo de la respuesta (CWE-79): la aplicación interpola esta entrada en el HTML sin sanitizar. Confirmar manualmente el contexto exacto (¿dentro de una etiqueta, de un atributo, de un bloque <script>?) para valorar la explotabilidad real y si hay CSP que lo mitigue.`,
         "Codificar la salida según el contexto (HTML entity-encoding, JS string-escaping); aplicar una Content-Security-Policy restrictiva como defensa en profundidad.",
+      );
+    });
+
+  // SSTI genérico: alguna sintaxis de motor de plantillas fue EVALUADA
+  // (no solo reflejada) en el parámetro. Esto es RCE potencial, no un XSS
+  // más — severidad Critical, a diferencia del reflejo sin escapar.
+  Object.keys(probeIdx)
+    .filter((k) => k.startsWith("ssti-reflect:"))
+    .forEach(function (key) {
+      const text = probeIdx[key];
+      if (!text || !sstiEvaluated(text)) return;
+      const param = key.slice("ssti-reflect:".length);
+      add(
+        `SSTI confirmado en el parámetro ?${param}= (evaluación server-side)`,
+        "Critical",
+        `El valor enviado en ?${param}= fue EVALUADO por el motor de plantillas del servidor (no solo reflejado): la expresión aritmética de prueba se resolvió a su resultado en el cuerpo de la respuesta (CWE-1336). Esto suele escalar a ejecución remota de código dependiendo del motor (Jinja2/Twig/Freemarker/Velocity/Thymeleaf y similares tienen sandboxes conocidos con bypasses documentados). Confirmar manualmente el motor exacto antes de intentar RCE.`,
+        "Nunca pasar entrada de usuario directo al renderizado de plantillas (usar solo como variable de contexto, jamás como código de plantilla). Actualizar el motor y aplicar el sandbox/allowlist que ofrezca contra ejecución de expresiones arbitrarias.",
       );
     });
 
