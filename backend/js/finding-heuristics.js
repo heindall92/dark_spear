@@ -48,6 +48,7 @@ import {
   nucleiFindings,
   sqlmapFindings,
   httpxFindings,
+  subdomainTakeoverFindings,
   katanaFindings,
   wapitiFindings,
   arjunFindings,
@@ -771,6 +772,9 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const httpxText = probeIdx["httpx-hosts"];
   if (httpxText) {
     httpxFindings(httpxText, scopeRoot(ctx.host || "", ctx.scope)).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+    // Mismo httpx (-cname agregado): candidatos a subdomain takeover.
+    subdomainTakeoverFindings(httpxText).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
