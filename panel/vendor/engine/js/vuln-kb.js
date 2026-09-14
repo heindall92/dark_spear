@@ -2643,9 +2643,77 @@ export function extractSubfinderHosts(stdout, root) {
 }
 
 export function httpxArgsForHosts(hosts) {
-  const args = ["-silent", "-json", "-tech-detect", "-status-code", "-title", "-timeout", "8"];
+  const args = ["-silent", "-json", "-tech-detect", "-status-code", "-title", "-cname", "-timeout", "8"];
   for (const h of hosts) args.push("-u", `https://${h}`);
   return args;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Subdomain takeover — casi gratis sobre el httpx que ya corre en OSINT
+ * (Fase 1): con -cname agregado, cada línea trae el CNAME real. Si apunta
+ * a un proveedor conocido de "claim this domain" Y el host no responde
+ * sano (failed, sin host_ip, o 404/0), es candidato a takeover. Solo
+ * "candidato": confirmar de verdad requiere intentar reclamar el recurso
+ * en el proveedor, algo que este motor no automatiza (fuera de alcance
+ * de una auditoría no destructiva). Lista curada de proveedores con
+ * historial de takeover documentado (evita ruido con dominios propios).
+ * ------------------------------------------------------------------------ */
+const TAKEOVER_FINGERPRINTS = [
+  { suffix: "github.io", service: "GitHub Pages" },
+  { suffix: "herokuapp.com", service: "Heroku" },
+  { suffix: "herokudns.com", service: "Heroku" },
+  { suffix: "s3.amazonaws.com", service: "AWS S3" },
+  { suffix: "s3-website", service: "AWS S3" },
+  { suffix: "azurewebsites.net", service: "Azure App Service" },
+  { suffix: "cloudapp.net", service: "Azure Cloud Service" },
+  { suffix: "trafficmanager.net", service: "Azure Traffic Manager" },
+  { suffix: "myshopify.com", service: "Shopify" },
+  { suffix: "wpengine.com", service: "WP Engine" },
+  { suffix: "unbouncepages.com", service: "Unbounce" },
+  { suffix: "statuspage.io", service: "Statuspage" },
+  { suffix: "surge.sh", service: "Surge.sh" },
+  { suffix: "bitbucket.io", service: "Bitbucket Pages" },
+  { suffix: "ghost.io", service: "Ghost" },
+  { suffix: "helpjuice.com", service: "Helpjuice" },
+  { suffix: "helpscoutdocs.com", service: "Help Scout Docs" },
+  { suffix: "readme.io", service: "ReadMe" },
+  { suffix: "zendesk.com", service: "Zendesk" },
+  { suffix: "pantheonsite.io", service: "Pantheon" },
+  { suffix: "webflow.io", service: "Webflow" },
+  { suffix: "intercom.help", service: "Intercom" },
+];
+
+export function subdomainTakeoverFindings(stdout) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  for (const line of lines) {
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const cnameRaw = Array.isArray(hit.cname) ? hit.cname[0] : hit.cname;
+    const cname = String(cnameRaw || "").toLowerCase();
+    if (!cname) continue;
+    const fp = TAKEOVER_FINGERPRINTS.find((f) => cname.includes(f.suffix));
+    if (!fp) continue;
+    const dangling = hit.failed === true || !hit.host_ip || hit.status_code === 404 || hit.status_code === 0;
+    if (!dangling) continue;
+    const host = hit.host || hit.input || hit.url || cname;
+    if (seen.has(host)) continue;
+    seen.add(host);
+    const statusNote = hit.failed ? "la conexión falló (no resuelve/responde)" : `respondió HTTP ${hit.status_code || "sin código"}`;
+    out.push({
+      title: `Posible subdomain takeover: ${host} → ${fp.service} (CNAME colgante)`,
+      severity: "Medium",
+      description: `${host} tiene un CNAME hacia ${cname} (${fp.service}), y ${statusNote} — patrón típico de un recurso no reclamado en ese proveedor. Es un candidato, no una confirmación: falta intentar reclamar el mismo nombre en el panel de ${fp.service}.`,
+      remediation: `Si ese servicio de ${fp.service} ya no está en uso, eliminar el registro CNAME de ${host} del DNS. Si sigue en uso, verificar que el recurso siga existiendo y reclamado en ${fp.service}; si no, reclamarlo antes de que un tercero lo haga con ese mismo hostname.`,
+    });
+    if (out.length >= 8) break;
+  }
+  return out;
 }
 
 /**
