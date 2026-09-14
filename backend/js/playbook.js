@@ -18,6 +18,7 @@ import {
   nosqliLoginProbeSteps,
   xssReflectionCurlSteps,
   sstiReflectionCurlSteps,
+  graphqlIntrospectionCurlSteps,
   openRedirectCurlSteps,
   idorCurlSteps,
   hydraDefCredsSteps,
@@ -488,6 +489,10 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       skipIf: (c) => !c.hasWebStack,
     })),
     ...sstiReflectionCurlSteps(step, "p1-ssti", baseUrl, "12").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...graphqlIntrospectionCurlSteps(step, "p1-graphql", baseUrl, "12").map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
