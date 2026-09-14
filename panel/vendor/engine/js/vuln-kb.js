@@ -538,6 +538,43 @@ export function xssReflectionCurlSteps(step, prefix, baseUrl, maxTime = "12") {
 }
 
 /**
+ * SSTI (Server-Side Template Injection) genérico: a diferencia de XSS
+ * reflejado (busca el payload SIN escapar), aquí se busca que el motor de
+ * plantillas lo haya EVALUADO. Un solo payload por parámetro concatena la
+ * sintaxis de los motores más comunes — {{7*7}} (Jinja2/Twig/Nunjucks),
+ * ${7*7} (Freemarker/Thymeleaf/JSP EL/OGNL), <%= 7*7 %> (ERB/JSP
+ * scriptlet), @(7*7) (Razor), #{7*7} (Pug) — cada uno envuelto por el
+ * mismo marcador único a ambos lados. Si CUALQUIERA de los motores evalúa
+ * su expresión, el resultado ("49") queda pegado entre dos ocurrencias
+ * consecutivas del marcador; los que no evalúan mantienen su sintaxis
+ * literal entre marcadores. Por eso basta una sola regex
+ * "MARCADOR + 49 + MARCADOR" para detectar evaluación en cualquier
+ * posición, sin necesidad de un request por motor.
+ */
+export const SSTI_MARKER = "dsssti1337";
+export const SSTI_PAYLOAD = `${SSTI_MARKER}{{7*7}}${SSTI_MARKER}\${7*7}${SSTI_MARKER}<%= 7*7 %>${SSTI_MARKER}@(7*7)${SSTI_MARKER}#{7*7}${SSTI_MARKER}`;
+export const SSTI_PARAMS = ["q", "search", "query", "name", "s", "template", "lang"];
+
+const SSTI_EVALUATED_RE = new RegExp(`${SSTI_MARKER}\\s*49\\s*${SSTI_MARKER}`);
+
+/** true si algún motor de plantillas evaluó su expresión (ver comentario arriba). */
+export function sstiEvaluated(text) {
+  return SSTI_EVALUATED_RE.test(String(text || ""));
+}
+
+export function sstiReflectionCurlSteps(step, prefix, baseUrl, maxTime = "12") {
+  return SSTI_PARAMS.map((param) =>
+    step(`${prefix}-${param}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-G", "--data-urlencode", `${param}=${SSTI_PAYLOAD}`,
+      baseUrl + "/",
+    ], null, {
+      desc: `Sonda de SSTI genérico: parámetro ?${param}=`,
+    }),
+  );
+}
+
+/**
  * Open redirect genérico: parámetros habituales de redirección con una URL
  * externa de prueba. Si el servidor responde con Location apuntando a esa
  * URL (sin validar contra allow-list), es redirect abierto — útil para

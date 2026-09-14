@@ -17,6 +17,7 @@ import {
   sqliLoginProbeSteps,
   nosqliLoginProbeSteps,
   xssReflectionCurlSteps,
+  sstiReflectionCurlSteps,
   openRedirectCurlSteps,
   idorCurlSteps,
   hydraDefCredsSteps,
@@ -483,6 +484,10 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       skipIf: (c) => !c.hasWebStack,
     })),
     ...xssReflectionCurlSteps(step, "p1-xss", baseUrl, "12").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...sstiReflectionCurlSteps(step, "p1-ssti", baseUrl, "12").map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
