@@ -342,7 +342,7 @@ async function main() {
   // página negativa y evidence_step_ids reales.
   const dvwaCrossContamBlob = "algo random dvwa mencionado en un script de terceros";
   const dvwaCrossContamRecords = [
-    { id: "p1-osint-curl-head-root", text: "<title>Vantek · Tu cuenta</title>" },
+    { id: "p1-osint-curl-head-root", text: "<title>Acme Corp · Tu cuenta</title>" },
   ];
   const dvwaCrossContamFindings = collectHeuristicFindings(
     dvwaCrossContamBlob,
@@ -366,7 +366,7 @@ async function main() {
   );
 
   const securityLowCrossContamRecords = [
-    { id: "p1-osint-curl-head-root", text: "<title>Vantek · Tu cuenta</title>" },
+    { id: "p1-osint-curl-head-root", text: "<title>Acme Corp · Tu cuenta</title>" },
   ];
   const securityLowCrossContamFindings = collectHeuristicFindings(
     "set-cookie: security=low",
