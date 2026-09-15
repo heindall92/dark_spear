@@ -51,7 +51,7 @@ check("sin salida -> []", niktoFindings("").length === 0);
 check("solo ruido de cabecera -> []", niktoFindings("+ The X-Frame-Options header is not present.\n").length === 0);
 check("solo referrer-policy Suggested -> []", niktoFindings("+ [013587] /: Suggested security header missing: referrer-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy\n").length === 0);
 
-// Secreto real filtrado (caso demo.evolve.es en producción): Nikto reporta
+// Secreto real filtrado (caso visto en auditoría real de cliente): Nikto reporta
 // esto como check de "superficie" genérico -> Low, escondiendo que hay una
 // clave de API en texto plano. Debe reclasificar a severidad alta con
 // título específico, reusando el catálogo JS_SECRET_SIGNATURES.

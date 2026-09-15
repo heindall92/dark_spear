@@ -38,7 +38,7 @@ export const PHASE_NAMES = {
 };
 
 const PHASE_TOOLS = {
-  1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
+  1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "cloud_enum", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
       "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"],
   2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "wapiti", "arjun", "dalfox", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
@@ -357,7 +357,7 @@ async function runPlaybookSteps({
       let result;
       if (spec.id === "p1-login-post") {
         result = await execDvwaLoginPost(target, cookieFile);
-      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python", "katana", "wapiti", "arjun", "dalfox"].includes(spec.tool)) {
+      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python", "katana", "wapiti", "arjun", "dalfox", "cloud_enum"].includes(spec.tool)) {
         onStep(normalizeStep(null, engagementId, {
           tool: "(agent)", args: [spec.id],
           stderr: `${spec.tool} en curso (puede tardar 1–2 min)…`,

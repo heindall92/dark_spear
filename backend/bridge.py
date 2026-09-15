@@ -65,7 +65,7 @@ CORS_ORIGINS = {
 ALLOWED_TOOLS = {
     "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "nuclei", "subfinder", "httpx", "testssl.sh", "semgrep", "hydra", "sqlmap",
     "katana",
-    "wapiti", "arjun", "dalfox",
+    "wapiti", "arjun", "dalfox", "cloud_enum",
     "wpscan",
     "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
@@ -91,7 +91,7 @@ PHASE_NAMES = {
 # are cumulative (see cumulative_phase_tools) — this dict holds only each
 # phase's OWN additions, not the running total.
 PHASE_TOOLS = {
-    1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
+    1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "cloud_enum", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
         "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"},
     2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "wapiti", "arjun", "dalfox", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
@@ -155,6 +155,7 @@ def resolve_tool_path(tool: str) -> str | None:
 STDOUT_REDIRECT_FLAGS = {
     "wapiti": "-o",
     "arjun": "-oJ",
+    "cloud_enum": "-l",
 }
 
 
@@ -1257,7 +1258,7 @@ class Handler(BaseHTTPRequestHandler):
 
             exec_args, stdout_tmp_path = rewrite_stdout_placeholder([str(a) for a in args], tool)
             cmd = [resolved] + exec_args
-            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti") else 120
+            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti", "cloud_enum") else 120
             run_cwd = None
             if tool == "bloodhound-python" and CURRENT_ENGAGEMENT_DIR is not None:
                 # JSON/zip del ingestor → evidence del engagement (no cwd del bridge).
@@ -1811,19 +1812,25 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/findings/review":
             body = self._read_json()
-            mismatch = _engagement_mismatch(body)
             finding_id = body.get("finding_id", "")
             action = body.get("action", "")
+            req = str(body.get("engagement_dir") or "").strip()
             disk_dir = None
             findings_ref = FINDINGS
             evidence_root = CURRENT_ENGAGEMENT_DIR
-            if mismatch:
-                disk_dir = _engagement_dir_safe(str(body.get("engagement_dir") or ""))
-                if disk_dir is None:
-                    self._send_json(409, mismatch)
-                    return
-                findings_ref = _load_findings_from_dir(disk_dir)
-                evidence_root = disk_dir
+            active = CURRENT_ENGAGEMENT_DIR.name if CURRENT_ENGAGEMENT_DIR is not None else ""
+            if req:
+                if CURRENT_ENGAGEMENT_DIR is not None and req == active:
+                    findings_ref = FINDINGS
+                    evidence_root = CURRENT_ENGAGEMENT_DIR
+                    disk_dir = None
+                else:
+                    disk_dir = _engagement_dir_safe(req)
+                    if disk_dir is None:
+                        self._send_json(404, {"error": "engagement_not_found"})
+                        return
+                    findings_ref = _load_findings_from_dir(disk_dir)
+                    evidence_root = disk_dir
             elif CURRENT_SCOPE is None:
                 self._send_json(400, {"error": "no_active_engagement"})
                 return
