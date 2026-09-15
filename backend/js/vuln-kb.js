@@ -4040,6 +4040,58 @@ export function adWinrmCheckSteps(step, host) {
   ];
 }
 
+/**
+ * Cortafuegos AD (Windows Defender Firewall en el DC). A diferencia de
+ * ufw/iptables/nft (host local, lectura directa) o de adWinrmCheckSteps
+ * (solo valida auth, sin shell), Windows Firewall remoto NO tiene
+ * consulta de solo-lectura vía RPC/LDAP — la única vía real es ejecutar
+ * `netsh advfirewall show allprofiles` en el DC (netexec -x, por debajo
+ * wmiexec: crea un proceso real, aunque el comando en sí sea de solo
+ * lectura). Por eso vive en Fase 3 (Exploitation, mismo gate humano que
+ * wmiexec.py/secretsdump.py), no junto a la collection AD de Fase 1/2.
+ */
+export function adFirewallCheckSteps(step, host) {
+  const h = String(host || "").trim();
+  if (!h) return [];
+  return [
+    step("p3-ad-firewall", "netexec", (c) => {
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h, "-u", user, "-p", pass, "-x", "netsh advfirewall show allprofiles"];
+      const d = String(c.adDomain || "").trim();
+      if (d) args.push("-d", d);
+      return args;
+    }, null, {
+      desc: "Estado de Windows Firewall en el DC (netexec -x netsh advfirewall)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+  ];
+}
+
+const AD_FIREWALL_PROFILE_RE = /^(Domain|Private|Public) Profile Settings:\s*[\r\n]+-+\s*[\r\n]+State\s+(ON|OFF)/gim;
+const AD_FIREWALL_PROFILE_SEVERITY = { domain: "High", private: "Medium", public: "Medium" };
+const AD_FIREWALL_PROFILE_LABEL = { domain: "Domain", private: "Private", public: "Public" };
+
+/** Parsea `netsh advfirewall show allprofiles` (vía netexec -x). */
+export function adFirewallFindings(stdout, host) {
+  const text = String(stdout || "");
+  const out = [];
+  for (const m of text.matchAll(AD_FIREWALL_PROFILE_RE)) {
+    const key = m[1].toLowerCase();
+    const state = m[2].toUpperCase();
+    if (state !== "OFF") continue;
+    const label = AD_FIREWALL_PROFILE_LABEL[key];
+    out.push({
+      title: `Windows Firewall desactivado (perfil ${label}) en ${host || "el DC"}`,
+      severity: AD_FIREWALL_PROFILE_SEVERITY[key] || "Medium",
+      description: `\`netsh advfirewall show allprofiles\` ejecutado remotamente confirma que el perfil ${label} de Windows Defender Firewall está en State OFF en ${host || "el controlador de dominio"}${key === "domain" ? " — este es el perfil que aplica al tráfico intra-dominio, el más sensible en un DC" : ""} (CWE-16).`,
+      remediation: `Reactivar el perfil ${label}: \`netsh advfirewall set ${key}profile state on\`, o vía GPO (Computer Configuration > Windows Defender Firewall) para que no dependa de configuración manual por host.`,
+    });
+  }
+  return out;
+}
+
 export function extractAdDomain(text) {
   const t = String(text || "");
   let m = t.match(/\(domain:([A-Za-z0-9._-]+)\)/i)

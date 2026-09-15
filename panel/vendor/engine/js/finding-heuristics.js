@@ -19,6 +19,7 @@ import {
   GRAPHQL_PROBES,
   graphqlFindings,
   cloudEnumFindings,
+  adFirewallFindings,
   OPEN_REDIRECT_TEST_URL,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
@@ -204,6 +205,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-ad-getuserspns") push("ad-spn", text);
     if (r.id === "p2-ad-certipy-find") push("ad-certipy", text);
     if (r.id === "p3-ad-netexec-winrm") push("ad-winrm", text);
+    if (r.id === "p3-ad-firewall") push("ad-firewall", text);
     if (r.id === "p2-ad-lookupsid-null" || r.id === "p2-ad-lookupsid-auth") push("ad-lookupsid", text);
     if (r.id === "p2-ad-samrdump-null" || r.id === "p2-ad-samrdump-auth") push("ad-samrdump", text);
     if (r.id === "p2-ad-nxc-users") push("ad-nxc-users", text);
@@ -937,6 +939,11 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adWinrm = probeIdx["ad-winrm"];
   if (adWinrm) {
     netexecWinrmFindings(adWinrm).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adFirewall = probeIdx["ad-firewall"];
+  if (adFirewall) {
+    adFirewallFindings(adFirewall, ctx.host || "").forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
   const adLookupsid = probeIdx["ad-lookupsid"];

@@ -66,6 +66,7 @@ import {
   adCollectionSteps,
   adAuthCollectionSteps,
   adWinrmCheckSteps,
+  adFirewallCheckSteps,
   detectDomainController,
   extractAdDomain,
   extractAdUsersFromBlob,
@@ -893,6 +894,7 @@ function phase3Steps(baseUrl, host, cookie, ctx) {
       desc: "setup.php autenticado ( fuga de config )",
     }),
     ...adWinrmCheckSteps(step, host),
+    ...adFirewallCheckSteps(step, host),
   ];
   return steps;
 }
