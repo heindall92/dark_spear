@@ -1836,6 +1836,74 @@ export const AZURE_BLOB_LISTING_RE = /<EnumerationResults/i;
 export const GCS_LISTING_RE = /"kind":\s*"storage#objects"/i;
 
 /* ------------------------------------------------------------------------ *
+ * cloud_enum (github.com/initstring/cloud_enum) — enumeración ACTIVA por
+ * permutación de nombre contra AWS/Azure/GCP, a diferencia de
+ * extractS3BucketHost/extractAzureBlobContainer/extractGcsBucket (arriba),
+ * que son PASIVAS: solo confirman un recurso que la app YA referencia.
+ * Esto adivina nombres a partir del dominio del cliente.
+ *
+ * Problema de atribución inherente a la técnica: un bucket "acme" puede
+ * pertenecer a CUALQUIER empresa que se llame así, no necesariamente al
+ * cliente auditado — a diferencia de subdomain takeover (ancla a un host
+ * que sí resuelve bajo el dominio real). Por eso ningún finding de acá
+ * pasa de Medium: siempre es candidato a confirmar propiedad a mano.
+ * ------------------------------------------------------------------------ */
+
+/** Segundo-a-último label del dominio (nombre de marca, no el TLD ni un subdominio). */
+export function cloudEnumKeyword(root) {
+  const labels = String(root || "").toLowerCase().split(".").filter(Boolean);
+  if (!labels.length) return "";
+  return labels.length >= 2 ? labels[labels.length - 2] : labels[0];
+}
+
+export function cloudEnumArgs(keyword) {
+  return ["-k", keyword, "-qs", "-l", "/dev/stdout", "-f", "json"];
+}
+
+// Recursos con datos reales detrás (no solo un DNS/app registrado).
+const CLOUD_ENUM_STORAGE_RE = /bucket|container|storage|database|blob/i;
+// cloud_enum marca "Open X" cuando confirma listado/lectura sin auth.
+const CLOUD_ENUM_OPEN_RE = /^open\b/i;
+
+export function cloudEnumFindings(stdout) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  for (const line of lines) {
+    if (!line.startsWith("{")) continue;
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!hit.target || hit.access === "disabled" || !hit.access) continue;
+    if (seen.has(hit.target)) continue;
+    seen.add(hit.target);
+    const platform = String(hit.platform || "cloud").toUpperCase();
+    const isStorage = CLOUD_ENUM_STORAGE_RE.test(hit.msg || "");
+    const isOpen = hit.access === "public" && (CLOUD_ENUM_OPEN_RE.test(hit.msg || "") || isStorage);
+    if (isOpen) {
+      out.push({
+        title: `${platform}: recurso cloud público sin autenticación (candidato — confirmar pertenencia)`,
+        severity: "Medium",
+        description: `cloud_enum encontró «${hit.msg}» en ${hit.target} por permutación del nombre del cliente, marcado como accesible sin autenticación. Candidato, no confirmado: verificar a mano que el recurso pertenece de verdad al cliente auditado antes de tratarlo como hallazgo (un bucket/cuenta con ese nombre puede pertenecer a otra organización).`,
+        remediation: "Si el recurso es del cliente: bloquear el acceso anónimo/listado público (S3 Block Public Access, contenedor privado en Azure, uniform bucket-level access en GCS). Si no pertenece al cliente, descartar como falso positivo de atribución.",
+      });
+    } else {
+      out.push({
+        title: `${platform}: recurso cloud descubierto por nombre (candidato — confirmar pertenencia)`,
+        severity: "Info",
+        description: `cloud_enum confirmó la existencia de «${hit.msg}» en ${hit.target} por permutación del nombre del cliente (acceso: ${hit.access}). No implica datos expuestos por sí solo; inventario de superficie cloud no visible por crawling pasivo. Confirmar que el recurso pertenece al alcance autorizado antes de sondearlo más.`,
+        remediation: "Ninguna por sí sola: es inventario de superficie a confirmar. Si pertenece al cliente y requiere auth, sin acción; si es de otra organización, descartar.",
+      });
+    }
+    if (out.length >= 15) break;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
  * SSRF genérico → AWS Instance Metadata Service (IMDS, 169.254.169.254):
  * si algún parámetro típico de "fetch de URL" acepta la IMDS y la respuesta
  * refleja contenido de metadata/credenciales, es SSRF confirmado hacia la

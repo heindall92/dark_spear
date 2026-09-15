@@ -18,6 +18,7 @@ import {
   sstiEvaluated,
   GRAPHQL_PROBES,
   graphqlFindings,
+  cloudEnumFindings,
   OPEN_REDIRECT_TEST_URL,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
@@ -182,6 +183,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
     if (r.id === "p3-sqlmap-arjun-1") push("sqlmap-arjun-1", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
+    if (r.id === "p1-cloud-enum") push("cloud-enum", text);
     if (r.id === "p2-katana") push("katana", text);
     if (r.id === "p2-wapiti") push("wapiti", text);
     if (r.id === "p2-arjun") push("arjun", text);
@@ -814,6 +816,14 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       add(f.title, f.severity, f.description, f.remediation));
     // Mismo httpx (-cname agregado): candidatos a subdomain takeover.
     subdomainTakeoverFindings(httpxText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // cloud_enum: recursos AWS/Azure/GCP hallados por permutación de nombre
+  // (candidatos, atribución sin confirmar — ver comentario en vuln-kb.js).
+  const cloudEnumText = probeIdx["cloud-enum"];
+  if (cloudEnumText) {
+    cloudEnumFindings(cloudEnumText).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 

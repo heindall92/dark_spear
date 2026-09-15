@@ -35,6 +35,8 @@ import {
   ssrfImdsCurlSteps,
   ssrfGcpImdsCurlSteps,
   ssrfAzureImdsCurlSteps,
+  cloudEnumKeyword,
+  cloudEnumArgs,
   perimeterNmapArgs,
   ipRdapCheckStep,
   idpDiscoveryCurlSteps,
@@ -343,6 +345,14 @@ function domainOsintSteps(root, host) {
     }),
     step("p1-osint-subfinder", "subfinder", subfinderArgs(root), null, {
       desc: "Enumeración pasiva de subdominios (subfinder, sin tocar el target)",
+    }),
+    // cloud_enum: permutación de nombre contra AWS/Azure/GCP (buckets,
+    // storage accounts, apps) — activa pero no toca el target, solo
+    // namespaces públicos de los proveedores cloud. Se salta sin dominio
+    // real (IP) y en DVWA (skipHeavy, mismo criterio que nikto/wapiti).
+    step("p1-cloud-enum", "cloud_enum", cloudEnumArgs(cloudEnumKeyword(root)), null, {
+      desc: `cloud_enum: permutación de "${cloudEnumKeyword(root)}" contra AWS/Azure/GCP`,
+      skipIf: (c) => c.isIpTarget || isIpHost(root) || c.isDvwa,
     }),
     step("p1-osint-dnsrecon", "dnsrecon", dnsreconArgs(root), null, {
       desc: "Enumeración DNS estándar (SOA/NS/MX/A + intento de transferencia de zona)",
