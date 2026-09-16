@@ -254,15 +254,21 @@ def _scope_host(value: str) -> str:
 
 
 def _target_in_scope(target: str, scope: str) -> bool:
+    # NUNCA usar substring crudo (t in s / s in t): "acme.com" es substring
+    # de "acme.com.attacker.net" — un dominio de un tercero completo, no un
+    # subdominio real. El scope-lock es el control central del producto;
+    # solo compara hostnames normalizados (o subdominio real bajo el scope).
     t = (target or "").strip()
     s = (scope or "").strip()
     if not t or not s:
         return False
-    if t in s or s in t:
-        return True
     th = _scope_host(t)
     sh = _scope_host(s)
-    return bool(th and sh and th == sh)
+    if not th or not sh:
+        return False
+    if th == sh:
+        return True
+    return th.endswith("." + sh)
 
 
 def _engagement_mismatch(body: dict | None) -> dict | None:
@@ -873,6 +879,14 @@ def _apply_finding_status_transition(finding: dict, action: str) -> str | None:
 
 _REDACT_KEY_RE = re.compile(r"((?:^|[&?])(?:password|pwd)=)[^&\s]*", re.IGNORECASE)
 _REDACT_FLAG_NAMES = {"-p", "--password", "-pass", "--pass"}
+# Formato de conexión estilo impacket: DOMAIN/USER:PASSWORD[@HOST] — usado
+# por lookupsid.py/samrdump.py/GetUserSPNs.py/findDelegation.py en
+# adAuthCollectionSteps. Redacta TODO tras el ":" (incluido un @host que
+# siga): una contraseña que contenga "@" haría ambiguo dónde empieza el
+# host, y equivocarse ahí filtraría parte de la contraseña real. El host
+# real ya viaja en otros args (-dc-ip, etc.), así que no se pierde nada
+# útil para depurar.
+_REDACT_IMPACKET_CREDS_RE = re.compile(r"^([A-Za-z0-9_.$-]+/[A-Za-z0-9_.$-]+:).*$")
 
 
 def redact_args(args: list) -> list:
@@ -896,6 +910,10 @@ def redact_args(args: list) -> list:
         if s.lower() in _REDACT_FLAG_NAMES:
             redacted.append(s)
             redact_next = True
+            continue
+        impacket_m = _REDACT_IMPACKET_CREDS_RE.match(s)
+        if impacket_m:
+            redacted.append(f"{impacket_m.group(1)}***REDACTED***")
             continue
         redacted.append(_REDACT_KEY_RE.sub(r"\1***REDACTED***", s))
     return redacted
