@@ -1066,6 +1066,13 @@ def _earliest_reset_seconds() -> float:
 
 
 class Handler(BaseHTTPRequestHandler):
+    # Sin esto, un cliente que abre la conexión y nunca termina de mandar
+    # headers/body (slowloris) cuelga el hilo del thread pool indefinido —
+    # StreamRequestHandler.setup() aplica esto vía socket.settimeout()
+    # automáticamente. Bind es solo a 127.0.0.1 (sin atacante remoto), pero
+    # barato de evitar igual (otro proceso local con bug, por ejemplo).
+    timeout = 60
+
     def _apply_cors(self) -> None:
         origin = self.headers.get("Origin", "")
         if origin in CORS_ORIGINS:
