@@ -113,6 +113,13 @@ SCAN_SOURCE_TOOLS: dict[str, list[str]] = {
     "semgrep": ["--config=p/owasp-top-ten", "--json", "--timeout", "30", "--quiet"],
 }
 MAX_SCAN_SOURCE_BYTES = 500_000
+# _read_json() leía Content-Length bytes sin tope: un Content-Length
+# anunciado enorme (bug de cliente, o proceso local malicioso) hace que el
+# servidor intente reservar/leer esa cantidad antes de parsear nada. Bind
+# es solo a 127.0.0.1 (sin atacante remoto), pero es un self-DoS barato de
+# evitar. 5MB es generoso para cualquier body legítimo de este servidor
+# (el más grande, /scan-source, ya limita su contenido a 500KB).
+MAX_REQUEST_BODY_BYTES = 5_000_000
 
 MAX_PHASE = max(PHASE_TOOLS)
 
@@ -1079,6 +1086,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _read_json(self) -> dict:
         length = int(self.headers.get("Content-Length", 0))
+        if length > MAX_REQUEST_BODY_BYTES:
+            raise ValueError("request_body_too_large")
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw or b"{}")
 
@@ -1137,6 +1146,12 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_post()
         except json.JSONDecodeError:
             self._send_json(400, {"error": "invalid_json"})
+        except ValueError as e:
+            if str(e) == "request_body_too_large":
+                self._send_json(413, {"error": "request_body_too_large"})
+                return
+            audit_log({"event": "handler_error", "path": self.path, "error": str(e)})
+            self._send_json(500, {"error": "internal_error", "detail": str(e)})
         except Exception as e:
             audit_log({"event": "handler_error", "path": self.path, "error": str(e)})
             self._send_json(500, {"error": "internal_error", "detail": str(e)})
