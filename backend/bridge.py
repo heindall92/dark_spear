@@ -17,6 +17,7 @@ toy dev server.
 """
 import getpass
 import hashlib
+import hmac
 import importlib.util
 import os
 import json
@@ -1085,7 +1086,10 @@ class Handler(BaseHTTPRequestHandler):
         return self.headers.get("Host", "") in ALLOWED_HOSTS
 
     def _auth_ok(self) -> bool:
-        return self.headers.get("X-Auditor-Token", "") == AUTH_TOKEN
+        # compare_digest en vez de == : bajo impacto real (127.0.0.1 solo,
+        # sin atacante remoto con ruta de red), pero comparación de token
+        # de auth no debería depender de eso — hardening barato.
+        return hmac.compare_digest(self.headers.get("X-Auditor-Token", ""), AUTH_TOKEN)
 
     def do_GET(self) -> None:
         if not self._host_ok():
