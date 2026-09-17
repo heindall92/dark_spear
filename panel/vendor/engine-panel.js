@@ -1606,21 +1606,49 @@ async function bootEngagement() {
         if (isPending) {
           const row = document.createElement("div");
           row.className = "flex gap-sm flex-wrap";
+          const extra = { engagement_dir: currentEngId || undefined };
+          const reviewToast = (msg) => {
+            if (window.DarkSpearExport && typeof DarkSpearExport.toast === "function") {
+              DarkSpearExport.toast(msg);
+            } else {
+              window.alert(msg);
+            }
+          };
           const acc = document.createElement("button");
           acc.type = "button";
           acc.className = "px-md py-sm rounded bg-primary-container text-on-primary-container font-label-md";
-          acc.textContent = "Aceptar";
+          acc.textContent = t("eng.accept", "Aceptar");
           acc.onclick = async () => {
-            await api.bridge.reviewFinding(f.id, "accept", { edited_fields: {}, evidence_texts: [] });
-            await refreshFindings();
+            acc.disabled = true;
+            rej.disabled = true;
+            try {
+              await api.bridge.reviewFinding(f.id, "accept", {
+                edited_fields: {},
+                evidence_texts: [],
+                ...extra,
+              });
+              await refreshFindings();
+            } catch (err) {
+              acc.disabled = false;
+              rej.disabled = false;
+              reviewToast(t("eng.acceptFail", "No se pudo aceptar: ") + (err && err.message ? err.message : err));
+            }
           };
           const rej = document.createElement("button");
           rej.type = "button";
           rej.className = "px-md py-sm rounded border border-outline-variant font-label-md";
-          rej.textContent = "Rechazar";
+          rej.textContent = t("eng.reject", "Rechazar");
           rej.onclick = async () => {
-            await api.bridge.reviewFinding(f.id, "reject");
-            await refreshFindings();
+            acc.disabled = true;
+            rej.disabled = true;
+            try {
+              await api.bridge.reviewFinding(f.id, "reject", extra);
+              await refreshFindings();
+            } catch (err) {
+              acc.disabled = false;
+              rej.disabled = false;
+              reviewToast(t("eng.rejectFail", "No se pudo rechazar: ") + (err && err.message ? err.message : err));
+            }
           };
           row.append(acc, rej);
           card.appendChild(row);

@@ -95,8 +95,7 @@
   var HT = "https://hacktricks.wiki/en/pentesting-web/";
 
   /**
-   * Gobernanza al molde del informe Aurora (Evolve 2026-08-18):
-   * obligación legal / hueco / riesgo AEPD / impacto de negocio / coste / 30-60-90.
+   * Gobernanza: obligación legal / hueco / riesgo AEPD / impacto de negocio / coste / 30-60-90.
    * Techos 83.4 y 83.5 son el máximo de la norma, no una multa calculada.
    */
   var GOV = {
@@ -126,7 +125,7 @@
       nis2: { es: "Art. 21.2.c — seguridad en la cadena de suministro y en el desarrollo", en: "Art. 21.2.c — supply-chain and development security" },
       nist: ["PR.PS-01 Configuración segura", "PR.PS-02 Mantenimiento de software", "RS.MA-01 Gestión de incidentes"],
       obligation: { es: "Art. 32 exige integridad permanente. Command injection, file inclusion o upload ejecutable demuestran que un tercero puede ejecutar código o persistir en el servidor.", en: "Art. 32 requires ongoing integrity. Command injection, file inclusion or executable uploads show a third party can run code or persist on the host." },
-      aepd: { es: "Un host comprometido anula copias de seguridad no probadas y el reloj de 72 h: no hay garantía de qué datos salieron. Sin IRP (como en el vacío GRC Aurora) el incidente no tiene dueño.", en: "A compromised host voids untested backups and the 72h clock: you cannot prove what left. Without an IRP the incident has no owner." },
+      aepd: { es: "Un host comprometido anula copias de seguridad no probadas y el reloj de 72 h: no hay garantía de qué datos salieron. Sin IRP el incidente no tiene dueño.", en: "A compromised host voids untested backups and the 72h clock: you cannot prove what left. Without an IRP the incident has no owner." },
       business: { operational: "Alto", reputational: "Alto", legal: "Alto", economic: "Alto" },
       costFix: { es: "Cerrar: 4–24 h (eliminar shell-out, allow-list, directorio de upload sin ejecución). Barato frente a reconstruir un servidor y rotar todo el perímetro.", en: "Fix: 4–24 h (stop shelling out, allow-list, non-executable upload dir). Cheap versus rebuilding a host and rotating the perimeter." },
       costIncident: { es: "ERIR, posible parada, rotación masiva de secretos, comunicación a clientes. Techos RGPD anteriores. NIS2: las entidades esenciales deben notificar incidentes significativos; un RCE lo es.", en: "IR, possible outage, mass secret rotation, customer notice. Same GDPR ceilings. NIS2: a significant incident for essential entities." },
@@ -154,13 +153,13 @@
     authn: {
       category: { es: "Autenticación y fuerza bruta", en: "Authentication and brute force" },
       legalBase: { es: "RGPD Art. 32.1.b (capacidad de garantizar confidencialidad) · Art. 25 · NIS2 Art. 21.2.d", en: "GDPR Art. 32.1.b · Art. 25 · NIS2 Art. 21.2.d" },
-      sanction: { art: "Art. 83.4", es: "Credenciales por defecto, sin lockout o sin MFA en consolas es el hueco que la AEPD considera más barato y esperable (el informe Aurora lo marcó como «el más serio» en GRC). Techo 10 M€ o 2 %.", en: "Default credentials, no lockout or no MFA is the cheapest expected Art. 32 measure. Ceiling €10M or 2%." },
+      sanction: { art: "Art. 83.4", es: "Credenciales por defecto, sin lockout o sin MFA en consolas es el hueco que la AEPD considera más barato y esperable. Techo 10 M€ o 2 %.", en: "Default credentials, no lockout or no MFA is the cheapest expected Art. 32 measure. Ceiling €10M or 2%." },
       iso: ["A.8.5 Autenticación segura", "A.5.17 Información de autenticación", "A.8.2 Identidades privilegiadas"],
       ens: { es: "Alto — autenticación", en: "High — authentication" },
       nis2: { es: "Art. 21.2.d — control de acceso a sistemas y datos", en: "Art. 21.2.d — access control to systems and data" },
       nist: ["PR.AA-01 Identidades gestionadas", "PR.AA-03 Autenticación", "PR.AA-04 Proveedores de identidad"],
       obligation: { es: "Art. 32 exige autenticación apropiada al riesgo. Cuentas de fábrica, login sin rate-limit y CAPTCHA solo en cliente no son medidas demostrables.", en: "Art. 32 requires authentication appropriate to the risk. Factory accounts, unlimited login and client-only CAPTCHA are not demonstrable measures." },
-      aepd: { es: "Una sola contraseña reutilizada abre el tratamiento. Sin MFA (como F-025/F-026 en Aurora) la posición Art. 32 queda débil aunque el código de negocio esté bien.", en: "One reused password opens processing. Without MFA the Art. 32 position is weak even if business code is sound." },
+      aepd: { es: "Una sola contraseña reutilizada abre el tratamiento. Sin MFA la posición Art. 32 queda débil aunque el código de negocio esté bien.", en: "One reused password opens processing. Without MFA the Art. 32 position is weak even if business code is sound." },
       business: { operational: "Alto", reputational: "Alto", legal: "Medio", economic: "Alto" },
       costFix: { es: "Cerrar: horas, no semanas (reset de default, lockout, MFA). Es el quick win más barato del plan 30 días.", en: "Fix: hours, not weeks (reset defaults, lockout, MFA). Cheapest 30-day quick win." },
       costIncident: { es: "Compromiso de cuenta admin = el resto de hallazgos se encadenan. Coste de incidente ≈ coste de la cadena (datos, fraude, notificación), no el de este hallazgo aislado.", en: "Admin account takeover chains every other finding. Incident cost ≈ the whole chain, not this item alone." },
@@ -197,7 +196,7 @@
       aepd: { es: "Si el lab comparte red o BD con interesados, la AEPD no acepta «era un entorno de pruebas» como medida apropiada. Segmentar, datos sintéticos y no publicar el vhost.", en: "If the lab shares network or DB with data subjects, 'it was a test env' is not an appropriate measure. Segment, synthetic data, do not publish the vhost." },
       business: { operational: "Alto", reputational: "Alto", legal: "Alto", economic: "Medio" },
       costFix: { es: "Apagar el vhost o aislar el lab: minutos. El coste de dejarlo es el de todos los módulos hijos (SQLi, exec, upload).", en: "Shut the vhost or isolate the lab: minutes. Leaving it costs every child module (SQLi, exec, upload)." },
-      costIncident: { es: "Cadena completa del playbook contra datos reales. Misma lógica que Aurora: un fallo técnico encuentra a la organización sin IRP ni RAT.", en: "Full playbook chain against real data. Same logic as Aurora: a technical fail meets an org with no IRP or RoPA." },
+      costIncident: { es: "Cadena completa del playbook contra datos reales: un fallo técnico encuentra a la organización sin IRP ni RAT.", en: "Full playbook chain against real data: a technical fail meets an org with no IRP or RoPA." },
       plan30: { es: "Confirmar RFC1918/localhost; si no es lab, apagar y rotar secretos; si es lab, VLAN sin datos reales.", en: "Confirm RFC1918/localhost; if not a lab, shut down and rotate secrets; if a lab, VLAN with no real data." },
       plan60: { es: "Inventario de clones Docker/snapshots; prohibir DVWA/setup en CI de producción.", en: "Inventory Docker clones/snapshots; ban DVWA/setup from production CI." },
       plan90: { es: "Política de entornos (dev/lab/prod) en el SGSI; evidencia ENS.", en: "Env policy (dev/lab/prod) in the ISMS; ENS evidence." },
@@ -228,7 +227,7 @@
       nis2: { es: "Art. 21.2.a — políticas de análisis de riesgos y seguridad de sistemas", en: "Art. 21.2.a — risk-analysis and system-security policies" },
       nist: ["PR.PS-01 Configuración segura", "ID.RA-01 Identificación de vulnerabilidades", "DE.CM-09 Monitorización de activos"],
       obligation: { es: "Art. 25 y 32 exigen minimizar lo que el sistema revela y no fiarse del cliente. Un banner con versión o un php.ini descargable no es explotable solo, pero documenta que el endurecimiento no está hecho.", en: "Arts. 25 and 32 require minimising disclosure and not trusting the client. A versioned banner or a downloadable php.ini is not exploitable alone, but it documents missing hardening." },
-      aepd: { es: "En inspección, estos hallazgos pintan madurez baja (en Aurora el índice quedó 2.5/10). No son el titular, son la prueba de que no hay SGSI operativo.", en: "In an inspection these findings paint low maturity (Aurora scored 2.5/10). They are not the headline; they prove the ISMS is not operational." },
+      aepd: { es: "En inspección, estos hallazgos pintan madurez baja. No son el titular, son la prueba de que no hay SGSI operativo.", en: "In an inspection these findings paint low maturity. They are not the headline; they prove the ISMS is not operational." },
       business: { operational: "Bajo", reputational: "Medio", legal: "Medio", economic: "Bajo" },
       costFix: { es: "Cerrar: 1–8 h (ServerTokens, denegar .ini, CSP, validación server-side). Quick wins del plan 30 días.", en: "Fix: 1–8 h (ServerTokens, deny .ini, CSP, server-side validation). 30-day quick wins." },
       costIncident: { es: "Por sí solo, bajo. Como eslabón (reconocimiento → módulo vulnerable), multiplica el resto. ISO: observaciones de A.8.9 que se acumulan en la auditoría.", en: "Alone, low. As a link (recon → vulnerable module), it multiplies the rest. ISO: A.8.9 observations that pile up in audit." },
