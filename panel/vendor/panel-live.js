@@ -4616,12 +4616,17 @@
     var party = reportParty();
     var target = (meta && meta.target) || "—";
     var ref = "DS-" + String(scanId || target).replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+    var team = party.operator + (party.role ? " · " + party.role : "");
+    var method = tKey("comp.coverMethodLine", "PTES · reconocimiento, escaneo, explotación, post-explotación");
     var rows = [
+      [tKey("comp.coverOrg", "Organización"), party.org || "—"],
+      [tKey("comp.coverOrgEmail", "Correo de la organización"), party.orgEmail || "—"],
+      [tKey("comp.coverTeam", "Equipo auditor"), team],
+      [tKey("comp.coverAuditorEmail", "Correo del auditor"), party.email || "—"],
       [tKey("comp.coverObjective", "Objetivo auditado"), target],
       [tKey("comp.dtScope", "Scope"), (meta && meta.scope) || target],
       [tKey("comp.coverDate", "Fecha del informe"), new Date().toLocaleDateString()],
-      [tKey("comp.coverMethod", "Metodología"), tKey("comp.sec07Body", "PTES · reconocimiento, escaneo, explotación, post-explotación")],
-      [tKey("comp.coverTeam", "Equipo auditor"), party.operator + (party.role ? " · " + party.role : "")],
+      [tKey("comp.coverMethod", "Metodología"), method],
       [tKey("comp.coverFindings", "Hallazgos"), String((findings || []).length) + " (" +
         c.critical + " " + tKey("exec.sevCritical", "críticos") + " · " +
         c.high + " " + tKey("exec.sevHigh", "altos") + " · " +
@@ -4632,7 +4637,9 @@
     return '<div class="flex justify-between items-start gap-md mb-lg">' +
       '<div class="flex items-center gap-sm"><img src="vendor/logo.png" alt="" class="w-10 h-10"/>' +
       '<div><p class="font-headline-md text-primary font-bold">Dark Spear</p>' +
-      '<p class="font-body-sm text-on-surface-variant">' + escapeHtml(party.org || "—") + "</p></div></div>" +
+      '<p class="font-body-sm text-on-surface-variant">' + escapeHtml(party.org || "—") + "</p>" +
+      (party.orgEmail ? '<p class="font-mono-md text-[11px] text-on-surface-variant">' + escapeHtml(party.orgEmail) + "</p>" : "") +
+      "</div></div>" +
       '<span class="px-sm py-[2px] bg-secondary-container/50 text-on-secondary-container rounded-sm font-mono-md text-[11px] border border-secondary-container">' +
       escapeHtml(classificationLabel(party.classification)) + "</span></div>" +
       '<p class="font-label-md text-primary tracking-[0.2em] uppercase mb-xs">' +
@@ -4673,11 +4680,11 @@
       "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.dtGenerated", "Fecha")) +
       "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.sigMark", "Firma")) +
       "</th></tr></thead><tbody>" +
-      "<tr><td class=\"p-sm\">" + escapeHtml(party.role) + "</td><td class=\"p-sm\">" +
-      escapeHtml(party.operator) + "</td><td class=\"p-sm\">" +
+      "<tr><td class=\"p-sm\">" + escapeHtml(party.role || "—") + "</td><td class=\"p-sm\">" +
+      escapeHtml(party.operator || "—") + "</td><td class=\"p-sm\">" +
       escapeHtml(new Date().toLocaleDateString()) + "</td><td class=\"p-sm text-on-surface-variant\">___________</td></tr>" +
       "<tr><td class=\"p-sm\">" + escapeHtml(tKey("comp.sigClient", "Recibido por (cliente)")) +
-      "</td><td class=\"p-sm\">" + escapeHtml(party.org) + "</td><td class=\"p-sm\">—</td><td class=\"p-sm text-on-surface-variant\">___________</td></tr>" +
+      "</td><td class=\"p-sm\">" + escapeHtml(party.org || "—") + "</td><td class=\"p-sm\">—</td><td class=\"p-sm text-on-surface-variant\">___________</td></tr>" +
       "</tbody></table>";
   }
 
@@ -4711,7 +4718,9 @@
     var rows = [
       [tKey("comp.dtTitle", "Título"), tKey("comp.coverH1", "Informe de Auditoría de Seguridad") + " — " + ((meta && meta.target) || "—")],
       [tKey("comp.dtClient", "Cliente / organización"), party.org || "—"],
+      [tKey("comp.coverOrgEmail", "Correo de la organización"), party.orgEmail || "—"],
       [tKey("comp.dtAuditor", "Auditor"), party.operator + (party.role ? " · " + party.role : "")],
+      [tKey("comp.coverAuditorEmail", "Correo del auditor"), party.email || "—"],
       [tKey("comp.dtTarget", "Target"), (meta && meta.target) || "—"],
       [tKey("comp.dtScope", "Scope"), (meta && meta.scope) || "—"],
       [tKey("comp.dtStarted", "Inicio del engagement"), formatEngagementStarted(meta && meta.started_at)],

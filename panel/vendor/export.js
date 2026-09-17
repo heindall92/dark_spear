@@ -179,7 +179,13 @@
       "body.ds-printing #comp-stats{display:none!important}" +
       "body.ds-printing .ds-print-target{box-shadow:none!important;border:none!important;max-width:none!important;min-height:0!important;margin:0 auto!important;background:#fff!important}" +
       "body.ds-printing .glass-panel{background:#fff!important;border:1px solid #D8E3F0!important}" +
-      "body.ds-printing .report-finding-card+ .report-finding-card{break-before:page;border-top:0}" +
+      "body.ds-printing .report-finding-card{break-before:page!important;page-break-before:always!important;break-inside:auto!important;margin-top:0!important}" +
+      "body.ds-printing #sec-04{break-before:page!important;page-break-before:always!important}" +
+      "body.ds-printing .rpt-ev{max-height:none!important;overflow:visible!important}" +
+      "body.ds-printing .rpt-finding-top{display:block!important}" +
+      "body.ds-printing .rpt-cvss,body.ds-printing .rpt-analysis,body.ds-printing .rpt-mitre{display:none!important}" +
+      "body.ds-printing .rpt-finding-grid{display:block!important}" +
+      "body.ds-printing .rpt-print-hide{display:none!important}" +
       "body.ds-printing .hidden-section{display:none!important}" +
       "}";
     document.head.appendChild(style);
@@ -218,7 +224,12 @@
       "\" lang=\"" + escHtml(document.documentElement.lang || "es") + "\"><head><meta charset=\"utf-8\"/>" +
       "<title>Dark Spear — Informe</title>" + collectHeadAssets() +
       "<style>@page{size:A4;margin:12mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
-      "body{margin:0;background:#fff}.paper-shadow{box-shadow:none!important}</style></head>" +
+      "body{margin:0;background:#fff}.paper-shadow{box-shadow:none!important}" +
+      ".report-finding-card{break-before:page;page-break-before:always}" +
+      ".rpt-ev{max-height:none!important;overflow:visible!important}.rpt-print-hide{display:none!important}" +
+      ".rpt-finding-top{display:block!important}" +
+      ".rpt-cvss,.rpt-analysis,.rpt-mitre{display:none!important}" +
+      ".rpt-finding-grid{display:block!important}</style></head>" +
       "<body class=\"bg-white text-on-surface\">" + clone.outerHTML + "</body></html>";
   }
 
@@ -675,6 +686,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     bindChrome();
+    applyOperatorChrome();
     var fmtBtn = document.getElementById("btn-generate-fmt");
     var fmt = document.getElementById("fmt");
     if (fmtBtn && fmt && !document.getElementById("preview-paper")) {
@@ -692,8 +704,27 @@
     }
   });
 
+  function applyOperatorChrome() {
+    var profile = {};
+    try { profile = JSON.parse(localStorage.getItem("ds-profile") || "{}"); } catch (e) { profile = {}; }
+    var first = String(profile["profile-name"] || "").trim();
+    var last = String(profile["profile-last"] || "").trim();
+    var initials = ((first[0] || "") + (last[0] || "")).toUpperCase() || "DS";
+    document.querySelectorAll("header .cursor-pointer").forEach(function (wrap) {
+      if (wrap.closest("a")) return;
+      if (profile.avatar) {
+        wrap.innerHTML = '<img alt="" class="w-full h-full object-cover" src="' + String(profile.avatar).replace(/"/g, "") + '"/>';
+        return;
+      }
+      var label = wrap.querySelector(".font-label-md");
+      if (label) label.textContent = initials;
+    });
+  }
+
   window.DarkSpearExport = {
     run: run,
+    toast: toast,
+    applyOperatorChrome: applyOperatorChrome,
     json: exportJSON,
     csv: exportCSV,
     html: exportHTML,
