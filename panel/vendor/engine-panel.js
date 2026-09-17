@@ -674,10 +674,10 @@ function appendStepCard(step) {
       <i data-lucide="${toolIcon(step.tool, step.verdict)}"></i>
     </div>
     <div class="min-w-0">
-      <h3 class="font-headline-md text-headline-md text-on-surface truncate">${step.tool}</h3>
+      <h3 class="font-headline-md text-headline-md text-on-surface truncate">${escapeHtml(step.tool)}</h3>
       <div class="flex items-center gap-xs mt-xs">
         <i data-lucide="terminal" class="icon-sm text-outline shrink-0"></i>
-        <code class="font-mono-md text-mono-md text-secondary bg-surface-container-low px-xs rounded text-[11px] truncate max-w-[42rem]">${args || "—"}</code>
+        <code class="font-mono-md text-mono-md text-secondary bg-surface-container-low px-xs rounded text-[11px] truncate max-w-[42rem]">${escapeHtml(args) || "—"}</code>
       </div>
     </div>
   </div>
