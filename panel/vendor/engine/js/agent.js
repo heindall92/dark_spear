@@ -784,7 +784,7 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
         continue;
       }
 
-      const result = await execTool(decision.tool, decision.args, target);
+      const result = await execTool(decision.tool, decision.args, target, "agent");
       assertExecAllowed(result);
       const axisResult = await checkAndRecordAxis(db, engagementId, decision.tool, decision.args, result.stdout ?? "", { agent: true });
       axisWarning = axisResult.warn || axisResult.blocked;
