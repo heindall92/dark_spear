@@ -134,8 +134,8 @@ export function startEngagement(target, scope, opts = {}) {
   });
 }
 
-export async function execTool(tool, args, target) {
-  const data = await postJSON("/exec", withEngagementDir({ tool, args, target }));
+export async function execTool(tool, args, target, source = "playbook") {
+  const data = await postJSON("/exec", withEngagementDir({ tool, args, target, source }));
   if (data.verdict && data.stdout === undefined) {
     return {
       stdout: "",
@@ -231,6 +231,10 @@ export function listEngagementFindings(engagementDir) {
   return postJSON("/engagements/findings", { engagement_dir: engagementDir });
 }
 
-export function reviewFinding(findingId, action, extra = {}) {
-  return postJSON("/findings/review", withEngagementDir({ finding_id: findingId, action, ...extra }));
+export async function reviewFinding(findingId, action, extra = {}) {
+  const data = await postJSON("/findings/review", withEngagementDir({ finding_id: findingId, action, ...extra }));
+  if (data && data.error) {
+    throw new Error(data.error);
+  }
+  return data;
 }

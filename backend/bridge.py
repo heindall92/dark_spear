@@ -261,6 +261,62 @@ def _scope_host(value: str) -> str:
     return host
 
 
+# Servicios externos que el PROPIO playbook determinista ya llama a
+# propósito, fuera del scope del cliente (OSINT pasivo + comprobación de
+# buckets/recursos cloud) — ver rdap/crt.sh/Wayback en playbook.js, y
+# S3/Azure Blob/GCS/cloud_enum en vuln-kb.js. En modo agente LLM (donde el
+# modelo elige args libremente cada turno, superficie real de prompt
+# injection vía contenido de la respuesta escaneada) solo estos hosts +
+# el propio scope están permitidos como destino real de una petición.
+AGENT_EXTERNAL_ALLOWLIST = (
+    "crt.sh", "rdap.org", "web.archive.org", "archive.org", "stat.ripe.net",
+    "storage.googleapis.com", "amazonaws.com", "awsapps.com",
+    "blob.core.windows.net", "file.core.windows.net", "queue.core.windows.net",
+    "table.core.windows.net", "azurewebsites.net", "database.windows.net",
+    "cloudapp.azure.com", "cloudapp.net", "trafficmanager.net",
+    "github.io", "herokuapp.com", "herokudns.com", "myshopify.com",
+    "wpengine.com", "unbouncepages.com", "statuspage.io", "surge.sh",
+    "bitbucket.io", "ghost.io", "helpjuice.com", "helpscoutdocs.com",
+    "readme.io", "zendesk.com", "pantheonsite.io", "webflow.io",
+    "intercom.help",
+)
+# IMDS link-local: mismo IP en AWS/GCP/Azure — probes de SSRF legítimos
+# del playbook (ssrfImdsCurlSteps/ssrfGcpImdsCurlSteps/ssrfAzureImdsCurlSteps).
+IMDS_IP = "169.254.169.254"
+
+_ARG_URL_RE = re.compile(r"https?://([^/\s\"'<>]+)", re.IGNORECASE)
+
+
+def _host_allowed_for_agent(host: str, scope: str) -> bool:
+    h = _scope_host(host)
+    if not h:
+        return False
+    if h == IMDS_IP or h.startswith(IMDS_IP + ":"):
+        return True
+    if _target_in_scope(host, scope):
+        return True
+    return any(h == d or h.endswith("." + d) for d in AGENT_EXTERNAL_ALLOWLIST)
+
+
+def args_hosts_allowed(args: list, scope: str, source: str) -> tuple[bool, str | None]:
+    """True si todo host embebido en args es válido para este `source`.
+
+    source == "agent": cada host debe estar en scope o en la allowlist de
+    servicios OSINT/cloud ya usados por el playbook. Cualquier otro valor
+    (incluido vacío, por compat con llamadas sin el campo) no restringe:
+    es código de confianza (playbook determinista), no una decisión del
+    LLM potencialmente manipulada por contenido del target.
+    """
+    if source != "agent":
+        return True, None
+    for a in args:
+        for m in _ARG_URL_RE.finditer(str(a)):
+            host = m.group(1).split("@")[-1]
+            if not _host_allowed_for_agent(host, scope):
+                return False, _scope_host(host) or host
+    return True, None
+
+
 def _target_in_scope(target: str, scope: str) -> bool:
     # NUNCA usar substring crudo (t in s / s in t): "acme.com" es substring
     # de "acme.com.attacker.net" — un dominio de un tercero completo, no un
@@ -1256,6 +1312,7 @@ class Handler(BaseHTTPRequestHandler):
             tool = body.get("tool", "")
             args = body.get("args", [])
             target = body.get("target", "")
+            source = body.get("source", "")
             mismatch = _engagement_mismatch(body)
             if mismatch:
                 audit_log({
@@ -1283,6 +1340,19 @@ class Handler(BaseHTTPRequestHandler):
             if not in_scope:
                 audit_log({"event": "scope_violation", "tool": tool, "target": target, "scope": scope})
                 self._send_json(403, {"error": "scope_violation", "verdict": "scope_violation"})
+                return
+
+            # El campo `target` es metadata fija que el LLM no puede pisar,
+            # pero en modo agente `args` lo construye el modelo libremente
+            # cada turno — contenido de la respuesta escaneada puede
+            # intentar manipularlo (prompt injection) para exfiltrar datos
+            # a un host ajeno mientras `target` sigue pareciendo legítimo.
+            args_ok, bad_host = args_hosts_allowed(args, scope, source)
+            if not args_ok:
+                audit_log({"event": "scope_violation_in_args", "tool": tool,
+                           "target": target, "scope": scope, "bad_host": bad_host})
+                self._send_json(403, {"error": "scope_violation", "verdict": "scope_violation",
+                                       "detail": f"args reference out-of-scope host: {bad_host}"})
                 return
 
             # Resolve to the actual binary PATH would pick before running it,
