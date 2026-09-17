@@ -140,9 +140,58 @@
           background-size: 18px 18px;
         }
         .dot-grid > svg { pointer-events: none; }
-        .report-finding-card + .report-finding-card { margin-top: 32px; padding-top: 32px; border-top: 1px solid rgba(192, 199, 212, 0.45); }
+        .report-finding-card { }
+        .report-finding-card + .report-finding-card { margin-top: 28px; }
+        .report-cover-grid { display: grid; grid-template-columns: 160px 1fr; gap: 8px 16px; }
+        .report-cover-grid dt { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #717783; font-weight: 600; }
+        .report-cover-grid dd { font-size: 14px; color: #181c1f; }
+        .rpt-term { background: #0d1117; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.25); }
+        .rpt-term-bar { display: flex; gap: 6px; padding: 8px 12px 0; }
+        .rpt-term-bar span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .rpt-term-bar span:nth-child(1) { background: #ff5f57; }
+        .rpt-term-bar span:nth-child(2) { background: #febc2e; }
+        .rpt-term-bar span:nth-child(3) { background: #28c840; }
+        .rpt-ev { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; background: transparent; color: #d4d4d4; border: 0; border-radius: 0; padding: 10px 12px 12px; margin: 0; }
+        .rpt-sev-band { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .rpt-finding-top { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+        @media (min-width: 1024px) {
+          .rpt-finding-top { grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.85fr); }
+        }
+        .rpt-cvss { background: #ffffff; }
         @media print {
-          .report-finding-card + .report-finding-card { break-before: page; border-top: 0; }
+          .report-finding-card {
+            break-before: page;
+            page-break-before: always;
+            break-inside: auto;
+            margin-top: 0 !important;
+            border-top: 0 !important;
+            box-shadow: none !important;
+          }
+          #sec-04 { break-before: page; page-break-before: always; }
+          #sec-cover { break-after: page; }
+          #sec-01 { break-after: page; }
+          #comp-toc, #comp-list-view, header, nav[data-app-nav],
+          #comp-detail-view > nav, #comp-stats, .rpt-print-hide { display: none !important; }
+          #comp-paper { box-shadow: none !important; border: none !important; max-width: none !important; }
+          /* Una ficha por página real (como genexys_report): la ficha
+             interactiva trae CVSS detallado + análisis técnico extenso
+             pensados para pantalla; en print eso sobrepasaba una página y
+             empujaba a la siguiente ficha a la 2ª hoja, dejando espacio
+             muerto detrás. Se recorta a lo esencial — severidad+CVSS ya
+             están en la banda de arriba — y se pasa a una sola columna. */
+          .rpt-cvss, .rpt-analysis, .rpt-mitre { display: none !important; }
+          .rpt-finding-top {
+            display: block !important;
+          }
+          .rpt-finding-grid { display: block !important; }
+          .rpt-ev { max-height: none !important; overflow: visible !important; }
+          .report-finding-card { font-size: 12.5px; line-height: 1.4; }
+          .report-finding-card p { margin-bottom: 8px !important; }
+          html, body, [data-app-shell], #main-content, .h-screen, .overflow-hidden, .overflow-y-auto, .flex-1 {
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+          }
         }
         .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; padding: 8px 16px; background: #0078d4; color: #ffffff; font-weight: 600; }
         .skip-link:focus { left: 8px; top: 8px; }
@@ -291,6 +340,7 @@
 </div>
 <nav class="flex-1 p-sm overflow-y-auto font-body-sm text-body-sm" aria-label="Report sections">
 <ul class="space-y-xs">
+<li><button class="toc-btn" data-go="sec-cover" type="button"><i data-lucide="book-open" class="icon-md text-outline"></i><span data-i18n="comp.coverTitle">Portada</span></button></li>
 <li><button class="toc-btn" data-go="sec-00" type="button"><i data-lucide="history" class="icon-md text-outline"></i><span data-i18n="comp.sec00Title">00. Control documental e historial</span></button></li>
 <li><button class="toc-btn" data-go="sec-01" type="button"><i data-lucide="chart-column" class="icon-md text-outline"></i><span data-i18n="comp.sec01Title">01. Resumen ejecutivo</span></button></li>
 <li><button class="toc-btn" data-go="sec-02" type="button"><i data-lucide="key" class="icon-md text-outline"></i><span data-i18n="comp.sec02Title">02. Resumen de hallazgos</span></button></li>
@@ -362,6 +412,7 @@
 
 <article id="comp-paper" class="max-w-4xl mx-auto w-full bg-white/80 border border-outline-variant/50 rounded-xl shadow-[0_8px_32px_rgba(27,42,65,0.08)] p-lg lg:p-xl flex flex-col gap-xl">
 
+<div id="sec-cover" class="scroll-mt-4"></div>
 <div id="sec-00" class="scroll-mt-4">
 <header class="flex justify-between items-start border-b border-outline-variant/30 pb-sm mb-md">
 <div>
@@ -371,11 +422,13 @@
 <span class="px-sm py-[2px] bg-secondary-container/50 text-on-secondary-container rounded-sm font-mono-md text-mono-md text-[11px] border border-secondary-container shrink-0" data-i18n="comp.confidential">CONFIDENCIAL</span>
 </header>
 <dl id="sec-00-table" class="grid grid-cols-1 sm:grid-cols-2 gap-sm font-body-sm text-body-sm"></dl>
+<div id="sec-00-history" class="mt-md"></div>
+<div id="sec-00-sign" class="mt-md"></div>
 </div>
 
 <div id="sec-01" class="scroll-mt-4">
 <h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec01Title">01. Resumen ejecutivo</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec01Lead">Postura del engagement y hallazgos que requieren decisión.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-md" data-i18n="comp.sec01Lead">Qué está pasando, en lenguaje de dirección: qué riesgo hay, por qué importa y qué hay que decidir esta semana.</p>
 <div id="sec-01-body" class="flex flex-col gap-md"></div>
 </div>
 
@@ -393,7 +446,7 @@
 
 <div id="sec-04" class="scroll-mt-4 flex flex-col gap-md">
 <h3 class="font-headline-md text-headline-md text-on-surface" data-i18n="comp.sec04Title">04. Hallazgos detallados</h3>
-<p class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="comp.sec04Lead">Ficha completa de cada hallazgo del escaneo: ejecutivo, criticidad, técnico, MITRE, gobernanza, grafo, plan y métricas.</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant" data-i18n="comp.sec04Lead">Una ficha por hallazgo, al estilo de auditoría: qué es, evidencia, impacto de negocio y remediación. La ficha larga (CVSS, GRC, grafo) está un clic más allá, no aquí.</p>
 <div id="comp-findings" class="flex flex-col gap-md"></div>
 </div>
 
@@ -439,7 +492,7 @@
 
 <div id="sec-09" class="scroll-mt-4">
 <h3 class="font-headline-md text-headline-md text-on-surface mb-xs" data-i18n="comp.sec09Title">09. Conclusiones</h3>
-<p id="sec-09-body" class="font-body-sm text-body-sm text-on-surface"></p>
+<p id="sec-09-body" class="font-body-md text-on-surface leading-relaxed flex flex-col gap-md"></p>
 </div>
 
 <footer class="flex flex-wrap items-center justify-between gap-sm border-t border-outline-variant/30 pt-md font-body-sm text-body-sm text-on-surface-variant">

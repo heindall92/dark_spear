@@ -142,6 +142,13 @@
         .pdf-doc th { background: #f1f4f8; font-weight: 600; color: #404752; }
         .pdf-doc code { font-family: "JetBrains Mono", monospace; font-size: 10px; background: #f1f4f8; padding: 1px 4px; border-radius: 3px; }
         .pdf-doc pre { font-family: "JetBrains Mono", monospace; font-size: 10px; line-height: 1.45; background: #2d3134; color: #eef1f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+        .rpt-term { background: #0d1117; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.25); }
+        .rpt-term-bar { display: flex; gap: 6px; padding: 8px 12px 0; }
+        .rpt-term-bar span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .rpt-term-bar span:nth-child(1) { background: #ff5f57; }
+        .rpt-term-bar span:nth-child(2) { background: #febc2e; }
+        .rpt-term-bar span:nth-child(3) { background: #28c840; }
+        .pdf-doc .rpt-ev { background: transparent !important; border: 0 !important; margin: 0 !important; padding: 10px 12px 12px !important; }
         .report-finding-card + .report-finding-card { margin-top: 28px; padding-top: 28px; border-top: 1px solid #e0e3e7; }
         .pdf-doc .report-finding-card { font-size: 14px; line-height: 1.5; color: #181c1f; }
         .pdf-doc .report-finding-card .glass-panel {
@@ -162,9 +169,18 @@
             font-size: 32px !important;
             line-height: 40px !important;
         }
+        .rpt-finding-top { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+        @media (min-width: 1024px) {
+          .rpt-finding-top { grid-template-columns: minmax(0, 1.35fr) minmax(240px, 0.85fr); }
+        }
         @media print {
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .report-finding-card + .report-finding-card { break-before: page; border-top: 0; }
+          /* Una ficha por página (ver comprehensive-report.html para el porqué):
+             se oculta el detalle pensado para pantalla y se pasa a una columna. */
+          .rpt-cvss, .rpt-analysis, .rpt-mitre { display: none !important; }
+          .rpt-finding-top { display: block !important; }
+          .pdf-doc .report-finding-card { font-size: 12.5px; line-height: 1.4; }
         }
         .pdf-badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
         .pdf-badge.crit { background: rgba(186,26,26,0.12); color: #ba1a1a; }

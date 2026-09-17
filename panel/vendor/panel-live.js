@@ -4496,26 +4496,229 @@
     return (findings || []).slice().sort(function (a, b) { return reportSevRank(a) - reportSevRank(b); });
   }
 
+  function clipPlain(text, n) {
+    var s = String(text || "").replace(/\s+/g, " ").trim();
+    if (!s) return "";
+    if (s.length <= n) return s;
+    return s.slice(0, n - 1).replace(/\s+\S*$/, "") + "…";
+  }
+
+  function dossierText(val) {
+    if (!val) return "";
+    if (typeof val === "string") return val;
+    if (window.DarkSpear && DarkSpear.lang && DarkSpear.lang() === "en") return val.en || val.es || "";
+    return val.es || val.en || "";
+  }
+
+  function topDecisionFindings(findings) {
+    return reportSortedFindings(findings).filter(function (f) {
+      if (!f || f.status === "rejected") return false;
+      var s = String(f.severity || "").toLowerCase();
+      return s === "critical" || s === "high";
+    });
+  }
+
+  function patternLabels(findings) {
+    var langEn = window.DarkSpear && DarkSpear.lang && DarkSpear.lang() === "en";
+    return ROOT_CAUSE_BUCKETS.map(function (b) {
+      var n = (findings || []).filter(function (f) { return b.re.test(findingBlob(f)); }).length;
+      return { label: langEn && b.en ? b.en : b.es, n: n };
+    }).filter(function (h) { return h.n > 0; }).sort(function (a, b) { return b.n - a.n; });
+  }
+
   function conclusionsText(findings, meta) {
+    var html = htmlConclusions(findings, meta);
+    return String(html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  }
+
+  function htmlConclusions(findings, meta) {
+    var target = (meta && meta.target) || "—";
     var c = sevCounts(findings || []);
-    return tKey("comp.sec09Body", "Este análisis contra {target} identificó {n} hallazgos: {c} críticos, {h} altos, {m} medios, {l} bajos y {i} informativos. Se recomienda priorizar la remediación de los hallazgos críticos y altos según el plan de la sección 06, y repetir el análisis tras aplicar las correcciones para verificar el cierre de cada hallazgo.")
-      .replace("{target}", (meta && meta.target) || "—")
+    var m = maturityFromFindings(findings);
+    var top = topDecisionFindings(findings);
+    var worst = top[0];
+    var d = worst && window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(worst) : null;
+    var patterns = patternLabels(findings);
+    var p1 = tKey("comp.conclP1",
+      "Sobre {target} el análisis no describe un inventario de tickets: describe una postura. Hay {n} hallazgos ({c} críticos, {h} altos, {m} medios). El índice de madurez de este engagement es {score}/100 ({level}). Eso no es una nota escolar: es cuánto control real hay delante de un atacante que ya está en Internet.")
+      .replace("{target}", target)
       .replace("{n}", String((findings || []).length))
       .replace("{c}", String(c.critical))
       .replace("{h}", String(c.high))
       .replace("{m}", String(c.medium))
-      .replace("{l}", String(c.low))
-      .replace("{i}", String(c.info));
+      .replace("{score}", String(m.score))
+      .replace("{level}", m.level || "—");
+    var p2;
+    if (d && worst) {
+      p2 = tKey("comp.conclP2",
+        "Lo que dirección tiene que recordar de una sola frase: {id} «{title}». {plain} Si eso no se cierra, el resto de hallazgos (cabeceras, OSINT, paneles) son ruido comparado con este vector.")
+        .replace("{id}", worst.id || "")
+        .replace("{title}", worst.title || "")
+        .replace("{plain}", clipPlain(d.exec, 420));
+    } else {
+      p2 = tKey("comp.conclP2ok",
+        "No hay críticos ni altos abiertos. El trabajo que queda es higiene y gobernanza: no relajar controles, no dejar sistemas a medias, y repetir el análisis cuando cambie el perímetro.");
+    }
+    var p3 = patterns.length
+      ? tKey("comp.conclP3",
+        "No son huecos aislados. El patrón que más se repite es «{pat}» ({n} hallazgos). Cerrar un título y dejar el patrón vivo es repetir el informe en 30 días.")
+        .replace("{pat}", patterns[0].label)
+        .replace("{n}", String(patterns[0].n))
+      : tKey("comp.conclP3none", "No hay un único patrón dominante: cada hallazgo se cierra por su propia ficha.");
+    var critIds = reportSortedFindings((findings || []).filter(isFindingOpen)).filter(function (f) {
+      return String(f.severity || "").toLowerCase() === "critical";
+    }).map(function (f) { return f.id; }).join(", ") || "—";
+    var highIds = reportSortedFindings((findings || []).filter(isFindingOpen)).filter(function (f) {
+      return String(f.severity || "").toLowerCase() === "high";
+    }).map(function (f) { return f.id; }).join(", ") || "—";
+    var boxes = [
+      [tKey("comp.slaImmediate", "Inmediata (24–72 h)"), critIds, tKey("comp.conclBox1", "Cerrar el vector de compromiso (auth bypass, secreto vivo, RCE). Sin esto el resto del plan es teatro.")],
+      [tKey("comp.slaWeek", "1–2 semanas"), highIds, tKey("comp.conclBox2", "Rate limiting, MFA, rotación de claves y WAF donde el perímetro está hueco.")],
+      [tKey("comp.slaMonth", "30–90 días"), tKey("comp.conclBox3ids", "GRC / RGPD"), tKey("comp.conclBox3", "DMARC, IRP con reloj AEPD 72 h, baja de legado, evidencia de que los controles siguen vivos tras cada despliegue.")],
+    ];
+    var success = tKey("comp.conclSuccess",
+      "Criterio de éxito: ningún crítico abierto; ningún login externo sin límite de intentos; secretos rotados y fuera del HTML; y capacidad de demostrar, por escrito, que una brecha se notificaría en 72 h. Después, repetir este mismo análisis — no firmar el PDF y olvidarlo.");
+    return "<p>" + escapeHtml(p1) + "</p><p>" + escapeHtml(p2) + "</p><p>" + escapeHtml(p3) + "</p>" +
+      '<div class="grid grid-cols-1 md:grid-cols-3 gap-sm">' +
+      boxes.map(function (b) {
+        return '<div class="rounded-lg border border-outline-variant/40 p-md bg-surface-container-lowest">' +
+          '<p class="font-label-md text-primary uppercase mb-xs">' + escapeHtml(b[0]) + "</p>" +
+          '<p class="font-mono-md text-[12px] text-on-surface mb-xs">' + escapeHtml(b[1]) + "</p>" +
+          '<p class="font-body-sm text-on-surface-variant">' + escapeHtml(b[2]) + "</p></div>";
+      }).join("") + "</div><p>" + escapeHtml(success) + "</p>";
+  }
+
+  function reportParty() {
+    var profile = {};
+    var org = {};
+    try { profile = JSON.parse(localStorage.getItem("ds-profile") || "{}"); } catch (e) { profile = {}; }
+    try { org = JSON.parse(localStorage.getItem("ds-settings") || "{}"); } catch (e) { org = {}; }
+    var name = [profile["profile-name"], profile["profile-last"]].filter(Boolean).join(" ").trim();
+    return {
+      operator: name || "—",
+      role: profile["profile-role"] || "",
+      email: profile["profile-email"] || "",
+      org: org.orgName || "",
+      orgEmail: org.orgEmail || "",
+      classification: org.classification || "",
+    };
+  }
+
+  function classificationLabel(code) {
+    if (code === "internal") return tKey("settings.classInternal", "Uso interno");
+    if (code === "restricted") return tKey("settings.classRestricted", "Restringido");
+    if (code === "confidential") return tKey("comp.confidential", "CONFIDENCIAL");
+    return "—";
+  }
+
+  function htmlCoverPage(findings, meta, scanId) {
+    var c = sevCounts(findings || []);
+    var party = reportParty();
+    var target = (meta && meta.target) || "—";
+    var ref = "DS-" + String(scanId || target).replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
+    var rows = [
+      [tKey("comp.coverObjective", "Objetivo auditado"), target],
+      [tKey("comp.dtScope", "Scope"), (meta && meta.scope) || target],
+      [tKey("comp.coverDate", "Fecha del informe"), new Date().toLocaleDateString()],
+      [tKey("comp.coverMethod", "Metodología"), tKey("comp.sec07Body", "PTES · reconocimiento, escaneo, explotación, post-explotación")],
+      [tKey("comp.coverTeam", "Equipo auditor"), party.operator + (party.role ? " · " + party.role : "")],
+      [tKey("comp.coverFindings", "Hallazgos"), String((findings || []).length) + " (" +
+        c.critical + " " + tKey("exec.sevCritical", "críticos") + " · " +
+        c.high + " " + tKey("exec.sevHigh", "altos") + " · " +
+        c.medium + " " + tKey("exec.sevMedium", "medios") + ")"],
+      [tKey("comp.coverRef", "Referencia"), ref],
+      [tKey("comp.coverClass", "Clasificación"), classificationLabel(party.classification)],
+    ];
+    return '<div class="flex justify-between items-start gap-md mb-lg">' +
+      '<div class="flex items-center gap-sm"><img src="vendor/logo.png" alt="" class="w-10 h-10"/>' +
+      '<div><p class="font-headline-md text-primary font-bold">Dark Spear</p>' +
+      '<p class="font-body-sm text-on-surface-variant">' + escapeHtml(party.org || "—") + "</p></div></div>" +
+      '<span class="px-sm py-[2px] bg-secondary-container/50 text-on-secondary-container rounded-sm font-mono-md text-[11px] border border-secondary-container">' +
+      escapeHtml(classificationLabel(party.classification)) + "</span></div>" +
+      '<p class="font-label-md text-primary tracking-[0.2em] uppercase mb-xs">' +
+      escapeHtml(tKey("comp.coverKicker", "Informe profesional")) + "</p>" +
+      '<h3 class="font-headline-xl text-on-surface mb-xs">' +
+      escapeHtml(tKey("comp.coverH1", "Informe de Auditoría de Seguridad")) + "</h3>" +
+      '<p class="font-headline-md text-on-surface-variant mb-lg">' + escapeHtml(target) + "</p>" +
+      '<dl class="report-cover-grid border-t border-outline-variant/40 pt-md">' +
+      rows.map(function (r) {
+        return "<dt>" + escapeHtml(r[0]) + "</dt><dd>" + escapeHtml(r[1]) + "</dd>";
+      }).join("") + "</dl>" +
+      '<p class="font-body-sm text-on-surface-variant mt-lg border-t border-outline-variant/30 pt-sm">' +
+      escapeHtml(tKey("comp.coverFooter", "Confidencial — no publicar fuera del ámbito autorizado.")) +
+      "</p>";
+  }
+
+  function htmlDocHistory(meta, party) {
+    var started = formatEngagementStarted(meta && meta.started_at);
+    return '<h4 class="font-label-md text-on-surface-variant uppercase mb-sm">' +
+      escapeHtml(tKey("comp.history", "Historial")) + "</h4>" +
+      '<table class="w-full text-left font-body-sm border border-outline-variant/40 rounded-lg overflow-hidden">' +
+      "<thead class=\"bg-surface-container-low\"><tr><th class=\"p-sm\">" + escapeHtml(tKey("comp.histVer", "Versión")) +
+      "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.dtGenerated", "Fecha")) +
+      "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.histAuthor", "Autor")) +
+      "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.histChange", "Cambios")) +
+      "</th></tr></thead><tbody><tr><td class=\"p-sm\">1.0</td><td class=\"p-sm\">" +
+      escapeHtml(started) + "</td><td class=\"p-sm\">" + escapeHtml(party.operator) +
+      "</td><td class=\"p-sm\">" + escapeHtml(tKey("comp.histEmit", "Emisión del engagement (playbook PTES).")) +
+      "</td></tr></tbody></table>";
+  }
+
+  function htmlSignatures(party) {
+    return '<h4 class="font-label-md text-on-surface-variant uppercase mb-sm">' +
+      escapeHtml(tKey("comp.signatures", "Revisión y firmas")) + "</h4>" +
+      '<table class="w-full text-left font-body-sm border border-outline-variant/40 rounded-lg overflow-hidden">' +
+      "<thead class=\"bg-surface-container-low\"><tr><th class=\"p-sm\">" + escapeHtml(tKey("comp.sigRole", "Rol")) +
+      "</th><th class=\"p-sm\">" + escapeHtml(tKey("profile.name", "Nombre")) +
+      "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.dtGenerated", "Fecha")) +
+      "</th><th class=\"p-sm\">" + escapeHtml(tKey("comp.sigMark", "Firma")) +
+      "</th></tr></thead><tbody>" +
+      "<tr><td class=\"p-sm\">" + escapeHtml(party.role) + "</td><td class=\"p-sm\">" +
+      escapeHtml(party.operator) + "</td><td class=\"p-sm\">" +
+      escapeHtml(new Date().toLocaleDateString()) + "</td><td class=\"p-sm text-on-surface-variant\">___________</td></tr>" +
+      "<tr><td class=\"p-sm\">" + escapeHtml(tKey("comp.sigClient", "Recibido por (cliente)")) +
+      "</td><td class=\"p-sm\">" + escapeHtml(party.org) + "</td><td class=\"p-sm\">—</td><td class=\"p-sm text-on-surface-variant\">___________</td></tr>" +
+      "</tbody></table>";
+  }
+
+  function htmlFindingsInventory(findings) {
+    var list = reportSortedFindings(findings);
+    if (!list.length) {
+      return htmlSevSummaryTable(findings);
+    }
+    var table = '<div class="border border-outline-variant rounded-lg overflow-hidden mt-md"><table class="w-full text-left border-collapse">' +
+      '<thead class="bg-surface-container-low font-label-md text-secondary"><tr>' +
+      "<th class=\"py-sm px-md border-b border-outline-variant\">ID</th>" +
+      "<th class=\"py-sm px-md border-b border-outline-variant\">" + escapeHtml(tKey("comp.colTitle", "Título")) + "</th>" +
+      "<th class=\"py-sm px-md border-b border-outline-variant\">" + escapeHtml(tKey("comp.colSev", "Severidad")) + "</th>" +
+      "<th class=\"py-sm px-md border-b border-outline-variant\">" + escapeHtml(tKey("comp.colAsset", "Activo")) + "</th>" +
+      "</tr></thead><tbody class=\"font-body-sm\">" +
+      list.map(function (f) {
+        var sp = sevPill(f.severity);
+        return "<tr><td class=\"py-sm px-md border-b border-outline-variant font-mono-md\">" +
+          escapeHtml(f.id || "—") + "</td><td class=\"py-sm px-md border-b border-outline-variant\">" +
+          '<a class="text-primary hover:underline" href="#' + escapeHtml(findingCardDomId(f)) + '">' +
+          escapeHtml(f.title || "—") + "</a></td><td class=\"py-sm px-md border-b border-outline-variant\"><span class=\"" +
+          sp.badge + " px-sm py-xs rounded\">" + escapeHtml(sp.label) +
+          "</span></td><td class=\"py-sm px-md border-b border-outline-variant font-mono-md text-secondary\">" +
+          escapeHtml(f.asset || "—") + "</td></tr>";
+      }).join("") + "</tbody></table></div>";
+    return htmlSevSummaryTable(findings) + table;
   }
 
   function htmlDocControlRows(findings, meta) {
+    var party = reportParty();
     var rows = [
+      [tKey("comp.dtTitle", "Título"), tKey("comp.coverH1", "Informe de Auditoría de Seguridad") + " — " + ((meta && meta.target) || "—")],
+      [tKey("comp.dtClient", "Cliente / organización"), party.org || "—"],
+      [tKey("comp.dtAuditor", "Auditor"), party.operator + (party.role ? " · " + party.role : "")],
       [tKey("comp.dtTarget", "Target"), (meta && meta.target) || "—"],
       [tKey("comp.dtScope", "Scope"), (meta && meta.scope) || "—"],
       [tKey("comp.dtStarted", "Inicio del engagement"), formatEngagementStarted(meta && meta.started_at)],
       [tKey("comp.dtGenerated", "Documento generado"), new Date().toLocaleString()],
       [tKey("comp.dtPhase", "Fase alcanzada"), meta && meta.phase != null ? String(meta.phase) : "—"],
       [tKey("comp.dtTotal", "Hallazgos totales"), String((findings || []).length)],
+      [tKey("comp.coverClass", "Clasificación"), classificationLabel(party.classification)],
     ];
     return rows.map(function (r) {
       return '<div class="flex justify-between gap-md border-b border-outline-variant/20 pb-xs"><dt class="text-on-surface-variant">' +
@@ -4550,27 +4753,49 @@
 
   function htmlExecChapter(findings, meta) {
     var c = sevCounts(findings || []);
-    var m = maturityFromFindings(findings);
-    var grade = m.score >= 85 ? "A" : m.score >= 70 ? "B" : m.score >= 55 ? "C" : m.score >= 40 ? "D" : "F";
-    var top = reportSortedFindings(findings).filter(function (f) {
-      var s = String(f.severity || "").toLowerCase();
-      return s === "critical" || s === "high";
-    }).slice(0, 4);
-    var narrative = tKey("exec.narrativeP1", "Este análisis sobre {target} registró {n} hallazgos: {c} críticos, {h} altos, {m} medios.")
-      .replace("{target}", (meta && meta.target) || "—")
-      .replace("{n}", String((findings || []).length))
-      .replace("{c}", String(c.critical))
-      .replace("{h}", String(c.high))
-      .replace("{m}", String(c.medium));
-    var topLine = top.length
-      ? escapeHtml(tKey("exec.narrativeP2", "Priorizar el cierre de: ")) + "<strong>" +
-        escapeHtml(top.map(function (f) { return f.title; }).join("; ")) + "</strong>."
-      : escapeHtml(tKey("exec.noCritical", "Sin hallazgos críticos o altos"));
-    return '<div class="grid grid-cols-2 md:grid-cols-4 gap-sm mb-md">' +
-      [["critical", tKey("exec.sevCritical", "Crítico"), c.critical],
+    var mat = maturityFromFindings(findings);
+    var target = (meta && meta.target) || "—";
+    var top = topDecisionFindings(findings);
+    var worst = top[0];
+    var d = worst && window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(worst) : null;
+    var patterns = patternLabels(findings);
+    var kpis = [["critical", tKey("exec.sevCritical", "Crítico"), c.critical],
        ["high", tKey("exec.sevHigh", "Alto"), c.high],
        ["medium", tKey("exec.sevMedium", "Medio"), c.medium],
-       ["low", tKey("exec.sevLow", "Bajo"), c.low + c.info]].map(function (row) {
+       ["low", tKey("exec.sevLow", "Bajo"), c.low + c.info]];
+    var p1 = tKey("exec.plainP1",
+      "Se auditó {target} como caja negra: lo que un atacante ve desde Internet, sin cuenta previa. El resultado no es una lista de parches: es si alguien de fuera puede entrar, suplantar el dominio o llevarse una identidad. En este engagement hay {n} hallazgos. {c} son críticos (compromiso inmediato) y {h} altos.")
+      .replace("{target}", target)
+      .replace("{n}", String((findings || []).length))
+      .replace("{c}", String(c.critical))
+      .replace("{h}", String(c.high));
+    var p2;
+    if (d && worst) {
+      p2 = tKey("exec.plainP2",
+        "El hallazgo que cambia la conversación con dirección es {id} — {title}. En claro: {plain}")
+        .replace("{id}", worst.id || "")
+        .replace("{title}", worst.title || "")
+        .replace("{plain}", clipPlain(d.exec, 520));
+    } else {
+      p2 = tKey("exec.plainP2ok",
+        "No hay un crítico abierto. El riesgo que queda es de higiene y de gobernanza: controles a medias, email spoofable, o superficie que un atacante usaría como mapa, no como puerta.");
+    }
+    var rest = top.slice(1, 3).map(function (f) { return (f.id || "") + " " + (f.title || ""); }).join("; ");
+    var p3 = rest
+      ? tKey("exec.plainP3",
+        "Ese vector no viaja solo. Lo acompañan: {rest}. Un atacante no elige un título: encadena el más barato con el de más privilegio.")
+        .replace("{rest}", rest)
+      : (patterns[0]
+        ? tKey("exec.plainP3pat", "El patrón técnico que explica varios hallazgos a la vez: {pat}.")
+          .replace("{pat}", patterns[0].label)
+        : tKey("exec.plainP3none", "No hay una cadena dominante documentada más allá de los hallazgos individuales."));
+    var p4 = tKey("exec.plainP4",
+      "Qué significa esto para el negocio: si el crítico es un bypass de login o un secreto vivo, el perímetro de identidad no está haciendo su trabajo. Cabeceras, WAF e índices OSINT importan, pero no son la decisión de esta semana. La decisión es cerrar {focus} y volver a medir. Madurez actual: {score}/100 ({level}).")
+      .replace("{focus}", worst ? (worst.id + " · " + worst.title) : tKey("exec.hygiene", "la higiene residual"))
+      .replace("{score}", String(mat.score))
+      .replace("{level}", mat.level || "—");
+    return '<div class="grid grid-cols-2 md:grid-cols-4 gap-sm mb-md">' +
+      kpis.map(function (row) {
         var tone = row[0] === "critical" ? "bg-error-container/30 text-error"
           : row[0] === "high" ? "bg-[#FFEFE5]/50 text-[#C25400]"
           : row[0] === "medium" ? "bg-[#FFF4CE]/50 text-[#795F00]"
@@ -4579,10 +4804,11 @@
           escapeHtml(row[1]) + '</p><p class="font-headline-xl text-on-surface">' + row[2] + "</p></div>";
       }).join("") +
       "</div>" +
-      '<p class="font-body-md text-on-surface-variant leading-relaxed mb-sm">' + escapeHtml(narrative) +
-      " · " + escapeHtml(tKey("exec.posture", "Puntuación global")) + ": <strong>" + grade + " · " + m.score + "/100</strong> (" +
-      escapeHtml(m.level) + ").</p>" +
-      '<p class="font-body-md text-on-surface-variant leading-relaxed">' + topLine + "</p>";
+      '<div class="flex flex-col gap-sm font-body-md text-on-surface leading-relaxed">' +
+      "<p>" + escapeHtml(p1) + "</p>" +
+      "<p>" + escapeHtml(p2) + "</p>" +
+      "<p>" + escapeHtml(p3) + "</p>" +
+      "<p>" + escapeHtml(p4) + "</p></div>";
   }
 
   function htmlSevSummaryTable(findings) {
@@ -4643,6 +4869,180 @@
     return "finding-card-" + String((f && f.id) || "finding").replace(/[^a-zA-Z0-9_-]/g, "-");
   }
 
+  function rptCvssBar(pct, tone) {
+    var color = tone === "error" ? "#ba1a1a" : tone === "tertiary" ? "#0a8575" : "#0078d4";
+    var w = Math.max(0, Math.min(100, Math.round((pct || 0) * 100)));
+    return '<div class="h-1.5 rounded-full bg-surface-variant overflow-hidden">' +
+      '<div style="width:' + w + "%;background:" + color + '" class="h-full rounded-full"></div></div>';
+  }
+
+  function htmlReportCvssPanel(d) {
+    if (!d) return "";
+    var title = escapeHtml(tKey("comp.cardCrit", "Criticidad"));
+    var head =
+      '<p class="font-label-md text-on-surface-variant uppercase mb-sm flex items-center gap-xs">' +
+      '<i data-lucide="gauge" class="icon-sm"></i>' + title + "</p>";
+    if (d.fair) {
+      var fair = d.fair;
+      var fairTone = (fair.grade === "A" || fair.grade === "B") ? "text-tertiary"
+        : fair.grade === "C" ? "text-on-surface" : "text-error";
+      var rows = [
+        { label: tKey("comp.fairE", "Exposición (E)"), text: fair.exposure == null ? "—" : String(fair.exposure), v: (fair.exposure || 0) / 100 },
+        { label: tKey("comp.fairT", "Amenaza (T)"), text: fair.threat == null ? "—" : String(fair.threat), v: (fair.threat || 0) / 100 },
+        { label: tKey("comp.fairI", "Impacto (I)"), text: fair.impact == null ? "—" : String(fair.impact), v: (fair.impact || 0) / 100 },
+      ];
+      return '<aside class="rpt-cvss rounded-lg border border-outline-variant/40 p-md bg-surface-container-lowest">' +
+        head +
+        '<p class="font-headline-xl text-headline-xl ' + fairTone + '">' + escapeHtml(String(fair.risk)) +
+        ' <span class="font-body-sm text-on-surface-variant">/100 · ' +
+        escapeHtml(tKey("comp.fairGrade", "grado")) + " " + escapeHtml(fair.grade || "—") + "</span></p>" +
+        '<p class="font-body-sm text-on-surface-variant mt-xs mb-md">' +
+        escapeHtml(tKey("comp.fairHint", "No es CVSS 3.1: es FAIR-lite de esta auditoría.")) + "</p>" +
+        rows.map(function (x) {
+          return '<div class="mb-sm"><div class="flex justify-between font-label-md text-on-surface-variant mb-xs"><span>' +
+            escapeHtml(x.label) + "</span><span>" + escapeHtml(x.text) + "</span></div>" +
+            rptCvssBar(x.v, x.v > 0.4 ? "error" : "tertiary") + "</div>";
+        }).join("") +
+        "</aside>";
+    }
+    var cv = d.cvss;
+    if (!cv) return "";
+    var m = cv.metrics || {};
+    var avLab = { N: tKey("cvss.avN", "Red"), A: tKey("cvss.avA", "Adyacente"), L: tKey("cvss.avL", "Local"), P: tKey("cvss.avP", "Físico") };
+    var acLab = { L: tKey("cvss.acL", "Baja"), H: tKey("cvss.acH", "Alta") };
+    var prLab = { N: tKey("cvss.prN", "Ninguno"), L: tKey("cvss.prL", "Bajos"), H: tKey("cvss.prH", "Altos") };
+    var ciaLab = { H: "HIGH", L: "LOW", N: "NONE" };
+    var dims = [
+      { label: tKey("cvss.av", "Vector de ataque"), text: avLab[m.AV] || m.AV || "—", v: cv.av },
+      { label: tKey("cvss.ac", "Complejidad"), text: acLab[m.AC] || m.AC || "—", v: cv.ac },
+      { label: tKey("cvss.pr", "Privilegios requeridos"), text: prLab[m.PR] || m.PR || "—", v: cv.pr },
+      { label: "C", text: ciaLab[m.C] || m.C || "—", v: cv.c },
+      { label: "I", text: ciaLab[m.I] || m.I || "—", v: cv.i },
+      { label: "A", text: ciaLab[m.A] || m.A || "—", v: cv.a },
+    ];
+    function impactPct(v) {
+      var s = String(v || "").toLowerCase();
+      if (s === "high") return 1;
+      if (s === "medium") return 0.55;
+      if (s === "low") return 0.22;
+      return 0.04;
+    }
+    var cia = [
+      { label: tKey("cvss.conf", "Confidencialidad"), v: (d.impact && d.impact.confidentiality) || "none" },
+      { label: tKey("cvss.int", "Integridad"), v: (d.impact && d.impact.integrity) || "none" },
+      { label: tKey("cvss.avail", "Disponibilidad"), v: (d.impact && d.impact.availability) || "none" },
+    ];
+    var score = typeof cv.score === "number" ? cv.score.toFixed(1) : "—";
+    return '<aside class="rpt-cvss rounded-lg border border-outline-variant/40 p-md bg-surface-container-lowest">' +
+      head +
+      '<p class="font-headline-xl text-headline-xl text-error">' + escapeHtml(score) +
+      ' <span class="font-body-sm text-on-surface-variant">CVSS 3.1</span></p>' +
+      (cv.vector ? '<p class="font-mono-md text-[11px] text-on-surface-variant break-all mt-xs mb-md">' + escapeHtml(cv.vector) + "</p>" : "") +
+      dims.map(function (x) {
+        return '<div class="mb-sm"><div class="flex justify-between font-label-md text-on-surface-variant mb-xs"><span>' +
+          escapeHtml(x.label) + "</span><span>" + escapeHtml(String(x.text || "—")) + "</span></div>" +
+          rptCvssBar(x.v, x.v > 0.7 ? "error" : "primary") + "</div>";
+      }).join("") +
+      '<div class="mt-md pt-md border-t border-outline-variant/30">' +
+      cia.map(function (row) {
+        return '<div class="mb-sm"><div class="flex justify-between font-label-md mb-xs"><span>' +
+          escapeHtml(row.label) + '</span><span class="uppercase">' + escapeHtml(String(row.v || "none")) +
+          "</span></div>" + rptCvssBar(impactPct(row.v), String(row.v).toLowerCase() === "high" ? "error" : "tertiary") + "</div>";
+      }).join("") +
+      "</div></aside>";
+  }
+
+  function htmlReportFindingCard(f, scanId) {
+    var d = window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(f) : null;
+    var sp = sevPill(f.severity);
+    var sk = String(f.severity || "").toLowerCase();
+    var major = sk === "critical" || sk === "high";
+    var href = findingHref(f, scanId);
+    var what = d ? String(d.exec || "") : String(f.description || "");
+    var analysis = d ? String(d.narrative || "") : "";
+    var impactBits = [];
+    if (d && d.gov) {
+      impactBits.push(tKey("comp.cardImpact", "Operativo {o} · reputacional {r} · legal {l} · € {e}.")
+        .replace("{o}", (d.gov.business && d.gov.business.operational) || "—")
+        .replace("{r}", (d.gov.business && d.gov.business.reputational) || "—")
+        .replace("{l}", (d.gov.business && d.gov.business.legal) || "—")
+        .replace("{e}", (d.gov.business && d.gov.business.economic) || "—"));
+      var obl = dossierText(d.gov.obligation);
+      var aepd = dossierText(d.gov.aepd);
+      if (obl) impactBits.push(obl);
+      if (aepd) impactBits.push(aepd);
+    } else if (f.remediation) {
+      impactBits.push(f.remediation);
+    }
+    var ev = String((d && d.engineDescription) || f.description || "").trim();
+    var steps = (d && d.steps && d.steps.length) ? d.steps.slice() : [];
+    if (d && d.engineRemediation && steps.indexOf(d.engineRemediation) === -1) {
+      steps.unshift(d.engineRemediation);
+    }
+    if (!steps.length && f.remediation) steps = [f.remediation];
+    var mitre = (d && d.mitre) || [];
+    var cwe = ((d && d.cwe) || []).join(" · ");
+    var owasp = (d && d.owasp) || "";
+    var cvssChip = d && d.cvss && typeof d.cvss.score === "number"
+      ? '<span class="font-mono-md text-[11px] text-on-surface-variant">CVSS ' + d.cvss.score.toFixed(1) + "</span>"
+      : "";
+    var band = '<div class="rpt-sev-band mb-sm">' +
+      '<span class="font-mono-md text-secondary">' + escapeHtml(f.id || "—") + "</span>" +
+      '<span class="' + sp.badge + ' px-sm py-xs rounded font-label-md">' + escapeHtml(sp.label) + "</span>" +
+      cvssChip +
+      (cwe ? '<span class="font-mono-md text-[11px] text-on-surface-variant">' + escapeHtml(cwe) + "</span>" : "") +
+      (owasp ? '<span class="font-mono-md text-[11px] text-on-surface-variant">' + escapeHtml(owasp) + "</span>" : "") +
+      (d && d.slaLabel ? '<span class="font-label-md text-on-surface-variant">SLA ' + escapeHtml(d.slaLabel) + "</span>" : "") +
+      "</div>";
+    var mitreLine = mitre.length
+      ? '<p class="rpt-mitre font-mono-md text-[11px] text-on-surface-variant mb-sm">' +
+        mitre.map(function (t) { return escapeHtml(t.id) + " " + escapeHtml(t.name); }).join(" · ") +
+        (d && d.kill ? " · " + escapeHtml(d.kill) : "") + "</p>"
+      : "";
+    var evidence = ev
+      ? '<p class="font-label-md text-on-surface-variant uppercase mb-xs">' +
+        escapeHtml(tKey("comp.cardEvidence", "Evidencia técnica")) + "</p>" +
+        '<div class="rpt-term mb-sm"><div class="rpt-term-bar"><span></span><span></span><span></span></div>' +
+        '<pre class="rpt-ev">' + escapeHtml(ev) + "</pre></div>"
+      : "";
+    var rem = steps.length
+      ? '<p class="font-label-md text-on-surface-variant uppercase mb-xs">' +
+        escapeHtml(tKey("comp.cardFix", "Remediación")) + "</p>" +
+        "<ol class=\"list-decimal pl-lg font-body-sm text-on-surface space-y-xs mb-sm\">" +
+        steps.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ol>"
+      : "";
+    var intro =
+      '<p class="font-label-md text-on-surface-variant uppercase mb-xs">' +
+      escapeHtml(tKey("comp.cardWhat", "Qué es")) + "</p>" +
+      '<p class="font-body-md text-on-surface leading-relaxed mb-md whitespace-pre-wrap">' + escapeHtml(what) + "</p>" +
+      (analysis
+        ? '<p class="rpt-analysis font-label-md text-on-surface-variant uppercase mb-xs">' +
+          escapeHtml(tKey("comp.cardAnalysis", "Análisis técnico")) + "</p>" +
+          '<p class="rpt-analysis font-body-sm text-on-surface leading-relaxed mb-md whitespace-pre-wrap">' + escapeHtml(analysis) + "</p>"
+        : "");
+    var crit = htmlReportCvssPanel(d);
+    var body =
+      '<div class="rpt-finding-top mb-md">' +
+      '<div class="min-w-0">' + intro + "</div>" +
+      (crit || "") +
+      "</div>" +
+      '<div class="rpt-finding-grid grid grid-cols-1 lg:grid-cols-2 gap-md">' +
+      '<div class="min-w-0">' +
+      '<p class="font-label-md text-on-surface-variant uppercase mb-xs">' +
+      escapeHtml(tKey("comp.cardBiz", "Impacto")) + "</p>" +
+      '<p class="font-body-sm text-on-surface-variant leading-relaxed whitespace-pre-wrap">' +
+      escapeHtml(impactBits.join("\n\n")) + "</p></div>" +
+      '<div class="min-w-0">' + evidence + rem + "</div></div>";
+    return '<article id="' + escapeHtml(findingCardDomId(f)) + '" class="report-finding-card scroll-mt-4 rounded-lg border border-outline-variant/40 p-md ' +
+      (major ? "report-finding-major border-l-4 border-l-error" : "") + '">' +
+      band +
+      '<h4 class="font-headline-md text-on-surface mb-xs">' + escapeHtml(f.title || "—") + "</h4>" +
+      '<p class="font-mono-md text-secondary mb-sm">' + escapeHtml(f.asset || "—") + "</p>" +
+      mitreLine + body +
+      '<a class="rpt-print-hide font-label-md text-primary hover:underline mt-sm inline-block" href="' + escapeHtml(href) + '">' +
+      escapeHtml(tKey("comp.cardOpen", "Abrir en consola →")) + "</a></article>";
+  }
+
   function renderReportFindingDossiers(containerId, findings, scanId) {
     var root = typeof containerId === "string" ? document.getElementById(containerId) : containerId;
     if (!root) return;
@@ -4654,39 +5054,9 @@
       if (toc) toc.innerHTML = "";
       return;
     }
-    var indexHtml = '<nav class="border border-outline-variant/40 rounded-lg p-md bg-surface-container-lowest">' +
-      '<p class="font-label-md text-on-surface-variant uppercase mb-sm">' +
-      escapeHtml(tKey("comp.findingsIndex", "Índice de fichas")) + " · " + list.length + "</p>" +
-      '<ol class="columns-1 md:columns-2 gap-md font-body-sm space-y-xs list-decimal pl-lg">' +
-      list.map(function (f) {
-        return '<li class="break-inside-avoid"><a class="text-primary hover:underline" href="#' +
-          escapeHtml(findingCardDomId(f)) + '">' +
-          escapeHtml(f.id || "") + " · " + escapeHtml(f.title || "—") +
-          "</a></li>";
-      }).join("") + "</ol></nav>";
-    root.innerHTML = indexHtml + list.map(function (f) {
-      return '<article id="' + escapeHtml(findingCardDomId(f)) + '" class="report-finding-card scroll-mt-4"></article>';
-    }).join("");
-    if (window.DarkSpearDossier && DarkSpearDossier.render) {
-      list.forEach(function (f) {
-        var card = document.getElementById(findingCardDomId(f));
-        if (!card) return;
-        var prefix = "rpt-" + String(f.id || "x").replace(/[^a-zA-Z0-9_-]/g, "-") + "-";
-        DarkSpearDossier.render(card, f, {
-          embedded: true,
-          idPrefix: prefix,
-          scanId: scanId,
-          escapeHtml: escapeHtml,
-          relativeTime: relativeTime,
-          sevBadgeClass: sevBadgeClass,
-        });
-      });
-    } else {
-      list.forEach(function (f) {
-        var card = document.getElementById(findingCardDomId(f));
-        if (card) card.innerHTML = htmlFindingArticles([f], scanId);
-      });
-    }
+    var chunks = list.map(function (f) { return htmlReportFindingCard(f, scanId); }).join("");
+    root.innerHTML = chunks;
+    if (window.lucide && typeof lucide.createIcons === "function") lucide.createIcons();
     if (toc) {
       toc.innerHTML = list.map(function (f) {
         var title = String(f.title || "—");
@@ -4719,20 +5089,40 @@
         escapeHtml(tKey("remplan.noneOpen", "No hay hallazgos abiertos en este análisis.")) + "</p>";
     }
     var qScan = scanId ? ("?scan=" + encodeURIComponent(scanId) + "&") : "?";
-    return ranked.slice(0, 12).map(function (f) {
-      var d = window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(f) : null;
-      var steps = d && d.steps ? d.steps.slice(0, 3) : [];
-      var sp = sevPill(f.severity);
-      var href = "finding-detail.html" + qScan + "id=" + encodeURIComponent(f.id || "");
-      return '<article class="border border-outline-variant/40 rounded-lg p-md border-l-4 border-l-tertiary">' +
-        '<div class="flex justify-between items-start gap-sm flex-wrap mb-xs">' +
-        '<h4 class="font-headline-md text-on-surface">' + escapeHtml(f.title || "—") + "</h4>" +
-        '<span class="' + sp.badge + ' px-sm py-xs rounded font-label-md">' + escapeHtml(sp.label) + "</span></div>" +
-        '<p class="font-mono-md text-secondary mb-xs">' + escapeHtml(f.asset || "—") + "</p>" +
-        (steps.length ? "<ol class=\"list-decimal pl-lg font-body-sm text-on-surface-variant space-y-xs\">" +
-          steps.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ol>" : "") +
-        '<a class="font-label-md text-primary hover:underline mt-sm inline-block" href="' + escapeHtml(href) + '">' +
-        escapeHtml(tKey("remplan.openFinding", "Ficha y plan completo")) + "</a></article>";
+    function windowOf(f) {
+      var s = String(f.severity || "").toLowerCase();
+      if (s === "critical") return 0;
+      if (s === "high") return 1;
+      if (s === "medium") return 2;
+      return 3;
+    }
+    var labels = [
+      tKey("comp.slaImmediate", "Inmediata (24–72 h)"),
+      tKey("comp.slaWeek", "1 semana"),
+      tKey("comp.slaTwoWeeks", "2 semanas"),
+      tKey("comp.slaMonth", "1 mes"),
+    ];
+    var buckets = [[], [], [], []];
+    ranked.forEach(function (f) { buckets[windowOf(f)].push(f); });
+    return buckets.map(function (items, i) {
+      if (!items.length) return "";
+      return '<div class="mb-md"><h4 class="font-label-md text-primary uppercase mb-sm">' +
+        escapeHtml(labels[i]) + "</h4>" +
+        items.map(function (f) {
+          var d = window.DarkSpearDossier && DarkSpearDossier.enrich ? DarkSpearDossier.enrich(f) : null;
+          var steps = d && d.steps ? d.steps.slice(0, 3) : [];
+          var sp = sevPill(f.severity);
+          var href = "finding-detail.html" + qScan + "id=" + encodeURIComponent(f.id || "");
+          return '<article class="border border-outline-variant/40 rounded-lg p-md border-l-4 border-l-tertiary mb-sm">' +
+            '<div class="flex justify-between items-start gap-sm flex-wrap mb-xs">' +
+            '<h4 class="font-headline-md text-on-surface">' + escapeHtml(f.id || "") + " · " + escapeHtml(f.title || "—") + "</h4>" +
+            '<span class="' + sp.badge + ' px-sm py-xs rounded font-label-md">' + escapeHtml(sp.label) + "</span></div>" +
+            '<p class="font-mono-md text-secondary mb-xs">' + escapeHtml(f.asset || "—") + "</p>" +
+            (steps.length ? "<ol class=\"list-decimal pl-lg font-body-sm text-on-surface-variant space-y-xs\">" +
+              steps.map(function (s) { return "<li>" + escapeHtml(s) + "</li>"; }).join("") + "</ol>" : "") +
+            '<a class="font-label-md text-primary hover:underline mt-sm inline-block" href="' + escapeHtml(href) + '">' +
+            escapeHtml(tKey("remplan.openFinding", "Ficha y plan completo")) + "</a></article>";
+        }).join("") + "</div>";
     }).join("");
   }
 
@@ -5107,12 +5497,19 @@
 
   function renderComprehensiveDocument(findings, meta, scanId) {
     var all = findings || [];
+    var party = reportParty();
+    var cover = document.getElementById("sec-cover");
+    if (cover) cover.innerHTML = htmlCoverPage(all, meta || {}, scanId);
     var tbl = document.getElementById("sec-00-table");
     if (tbl) tbl.innerHTML = htmlDocControlRows(all, meta || {});
+    var hist = document.getElementById("sec-00-history");
+    if (hist) hist.innerHTML = htmlDocHistory(meta || {}, party);
+    var sig = document.getElementById("sec-00-sign");
+    if (sig) sig.innerHTML = htmlSignatures(party);
     var exec = document.getElementById("sec-01-body");
     if (exec) exec.innerHTML = htmlExecChapter(all, meta || {});
     var sum = document.getElementById("sec-02-body");
-    if (sum) sum.innerHTML = htmlSevSummaryTable(all);
+    if (sum) sum.innerHTML = htmlFindingsInventory(all);
     var rc = document.getElementById("sec-03-list");
     if (rc) rc.innerHTML = htmlRootCauseItems(all);
     var list = document.getElementById("comp-findings");
@@ -5142,7 +5539,7 @@
     var imp = document.getElementById("sec-08-impact");
     if (imp) imp.innerHTML = htmlBusinessImpact(all, meta || {});
     var concl = document.getElementById("sec-09-body");
-    if (concl) concl.textContent = conclusionsText(all, meta || {});
+    if (concl) concl.innerHTML = htmlConclusions(all, meta || {});
     var footDate = document.getElementById("comp-doc-footer-date");
     if (footDate) footDate.textContent = new Date().toLocaleString();
     if (window.lucide) lucide.createIcons();
@@ -5167,6 +5564,7 @@
       escapeHtml(name) + '</p><p class="font-body-sm text-secondary mt-sm">' +
       escapeHtml(tKey("comp.dtGenerated", "Documento generado")) + ": " + escapeHtml(new Date().toLocaleString()) +
       "</p></div>" +
+      htmlCoverPage(all, m, scanId) +
       '<section data-section="sec-00" class="mb-xl"><h2><span>00</span> ' + escapeHtml(tKey("comp.sec00Title", "Control documental")) +
       "</h2><dl>" + htmlDocControlRows(all, m) + "</dl></section>" +
       '<section data-section="sec-01" class="mb-xl"><h2><span>01</span> ' + escapeHtml(tKey("comp.sec01Title", "Resumen ejecutivo")) +
@@ -5193,7 +5591,7 @@
       '<section data-section="sec-08f" class="mb-xl"><h2><span>08f</span> ' + escapeHtml(tKey("comp.sec08fTitle", "Kill Chain y MITRE")) +
       "</h2>" + htmlMitreKillChain(all) + "</section>" +
       '<section data-section="sec-09" class="mb-xl"><h2><span>09</span> ' + escapeHtml(tKey("comp.sec09Title", "Conclusiones")) +
-      "</h2><p>" + escapeHtml(conclusionsText(all, m)) + "</p></section>" +
+      "</h2>" + htmlConclusions(all, m) + "</section>" +
       '<section data-section="sec-gallery" class="mb-xl hidden-section"><h2>' +
       escapeHtml(tKey("preview.gallery", "Galería de evidencia")) + "</h2>" +
       '<p class="font-body-sm text-on-surface-variant">' +
@@ -5854,18 +6252,156 @@
   }
 
   function bootSettings() {
+    var KEY = "ds-settings";
+    var saved = {};
+    try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { saved = {}; }
+    if (saved.v !== 2) {
+      saved = {
+        v: 2,
+        orgName: "",
+        orgEmail: "",
+        tz: "",
+        classification: "",
+        "notify-critical": saved["notify-critical"] !== false,
+        "notify-high": saved["notify-high"] !== false,
+        "notify-done": saved["notify-done"] !== false,
+      };
+      try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ }
+    }
+    var nameEl = document.getElementById("org-name");
+    var emailEl = document.getElementById("org-email");
+    var tzEl = document.getElementById("org-tz");
+    var classEl = document.getElementById("org-class");
+    if (nameEl) nameEl.value = saved.orgName || "";
+    if (emailEl) emailEl.value = saved.orgEmail || "";
+    if (tzEl) tzEl.value = saved.tz || "";
+    if (classEl) classEl.value = saved.classification || "";
+    ["notify-critical", "notify-high", "notify-done"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (saved[id] === false) el.checked = false;
+      else if (saved[id] === true) el.checked = true;
+    });
+    function toastSettings(msg) {
+      if (window.DarkSpearExport && DarkSpearExport.toast) DarkSpearExport.toast(msg);
+      else window.alert(msg);
+    }
+    function persistOrg() {
+      var data = {
+        v: 2,
+        orgName: nameEl ? nameEl.value.trim() : "",
+        orgEmail: emailEl ? emailEl.value.trim() : "",
+        tz: tzEl ? tzEl.value : "",
+        classification: classEl ? classEl.value : "",
+        "notify-critical": !!(document.getElementById("notify-critical") || {}).checked,
+        "notify-high": !!(document.getElementById("notify-high") || {}).checked,
+        "notify-done": !!(document.getElementById("notify-done") || {}).checked,
+      };
+      localStorage.setItem(KEY, JSON.stringify(data));
+      toastSettings(tKey("settings.saved", "Ajustes guardados"));
+    }
+    var saveBtn = document.getElementById("settings-save");
+    if (saveBtn && !saveBtn.dataset.bound) {
+      saveBtn.dataset.bound = "1";
+      saveBtn.addEventListener("click", persistOrg);
+    }
+    ["notify-critical", "notify-high", "notify-done"].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el && !el.dataset.bound) {
+        el.dataset.bound = "1";
+        el.addEventListener("change", persistOrg);
+      }
+    });
+    function markTheme() {
+      var dark = (localStorage.getItem("ds-theme") || "light") === "dark";
+      var l = document.getElementById("settings-theme-light");
+      var d = document.getElementById("settings-theme-dark");
+      if (l) l.classList.toggle("bg-primary-container", !dark);
+      if (l) l.classList.toggle("text-on-primary-container", !dark);
+      if (d) d.classList.toggle("bg-primary-container", dark);
+      if (d) d.classList.toggle("text-on-primary-container", dark);
+    }
+    function markLang() {
+      var en = (localStorage.getItem("ds-lang") || "es") === "en";
+      var esb = document.getElementById("settings-lang-es");
+      var enb = document.getElementById("settings-lang-en");
+      if (esb) esb.classList.toggle("bg-primary-container", !en);
+      if (esb) esb.classList.toggle("text-on-primary-container", !en);
+      if (enb) enb.classList.toggle("bg-primary-container", en);
+      if (enb) enb.classList.toggle("text-on-primary-container", en);
+    }
+    markTheme();
+    markLang();
+    function clickPref(sel, on) {
+      var el = document.querySelector(sel);
+      if (el) el.click();
+      else on();
+      markTheme();
+      markLang();
+    }
+    var tl = document.getElementById("settings-theme-light");
+    var td = document.getElementById("settings-theme-dark");
+    if (tl && !tl.dataset.bound) {
+      tl.dataset.bound = "1";
+      tl.addEventListener("click", function () {
+        if ((localStorage.getItem("ds-theme") || "light") === "dark") {
+          clickPref('[data-switch="theme"]', function () {
+            localStorage.setItem("ds-theme", "light");
+            document.documentElement.classList.remove("dark");
+            document.documentElement.classList.add("light");
+          });
+        }
+        markTheme();
+      });
+    }
+    if (td && !td.dataset.bound) {
+      td.dataset.bound = "1";
+      td.addEventListener("click", function () {
+        if ((localStorage.getItem("ds-theme") || "light") !== "dark") {
+          clickPref('[data-switch="theme"]', function () {
+            localStorage.setItem("ds-theme", "dark");
+            document.documentElement.classList.remove("light");
+            document.documentElement.classList.add("dark");
+          });
+        }
+        markTheme();
+      });
+    }
+    var les = document.getElementById("settings-lang-es");
+    var len = document.getElementById("settings-lang-en");
+    if (les && !les.dataset.bound) {
+      les.dataset.bound = "1";
+      les.addEventListener("click", function () {
+        if ((localStorage.getItem("ds-lang") || "es") === "en") {
+          clickPref('[data-switch="lang"]', function () {
+            localStorage.setItem("ds-lang", "es");
+            location.reload();
+          });
+        }
+        markLang();
+      });
+    }
+    if (len && !len.dataset.bound) {
+      len.dataset.bound = "1";
+      len.addEventListener("click", function () {
+        if ((localStorage.getItem("ds-lang") || "es") !== "en") {
+          clickPref('[data-switch="lang"]', function () {
+            localStorage.setItem("ds-lang", "en");
+            location.reload();
+          });
+        }
+        markLang();
+      });
+    }
     var btn = document.getElementById("panic-btn");
     if (!btn || btn.dataset.bound) return;
     btn.dataset.bound = "1";
     btn.addEventListener("click", function () {
-      var msg = "Esto borra el pool cifrado de API keys. No afecta hallazgos ni evidencia. ¿Continuar?";
-      if (window.DarkSpear && DarkSpear.lang && DarkSpear.lang() === "en") {
-        msg = "This deletes the encrypted API key pool. Findings and evidence are not affected. Continue?";
-      }
+      var msg = tKey("settings.panicConfirm", "Esto borra el pool cifrado de API keys. No afecta hallazgos ni evidencia. ¿Continuar?");
       if (!window.confirm(msg)) return;
       bridgePost("/keystore/panic", { confirm: "WIPE_KEYS" }).then(function (data) {
         var ok = data && data.ok;
-        window.alert(ok ? "Pool de claves borrado." : "Error: " + ((data && data.error) || "desconocido"));
+        toastSettings(ok ? tKey("settings.panicOk", "Pool de claves borrado.") : tKey("settings.panicErr", "Error: ") + ((data && data.error) || "desconocido"));
       });
     });
   }
