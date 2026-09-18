@@ -42,7 +42,11 @@ for (const fn of [
   "htmlMaturityChapter",
   "htmlMaturityStory",
   "htmlRiskMatrix3x3",
+  "htmlGdprDashboard",
   "htmlRgpdChapter",
+  "htmlRgpdFindingCard",
+  "htmlComplianceRisk",
+  "htmlMethodologyAppendix",
   "htmlMitreKillChain",
   "htmlConnectedSurfaces",
   "htmlRemediationPlan",
@@ -60,7 +64,9 @@ if (!preview.includes('id="preview-paper"')) {
 }
 
 const keys = [
-  "comp.sec01Title", "comp.sec08Title", "comp.connectedTitle",
+  "comp.sec01Title", "comp.sec08Title", "comp.sec08aTitle", "comp.sec08bTitle",
+  "comp.rgpdCardsLead", "comp.methNote", "comp.compRiskLead", "comp.kcPremise",
+  "comp.connectedTitle",
   "comp.findingsIndex", "comp.maturityExplain", "comp.maturityMethod",
   "maturity.whyTitle", "maturity.whyScore", "maturity.howUp", "maturity.vsFair",
   "preview.paperTitle", "report.preview",
@@ -81,9 +87,9 @@ if (!html.includes('id="comp-findings"')) {
   fail += 1;
   console.error("FAIL falta #comp-findings");
 }
-if (!live.includes('idPrefix: prefix') || !live.includes("embedded: true")) {
+if (!live.includes("function htmlReportFindingCard") || !live.includes("function renderReportFindingDossiers")) {
   fail += 1;
-  console.error("FAIL renderReportFindingDossiers no incrusta DarkSpearDossier");
+  console.error("FAIL falta htmlReportFindingCard / renderReportFindingDossiers");
 }
 if (!live.includes('id="preview-dossiers"')) {
   fail += 1;
@@ -115,10 +121,69 @@ if (!reporting.includes("vendor/finding-dossier.js")) {
   fail += 1;
   console.error("FAIL reporting.html no carga finding-dossier.js");
 }
+if (reporting.includes('data-report-export="pdf"')) {
+  fail += 1;
+  console.error("FAIL reporting.html sigue ofreciendo export PDF");
+}
+if (!reporting.includes("Abrir informe HTML") && !i18n.includes("Abrir informe HTML")) {
+  fail += 1;
+  console.error("FAIL falta CTA de informe HTML");
+}
+if (!live.includes('bindScanExport("btn-export"') || !live.includes(', "html")')) {
+  fail += 1;
+  console.error("FAIL el informe integral no descarga HTML");
+}
 
 if (!live.includes('hideOnListIds: ["comp-toc"]')) {
   fail += 1;
   console.error("FAIL bootComprehensiveReport no oculta el TOC en la lista");
+}
+
+for (const token of [
+  "SYSTEMIC_PATTERNS",
+  "function htmlGlossary",
+  "function htmlKpiTiles",
+  "function htmlCvssCompactLine",
+  "rpt-kpi-row",
+  "rpt-pass-badge",
+  "rpt-impact",
+  "findingPhaseCode",
+]) {
+  if (!live.includes(token)) {
+    fail += 1;
+    console.error("FAIL panel-live.js falta", token);
+  }
+}
+if (html.includes("<ul id=\"sec-03-list\"")) {
+  fail += 1;
+  console.error("FAIL sec-03-list sigue siendo <ul>");
+}
+if (!html.includes('id="sec-03-list"') || !html.includes('id="sec-05-list"')) {
+  fail += 1;
+  console.error("FAIL faltan contenedores 03/05");
+}
+if (!html.includes('id="sec-07-body"') || !html.includes('id="sec-08b"')) {
+  fail += 1;
+  console.error("FAIL faltan #sec-07-body / #sec-08b");
+}
+if (!live.includes("htmlMethodologyAppendix(all") || !live.includes("htmlComplianceRisk(all)")) {
+  fail += 1;
+  console.error("FAIL render no cablea metodología / 08b");
+}
+if (/G-00[1-9]/.test(live)) {
+  fail += 1;
+  console.error("FAIL panel-live inventa IDs G-");
+}
+if (!html.includes("rpt-kpi-row")) {
+  fail += 1;
+  console.error("FAIL comprehensive-report sin CSS de KPIs");
+}
+for (const k of ["comp.glossaryTitle", "comp.patternDominant", "comp.passBadge", "comp.colPhase"]) {
+  const hits = i18n.split('"' + k + '"').length - 1;
+  if (hits < 2) {
+    fail += 1;
+    console.error("FAIL i18n", k, "aparece", hits, "veces (hace falta ES+EN)");
+  }
 }
 
 if (fail) {
