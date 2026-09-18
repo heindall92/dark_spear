@@ -250,6 +250,111 @@ def send_raw_probe(host: str, port: int, payload: bytes, timeout: float = 8.0) -
         return {"timed_out": False, "elapsed_ms": elapsed_ms, "response_snippet": b"", "error": str(e)}
 
 
+# ---------------------------------------------------------------------------
+# bloodhound-python ya corre en Fase 2 y escribe su JSON (mismo formato que
+# consume la UI de BloodHound: {"data": [...], "meta": {...}} por tipo de
+# objeto) a evidence/bloodhound del engagement, pero dark_spear nunca lo
+# parseaba — solo confirmaba que el fichero existía. Las aristas de ACL
+# peligrosas se quedaban enterradas ahí, visibles solo si alguien abría
+# BloodHound UI a mano. Se extraen aquí las mismas que la UI resaltaría:
+# control total/de escritura sobre otro objeto, y Shadow Credentials
+# (AddKeyCredentialLink) — sin necesitar pywhisker/certipy por separado.
+BLOODHOUND_DANGEROUS_RIGHTS = {
+    "GenericAll": "Critical",
+    "AllExtendedRights": "Critical",
+    "AddKeyCredentialLink": "Critical",
+    "Owns": "High",
+    "GenericWrite": "High",
+    "WriteDacl": "High",
+    "WriteOwner": "High",
+    "AddMember": "High",
+    "AddSelf": "High",
+    "ForceChangePassword": "High",
+    "WriteSPN": "High",
+}
+
+
+def collect_bloodhound_aces(evidence_dir: Path, cap: int = 15) -> list:
+    """Lee los *_users/computers/groups/domains/gpos/ous.json que
+    bloodhound-python escribió en evidence_dir y devuelve las aristas de
+    ACL peligrosas ya resueltas (SID -> nombre legible cuando se conoce).
+    DCSync solo se reporta si el MISMO principal tiene GetChanges Y
+    GetChangesAll sobre el mismo objeto dominio (ambos son necesarios).
+    """
+    if not evidence_dir.exists():
+        return []
+
+    sid_to_name: dict = {}
+    sid_to_type: dict = {}
+    objects: list = []
+
+    for f in sorted(evidence_dir.glob("*.json")):
+        try:
+            payload = json.loads(f.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        data = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(data, list):
+            continue
+        obj_type = ((payload.get("meta") or {}).get("type") or "").rstrip("s")
+        for obj in data:
+            sid = obj.get("ObjectIdentifier")
+            name = (obj.get("Properties") or {}).get("name")
+            if sid and name:
+                sid_to_name[sid] = name
+                sid_to_type[sid] = obj_type
+            objects.append((sid, name or sid, obj_type, obj.get("Aces") or []))
+
+    def resolve(sid):
+        return sid_to_name.get(sid, sid)
+
+    def resolve_type(sid):
+        return sid_to_type.get(sid, "unknown")
+
+    out = []
+    dcsync_seen: dict = {}
+    for target_sid, target_name, target_type, aces in objects:
+        for ace in aces:
+            if ace.get("IsInherited"):
+                pass  # heredado igual es explotable (BloodHound no lo descarta) -> se conserva
+            right = ace.get("RightName")
+            principal_sid = ace.get("PrincipalSID")
+            if not right or not principal_sid:
+                continue
+            if right in ("GetChanges", "GetChangesAll") and target_type == "domain":
+                key = (principal_sid, target_sid)
+                dcsync_seen.setdefault(key, set()).add(right)
+                continue
+            if right not in BLOODHOUND_DANGEROUS_RIGHTS:
+                continue
+            out.append({
+                "principal": resolve(principal_sid),
+                "principal_type": resolve_type(principal_sid) or ace.get("PrincipalType", "unknown"),
+                "right": right,
+                "target": target_name,
+                "target_type": target_type,
+            })
+
+    for (principal_sid, target_sid), rights in dcsync_seen.items():
+        if {"GetChanges", "GetChangesAll"}.issubset(rights):
+            out.append({
+                "principal": resolve(principal_sid),
+                "principal_type": resolve_type(principal_sid),
+                "right": "DCSync",
+                "target": resolve(target_sid),
+                "target_type": "domain",
+            })
+
+    return out[:cap]
+
+
+def format_bloodhound_ace_lines(aces: list) -> str:
+    return "\n".join(
+        f"DS_ACE|{a['principal']}|{a['principal_type']}|{a['right']}|{a['target']}|{a['target_type']}"
+        for a in aces
+    )
+
+
 def rewrite_stdout_placeholder(args: list, tool: str) -> tuple[list, str | None]:
     flag = STDOUT_REDIRECT_FLAGS.get(tool)
     if not flag:
@@ -1532,6 +1637,15 @@ class Handler(BaseHTTPRequestHandler):
                 file_content = _truncate_output(read_and_cleanup_tempfile(stdout_tmp_path))
                 if file_content:
                     result["stdout"] = f"{result['stdout']}\n{file_content}".strip() if result.get("stdout") else file_content
+            if tool == "bloodhound-python" and run_cwd:
+                # El JSON útil (aristas de ACL) vive en ficheros, no en
+                # stdout: se anexa aquí como texto sintético para que el
+                # motor JS lo consuma con el mismo pipeline probeIdx/regex
+                # que el resto de herramientas.
+                aces = collect_bloodhound_aces(Path(run_cwd))
+                ace_lines = format_bloodhound_ace_lines(aces)
+                if ace_lines:
+                    result["stdout"] = f"{result['stdout']}\n{ace_lines}".strip() if result.get("stdout") else ace_lines
             audit_log({"event": "exec", "tool": tool, "resolved_path": resolved,
                        "args": redact_args(args), "target": target,
                        "cwd": run_cwd,
