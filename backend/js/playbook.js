@@ -68,6 +68,7 @@ import {
   adAuthCollectionSteps,
   adWinrmCheckSteps,
   adFirewallCheckSteps,
+  smugglingProbeSteps,
   detectDomainController,
   extractAdDomain,
   extractAdUsersFromBlob,
@@ -900,6 +901,10 @@ function phase3Steps(baseUrl, host, cookie, ctx) {
     }),
     ...adWinrmCheckSteps(step, host),
     ...adFirewallCheckSteps(step, host),
+    ...smugglingProbeSteps(step, "p3-smuggle", baseUrl, "8").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
   ];
   return steps;
 }

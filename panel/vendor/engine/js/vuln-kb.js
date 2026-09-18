@@ -5203,3 +5203,54 @@ export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTi
 export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
   return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime);
 }
+
+/* ------------------------------------------------------------------------ *
+ * HTTP Request Smuggling (CL.TE / TE.CL) — sondas de timing (metodología
+ * PortSwigger). curl no puede mandar Content-Length/Transfer-Encoding
+ * ambiguos de forma fiable, así que estos steps invocan la pseudo-
+ * herramienta "http-smuggle-probe" que el bridge maneja con una conexión
+ * TCP cruda propia (ver backend/bridge.py: build_smuggling_probe /
+ * send_raw_probe). Fase 3 (Exploitation): un desync real en un front-end
+ * compartido puede afectar peticiones de OTROS usuarios, no solo del que
+ * prueba — mismo gate humano de avance de fase que wmiexec/secretsdump.
+ * https://hacktricks.wiki/en/pentesting-web/http-request-smuggling/index.html
+ * ------------------------------------------------------------------------ */
+export function smugglingProbeSteps(step, prefix, baseUrl, maxTime = "12") {
+  let u;
+  try {
+    u = new URL(baseUrl);
+  } catch {
+    return [];
+  }
+  const port = u.port || (u.protocol === "https:" ? "443" : "80");
+  const path = u.pathname || "/";
+  return ["clte", "tecl"].map((kind) =>
+    step(`${prefix}-${kind}`, "http-smuggle-probe", [kind, u.hostname, port, path], null, {
+      desc: `Sonda de timing HTTP Request Smuggling (${kind === "clte" ? "CL.TE" : "TE.CL"})`,
+    }),
+  );
+}
+
+/**
+ * Clasifica el JSON que devuelve la pseudo-herramienta http-smuggle-probe.
+ * timed_out=true es solo CANDIDATO (la conexión se quedó colgada, señal
+ * de desync) — requiere la respuesta diferencial de seguimiento para
+ * confirmarlo, igual que otros hallazgos de esta herramienta que dejan
+ * el último paso a confirmación manual (SSTI/CORS).
+ */
+export function smugglingFinding(stdout, path) {
+  let hit;
+  try {
+    hit = JSON.parse(stdout || "");
+  } catch {
+    return null;
+  }
+  if (!hit || !hit.timed_out) return null;
+  const label = hit.kind === "tecl" ? "TE.CL" : "CL.TE";
+  return {
+    title: `Posible HTTP Request Smuggling (${label}) en ${path || "/"}`,
+    severity: "High",
+    description: `La sonda de timing ${label} contra ${path || "/"} se quedó sin respuesta (~${Math.round(hit.elapsed_ms || 0)}ms) en vez de recibir un rechazo o respuesta normal (CWE-444): señal de que front-end y backend interpretan de forma distinta los límites de la petición (Content-Length vs Transfer-Encoding ambiguos), lo que en un desync real permite mezclar la petición de un atacante con la de otra víctima en la misma conexión reutilizada. Esto es solo el candidato de timing — confirmar manualmente con la técnica de respuesta diferencial (petición de sondeo justo después de la sospechosa) antes de reportarlo como explotado.`,
+    remediation: "Normalizar en el borde: rechazar peticiones con Content-Length y Transfer-Encoding simultáneos (RFC 7230 §3.3.3); si front-end y backend son productos distintos, forzar HTTP/2 end-to-end (sin downgrade a HTTP/1.1 ambiguo) o desactivar el reuso de conexiones keep-alive hacia el backend.",
+  };
+}
