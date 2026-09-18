@@ -20,6 +20,7 @@ import {
   sstiReflectionCurlSteps,
   graphqlIntrospectionCurlSteps,
   openRedirectCurlSteps,
+  xxeCurlSteps,
   idorCurlSteps,
   hydraDefCredsSteps,
   JWT_TOKEN_RE,
@@ -510,6 +511,10 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       skipIf: (c) => !c.hasWebStack,
     })),
     ...openRedirectCurlSteps(step, "p1-redirect", baseUrl, "12").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...xxeCurlSteps(step, "p1-xxe", baseUrl, "12").map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),

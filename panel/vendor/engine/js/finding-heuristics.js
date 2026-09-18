@@ -21,6 +21,8 @@ import {
   cloudEnumFindings,
   adFirewallFindings,
   OPEN_REDIRECT_TEST_URL,
+  xxeConfirmed,
+  XXE_PATHS,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
   IDOR_DENIED_RE,
@@ -138,6 +140,8 @@ function buildProbeIndex(stepRecords) {
     if (m) push(`graphql:${m[1]}`, text);
     m = /^p1-redirect-(.+)$/.exec(r.id);
     if (m) push(`open-redirect:${m[1]}`, text);
+    m = /^p1-xxe-(\d+)$/.exec(r.id);
+    if (m) push(`xxe:${m[1]}`, text);
     m = /^p1-idor-(.+)$/.exec(r.id);
     if (m) push(`idor:${m[1]}`, text);
     m = /^p3-hydra-defcreds-(.+)$/.exec(r.id);
@@ -655,6 +659,19 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
         "Validar el destino de la redirección contra una allow-list de rutas/orígenes propios; no redirigir a una URL completa controlada por el usuario.",
       );
     });
+
+  // XXE: confirmado solo si la respuesta refleja /etc/passwd real (lectura
+  // de fichero local), no un eco ciego del payload sin evaluar.
+  XXE_PATHS.forEach(function (path, i) {
+    const text = probeIdx[`xxe:${i + 1}`];
+    if (!text || !xxeConfirmed(text)) return;
+    add(
+      `XXE (XML External Entity) confirmado en ${path}`,
+      "Critical",
+      `Al enviar una entidad externa DOCTYPE apuntando a file:///etc/passwd como cuerpo XML contra ${path}, la respuesta reflejó el contenido real del fichero (CWE-611): el parser XML del servidor resuelve entidades externas sin restricción, permitiendo leer ficheros arbitrarios del sistema y, dependiendo del parser/protocolo soportado, también SSRF interno o denegación de servicio (entity expansion).`,
+      "Deshabilitar la resolución de entidades externas y DTDs en el parser XML (p. ej. setFeature disallow-doctype-decl en Java, libxml_disable_entity_loader en PHP, defusedxml en Python); actualizar a una versión del parser que las deshabilite por defecto.",
+    );
+  });
 
   // IDOR genérico: recurso por ID accesible SIN NINGUNA sesión, con datos
   // de aspecto real en la respuesta (no un 401/403/404 ni el fallback SPA).
