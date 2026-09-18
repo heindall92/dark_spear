@@ -267,19 +267,61 @@
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
-<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<div class="max-w-container-max mx-auto flex flex-col gap-lg pb-xl">
 <div>
 <h2 class="font-headline-lg text-on-surface" data-i18n="profile.title">Perfil</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="profile.lead">Datos del operador en la consola.</p>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="profile.lead">Datos del operador en la consola. Aparecen en la portada y las firmas del informe.</p>
 </div>
-<div class="glass-panel rounded-xl p-xl max-w-xl flex flex-col gap-md">
-<div class="w-16 h-16 rounded-full bg-primary-container/15 text-primary flex items-center justify-center font-headline-md">—</div>
-<label class="font-label-md text-on-surface-variant" for="profile-name">Nombre</label>
-<input id="profile-name" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm" placeholder="—" type="text"/>
-<label class="font-label-md text-on-surface-variant" for="profile-email">Email</label>
-<input id="profile-email" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm" placeholder="—" type="email"/>
-<label class="font-label-md text-on-surface-variant" for="profile-role">Rol</label>
-<input id="profile-role" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm" placeholder="—" type="text"/>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-lg">
+<section class="glass-panel rounded-xl p-xl max-w-xl flex flex-col gap-md lg:col-span-2">
+<div class="flex items-center gap-md">
+<div class="w-16 h-16 rounded-full bg-primary-container/15 text-primary overflow-hidden border border-outline-variant/40 shrink-0">
+<img id="profile-avatar" alt="" class="w-full h-full object-cover hidden"/>
+<div id="profile-initials" class="w-full h-full flex items-center justify-center font-headline-md">DS</div>
+</div>
+<div class="flex flex-col gap-xs">
+<label class="font-label-md text-primary cursor-pointer inline-flex items-center gap-xs">
+<i data-lucide="camera" class="icon-sm"></i>
+<span data-i18n="profile.photo">Cambiar foto</span>
+<input id="profile-photo" class="sr-only" accept="image/png,image/jpeg,image/webp" type="file"/>
+</label>
+<p class="font-body-sm text-on-surface-variant" data-i18n="profile.photoHelp">PNG o JPG, se guarda solo en este navegador.</p>
+</div>
+</div>
+<label class="font-label-md text-on-surface-variant" for="profile-name" data-i18n="profile.name">Nombre</label>
+<input id="profile-name" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" autocomplete="given-name" type="text"/>
+<label class="font-label-md text-on-surface-variant" for="profile-last" data-i18n="profile.last">Apellidos</label>
+<input id="profile-last" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" autocomplete="family-name" type="text"/>
+<label class="font-label-md text-on-surface-variant" for="profile-email" data-i18n="profile.email">Email</label>
+<input id="profile-email" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" autocomplete="email" type="email"/>
+<label class="font-label-md text-on-surface-variant" for="profile-role" data-i18n="profile.role">Rol</label>
+<input id="profile-role" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" autocomplete="organization-title" type="text"/>
+<button type="button" id="profile-save" class="self-start px-md py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="save" class="icon-sm"></i>
+<span data-i18n="profile.save">Guardar perfil</span>
+</button>
+</section>
+<aside class="flex flex-col gap-md">
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-sm">
+<h3 class="font-headline-md text-on-surface" data-i18n="profile.sessionTitle">Sesión local</h3>
+<p class="font-body-sm text-on-surface-variant" data-i18n="profile.sessionLead">Esta consola no tiene cuentas en la nube. Cerrar sesión limpia el splash y vuelve al dashboard.</p>
+<div class="flex items-center justify-between gap-sm py-sm border-t border-outline-variant/30">
+<div>
+<p class="font-label-md text-on-surface" data-i18n="profile.thisBrowser">Este navegador</p>
+<p class="font-body-sm text-on-surface-variant" id="profile-session-meta">—</p>
+</div>
+<button type="button" id="revoke-session" class="px-sm py-xs rounded border border-outline-variant font-label-md" data-i18n="profile.revoke">Cerrar</button>
+</div>
+<button type="button" id="profile-password" class="px-md py-sm rounded-lg border border-outline-variant font-label-md text-on-surface-variant">
+<span data-i18n="profile.password">Cambio de contraseña</span>
+</button>
+</section>
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-sm">
+<h3 class="font-headline-md text-on-surface" data-i18n="profile.reportTitle">Informes</h3>
+<p class="font-body-sm text-on-surface-variant" data-i18n="profile.reportLead">El nombre y el rol salen en control documental y firmas del informe HTML.</p>
+<a href="settings.html" class="font-label-md text-primary hover:underline" data-i18n="profile.toSettings">Organización y clasificación →</a>
+</section>
+</aside>
 </div>
 </div>
 </main>
@@ -290,18 +332,15 @@
             var KEY = "ds-profile";
             var saved = {};
             try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { saved = {}; }
-            ["profile-name", "profile-last", "profile-role"].forEach(function (id) {
-                if (saved[id]) document.getElementById(id).value = saved[id];
-            });
-            if (saved.avatar) document.getElementById("profile-avatar").src = saved.avatar;
-            document.getElementById("profile-save").addEventListener("click", function () {
-                var data = {
-                    "profile-name": document.getElementById("profile-name").value,
-                    "profile-last": document.getElementById("profile-last").value,
-                    "profile-role": document.getElementById("profile-role").value,
-                    avatar: document.getElementById("profile-avatar").src
-                };
-                localStorage.setItem(KEY, JSON.stringify(data));
+            if (String(saved.v) !== "2") {
+                saved = { v: 2 };
+                try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch (e) { /* ignore */ }
+            }
+            function toast(msg) {
+                if (window.DarkSpearExport && DarkSpearExport.toast) {
+                    DarkSpearExport.toast(msg);
+                    return;
+                }
                 var el = document.getElementById("ds-toast");
                 if (!el) {
                     el = document.createElement("div");
@@ -309,31 +348,76 @@
                     el.className = "ds-toast";
                     document.body.appendChild(el);
                 }
-                el.textContent = "Perfil guardado";
+                el.textContent = msg;
                 el.classList.add("show");
                 setTimeout(function () { el.classList.remove("show"); }, 2000);
+            }
+            function paintAvatar() {
+                var img = document.getElementById("profile-avatar");
+                var ini = document.getElementById("profile-initials");
+                var first = (document.getElementById("profile-name").value || "").trim();
+                var last = (document.getElementById("profile-last").value || "").trim();
+                var letters = ((first[0] || "") + (last[0] || "")).toUpperCase() || "DS";
+                if (ini) ini.textContent = letters;
+                if (saved.avatar && img) {
+                    img.src = saved.avatar;
+                    img.classList.remove("hidden");
+                    if (ini) ini.classList.add("hidden");
+                } else if (img) {
+                    img.classList.add("hidden");
+                    if (ini) ini.classList.remove("hidden");
+                }
+            }
+            ["profile-name", "profile-last", "profile-role", "profile-email"].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && saved[id]) el.value = saved[id];
+            });
+            paintAvatar();
+            var meta = document.getElementById("profile-session-meta");
+            if (meta) meta.textContent = navigator.userAgent.split(" ").slice(-2).join(" ");
+            document.getElementById("profile-save").addEventListener("click", function () {
+                var img = document.getElementById("profile-avatar");
+                saved = {
+                    v: 2,
+                    "profile-name": document.getElementById("profile-name").value.trim(),
+                    "profile-last": document.getElementById("profile-last").value.trim(),
+                    "profile-role": document.getElementById("profile-role").value.trim(),
+                    "profile-email": document.getElementById("profile-email").value.trim(),
+                    avatar: img && !img.classList.contains("hidden") ? img.src : (saved.avatar || "")
+                };
+                localStorage.setItem(KEY, JSON.stringify(saved));
+                paintAvatar();
+                if (window.DarkSpearExport && DarkSpearExport.applyOperatorChrome) DarkSpearExport.applyOperatorChrome();
+                toast((window.DarkSpear && DarkSpear.t && DarkSpear.t("profile.saved")) || "Perfil guardado");
             });
             document.getElementById("profile-photo").addEventListener("change", function () {
                 var file = this.files && this.files[0];
                 if (!file) return;
+                if (file.size > 800000) {
+                    toast("La foto supera 800 KB.");
+                    return;
+                }
                 var reader = new FileReader();
-                reader.onload = function () { document.getElementById("profile-avatar").src = reader.result; };
+                reader.onload = function () {
+                    saved.avatar = reader.result;
+                    var img = document.getElementById("profile-avatar");
+                    var ini = document.getElementById("profile-initials");
+                    img.src = reader.result;
+                    img.classList.remove("hidden");
+                    if (ini) ini.classList.add("hidden");
+                };
                 reader.readAsDataURL(file);
             });
             document.getElementById("profile-password").addEventListener("click", function () {
-                var el = document.getElementById("ds-toast");
-                if (!el) {
-                    el = document.createElement("div");
-                    el.id = "ds-toast";
-                    el.className = "ds-toast";
-                    document.body.appendChild(el);
-                }
-                el.textContent = "Cambio de contraseña no configurado en esta instalación.";
-                el.classList.add("show");
-                setTimeout(function () { el.classList.remove("show"); }, 2200);
+                toast((window.DarkSpear && DarkSpear.t && DarkSpear.t("profile.passwordHint")) || "Cambio de contraseña no configurado en esta instalación.");
             });
             document.getElementById("revoke-session").addEventListener("click", function () {
-                this.closest("div").remove();
+                try {
+                    localStorage.removeItem("ds-splash");
+                    sessionStorage.removeItem("ds-splash");
+                } catch (e) {}
+                toast((window.DarkSpear && DarkSpear.t && DarkSpear.t("export.signedOut")) || "Sesión cerrada");
+                setTimeout(function () { location.href = "index.html"; }, 400);
             });
         })();
     </script>

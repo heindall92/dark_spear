@@ -17,6 +17,7 @@ toy dev server.
 """
 import getpass
 import hashlib
+import hmac
 import importlib.util
 import os
 import json
@@ -65,7 +66,7 @@ CORS_ORIGINS = {
 ALLOWED_TOOLS = {
     "nmap", "gobuster", "ffuf", "feroxbuster", "nikto", "whatweb", "wafw00f", "nuclei", "subfinder", "httpx", "testssl.sh", "semgrep", "hydra", "sqlmap",
     "katana",
-    "wapiti", "arjun", "dalfox",
+    "wapiti", "arjun", "dalfox", "cloud_enum",
     "wpscan",
     "hashcat", "john", "curl", "dig", "nslookup", "smbclient", "rpcclient",
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
@@ -76,6 +77,7 @@ ALLOWED_TOOLS = {
     "raiseChild.py", "dcomexec.py", "adscan", "findDelegation.py",
     "dnsrecon", "searchsploit",
     "ufw", "iptables", "nft",
+    "http-smuggle-probe",
 }
 
 PHASE_NAMES = {
@@ -91,7 +93,7 @@ PHASE_NAMES = {
 # are cumulative (see cumulative_phase_tools) — this dict holds only each
 # phase's OWN additions, not the running total.
 PHASE_TOOLS = {
-    1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
+    1: {"nmap", "whatweb", "wafw00f", "subfinder", "httpx", "cloud_enum", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
         "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"},
     2: {"gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "wapiti", "arjun", "dalfox", "GetNPUsers.py",
         "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
@@ -99,7 +101,7 @@ PHASE_TOOLS = {
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
         "smbexec.py", "atexec.py", "dcomexec.py", "mssqlclient.py",
         "ntlmrelayx.py", "crackmapexec", "netexec", "ticketer.py",
-        "getST.py", "raiseChild.py"},
+        "getST.py", "raiseChild.py", "http-smuggle-probe"},
     4: {"hashcat", "john"},
 }
 
@@ -112,6 +114,13 @@ SCAN_SOURCE_TOOLS: dict[str, list[str]] = {
     "semgrep": ["--config=p/owasp-top-ten", "--json", "--timeout", "30", "--quiet"],
 }
 MAX_SCAN_SOURCE_BYTES = 500_000
+# _read_json() leía Content-Length bytes sin tope: un Content-Length
+# anunciado enorme (bug de cliente, o proceso local malicioso) hace que el
+# servidor intente reservar/leer esa cantidad antes de parsear nada. Bind
+# es solo a 127.0.0.1 (sin atacante remoto), pero es un self-DoS barato de
+# evitar. 5MB es generoso para cualquier body legítimo de este servidor
+# (el más grande, /scan-source, ya limita su contenido a 500KB).
+MAX_REQUEST_BODY_BYTES = 5_000_000
 
 MAX_PHASE = max(PHASE_TOOLS)
 
@@ -155,7 +164,195 @@ def resolve_tool_path(tool: str) -> str | None:
 STDOUT_REDIRECT_FLAGS = {
     "wapiti": "-o",
     "arjun": "-oJ",
+    "cloud_enum": "-l",
 }
+
+# nuclei con -tags cve corre miles de templates (cada uno con matcher
+# propio, no aumenta falsos positivos, sí tiempo de escaneo) -> comparte
+# el bucket largo con las otras herramientas que ya lo necesitaban.
+EXEC_LONG_TIMEOUT_TOOLS = ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti", "cloud_enum", "nuclei")
+
+
+def exec_timeout_for(tool: str) -> int:
+    return 300 if tool in EXEC_LONG_TIMEOUT_TOOLS else 120
+
+
+# ---------------------------------------------------------------------------
+# HTTP Request Smuggling (CL.TE / TE.CL) — sondas de timing (metodología
+# PortSwigger). curl no puede mandar Content-Length y Transfer-Encoding
+# ambiguos de forma fiable (normaliza/rechaza la combinación) -> conexión
+# TCP cruda, construida a mano. Riesgo mayor que otras sondas: un desync
+# real en un front-end compartido puede afectar peticiones de OTROS
+# usuarios, no solo del que prueba -> vive en Fase 3 (mismo gate humano de
+# avance de fase que wmiexec/secretsdump), nunca en modo agente libre.
+#
+# CL.TE: el front-end confía en Content-Length (4) y solo reenvía "1\r\nA"
+# al backend; el backend confía en Transfer-Encoding: chunked, lee "1"
+# como tamaño de chunk, "A" como su único byte de datos, y se queda
+# esperando el CRLF terminador + el chunk final (0\r\n\r\n) que nunca
+# llega en esta misma petición -> cuelga hasta su propio timeout.
+#
+# TE.CL: el front-end confía en Transfer-Encoding, ve "0\r\n\r\n" (chunk
+# final) y da la petición por terminada ahí; el backend confía en
+# Content-Length (6) y espera 6 bytes exactos de cuerpo. El front-end
+# queda entonces esperando más bytes del cliente para completar lo que
+# interpreta como el inicio de una nueva petición encauzada (el "X"
+# sobrante) -> también se observa como un cuelgue desde este mismo socket.
+#
+# Es solo la sonda de timing inicial: un cuelgue es candidato, no
+# confirmación — hace falta la respuesta diferencial de seguimiento
+# (petición de sondeo tras la sospechosa) para confirmarlo manualmente,
+# igual que otros hallazgos de esta herramienta que requieren ese paso
+# (ver SSTI/CORS: "confirmar manualmente").
+def build_smuggling_probe(kind: str, host: str, path: str) -> bytes:
+    if kind == "clte":
+        body = b"1\r\nA\r\nX"
+        headers = (
+            f"POST {path} HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n"
+            "Content-Length: 4\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n"
+        ).encode()
+        return headers + body
+    if kind == "tecl":
+        body = b"0\r\n\r\nX"
+        headers = (
+            f"POST {path} HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n"
+            f"Content-Length: {len(body)}\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n"
+        ).encode()
+        return headers + body
+    raise ValueError(f"unknown smuggling probe kind: {kind}")
+
+
+def send_raw_probe(host: str, port: int, payload: bytes, timeout: float = 8.0) -> dict:
+    """Manda `payload` crudo por TCP y mide si la respuesta llega antes de
+    `timeout` o si la conexión se queda colgada (candidato a smuggling)."""
+    start = time.monotonic()
+    try:
+        with socket.create_connection((host, port), timeout=timeout) as sock:
+            sock.sendall(payload)
+            sock.settimeout(timeout)
+            try:
+                chunk = sock.recv(4096)
+                elapsed_ms = (time.monotonic() - start) * 1000
+                return {"timed_out": False, "elapsed_ms": elapsed_ms, "response_snippet": chunk[:500]}
+            except (socket.timeout, TimeoutError):
+                elapsed_ms = (time.monotonic() - start) * 1000
+                return {"timed_out": True, "elapsed_ms": elapsed_ms, "response_snippet": b""}
+    except OSError as e:
+        elapsed_ms = (time.monotonic() - start) * 1000
+        return {"timed_out": False, "elapsed_ms": elapsed_ms, "response_snippet": b"", "error": str(e)}
+
+
+# ---------------------------------------------------------------------------
+# bloodhound-python ya corre en Fase 2 y escribe su JSON (mismo formato que
+# consume la UI de BloodHound: {"data": [...], "meta": {...}} por tipo de
+# objeto) a evidence/bloodhound del engagement, pero dark_spear nunca lo
+# parseaba — solo confirmaba que el fichero existía. Las aristas de ACL
+# peligrosas se quedaban enterradas ahí, visibles solo si alguien abría
+# BloodHound UI a mano. Se extraen aquí las mismas que la UI resaltaría:
+# control total/de escritura sobre otro objeto, y Shadow Credentials
+# (AddKeyCredentialLink) — sin necesitar pywhisker/certipy por separado.
+BLOODHOUND_DANGEROUS_RIGHTS = {
+    "GenericAll": "Critical",
+    "AllExtendedRights": "Critical",
+    "AddKeyCredentialLink": "Critical",
+    "Owns": "High",
+    "GenericWrite": "High",
+    "WriteDacl": "High",
+    "WriteOwner": "High",
+    "AddMember": "High",
+    "AddSelf": "High",
+    "ForceChangePassword": "High",
+    "WriteSPN": "High",
+}
+
+
+def collect_bloodhound_aces(evidence_dir: Path, cap: int = 15) -> list:
+    """Lee los *_users/computers/groups/domains/gpos/ous.json que
+    bloodhound-python escribió en evidence_dir y devuelve las aristas de
+    ACL peligrosas ya resueltas (SID -> nombre legible cuando se conoce).
+    DCSync solo se reporta si el MISMO principal tiene GetChanges Y
+    GetChangesAll sobre el mismo objeto dominio (ambos son necesarios).
+    """
+    if not evidence_dir.exists():
+        return []
+
+    sid_to_name: dict = {}
+    sid_to_type: dict = {}
+    objects: list = []
+
+    for f in sorted(evidence_dir.glob("*.json")):
+        try:
+            payload = json.loads(f.read_text())
+        except (OSError, json.JSONDecodeError):
+            continue
+        data = payload.get("data") if isinstance(payload, dict) else None
+        if not isinstance(data, list):
+            continue
+        obj_type = ((payload.get("meta") or {}).get("type") or "").rstrip("s")
+        for obj in data:
+            sid = obj.get("ObjectIdentifier")
+            name = (obj.get("Properties") or {}).get("name")
+            if sid and name:
+                sid_to_name[sid] = name
+                sid_to_type[sid] = obj_type
+            objects.append((sid, name or sid, obj_type, obj.get("Aces") or []))
+
+    def resolve(sid):
+        return sid_to_name.get(sid, sid)
+
+    def resolve_type(sid):
+        return sid_to_type.get(sid, "unknown")
+
+    out = []
+    dcsync_seen: dict = {}
+    for target_sid, target_name, target_type, aces in objects:
+        for ace in aces:
+            if ace.get("IsInherited"):
+                pass  # heredado igual es explotable (BloodHound no lo descarta) -> se conserva
+            right = ace.get("RightName")
+            principal_sid = ace.get("PrincipalSID")
+            if not right or not principal_sid:
+                continue
+            if right in ("GetChanges", "GetChangesAll") and target_type == "domain":
+                key = (principal_sid, target_sid)
+                dcsync_seen.setdefault(key, set()).add(right)
+                continue
+            if right not in BLOODHOUND_DANGEROUS_RIGHTS:
+                continue
+            out.append({
+                "principal": resolve(principal_sid),
+                "principal_type": resolve_type(principal_sid) or ace.get("PrincipalType", "unknown"),
+                "right": right,
+                "target": target_name,
+                "target_type": target_type,
+            })
+
+    for (principal_sid, target_sid), rights in dcsync_seen.items():
+        if {"GetChanges", "GetChangesAll"}.issubset(rights):
+            out.append({
+                "principal": resolve(principal_sid),
+                "principal_type": resolve_type(principal_sid),
+                "right": "DCSync",
+                "target": resolve(target_sid),
+                "target_type": "domain",
+            })
+
+    return out[:cap]
+
+
+def format_bloodhound_ace_lines(aces: list) -> str:
+    return "\n".join(
+        f"DS_ACE|{a['principal']}|{a['principal_type']}|{a['right']}|{a['target']}|{a['target_type']}"
+        for a in aces
+    )
 
 
 def rewrite_stdout_placeholder(args: list, tool: str) -> tuple[list, str | None]:
@@ -252,16 +449,78 @@ def _scope_host(value: str) -> str:
     return host
 
 
+# Servicios externos que el PROPIO playbook determinista ya llama a
+# propósito, fuera del scope del cliente (OSINT pasivo + comprobación de
+# buckets/recursos cloud) — ver rdap/crt.sh/Wayback en playbook.js, y
+# S3/Azure Blob/GCS/cloud_enum en vuln-kb.js. En modo agente LLM (donde el
+# modelo elige args libremente cada turno, superficie real de prompt
+# injection vía contenido de la respuesta escaneada) solo estos hosts +
+# el propio scope están permitidos como destino real de una petición.
+AGENT_EXTERNAL_ALLOWLIST = (
+    "crt.sh", "rdap.org", "web.archive.org", "archive.org", "stat.ripe.net",
+    "storage.googleapis.com", "amazonaws.com", "awsapps.com",
+    "blob.core.windows.net", "file.core.windows.net", "queue.core.windows.net",
+    "table.core.windows.net", "azurewebsites.net", "database.windows.net",
+    "cloudapp.azure.com", "cloudapp.net", "trafficmanager.net",
+    "github.io", "herokuapp.com", "herokudns.com", "myshopify.com",
+    "wpengine.com", "unbouncepages.com", "statuspage.io", "surge.sh",
+    "bitbucket.io", "ghost.io", "helpjuice.com", "helpscoutdocs.com",
+    "readme.io", "zendesk.com", "pantheonsite.io", "webflow.io",
+    "intercom.help",
+)
+# IMDS link-local: mismo IP en AWS/GCP/Azure — probes de SSRF legítimos
+# del playbook (ssrfImdsCurlSteps/ssrfGcpImdsCurlSteps/ssrfAzureImdsCurlSteps).
+IMDS_IP = "169.254.169.254"
+
+_ARG_URL_RE = re.compile(r"https?://([^/\s\"'<>]+)", re.IGNORECASE)
+
+
+def _host_allowed_for_agent(host: str, scope: str) -> bool:
+    h = _scope_host(host)
+    if not h:
+        return False
+    if h == IMDS_IP or h.startswith(IMDS_IP + ":"):
+        return True
+    if _target_in_scope(host, scope):
+        return True
+    return any(h == d or h.endswith("." + d) for d in AGENT_EXTERNAL_ALLOWLIST)
+
+
+def args_hosts_allowed(args: list, scope: str, source: str) -> tuple[bool, str | None]:
+    """True si todo host embebido en args es válido para este `source`.
+
+    source == "agent": cada host debe estar en scope o en la allowlist de
+    servicios OSINT/cloud ya usados por el playbook. Cualquier otro valor
+    (incluido vacío, por compat con llamadas sin el campo) no restringe:
+    es código de confianza (playbook determinista), no una decisión del
+    LLM potencialmente manipulada por contenido del target.
+    """
+    if source != "agent":
+        return True, None
+    for a in args:
+        for m in _ARG_URL_RE.finditer(str(a)):
+            host = m.group(1).split("@")[-1]
+            if not _host_allowed_for_agent(host, scope):
+                return False, _scope_host(host) or host
+    return True, None
+
+
 def _target_in_scope(target: str, scope: str) -> bool:
+    # NUNCA usar substring crudo (t in s / s in t): "acme.com" es substring
+    # de "acme.com.attacker.net" — un dominio de un tercero completo, no un
+    # subdominio real. El scope-lock es el control central del producto;
+    # solo compara hostnames normalizados (o subdominio real bajo el scope).
     t = (target or "").strip()
     s = (scope or "").strip()
     if not t or not s:
         return False
-    if t in s or s in t:
-        return True
     th = _scope_host(t)
     sh = _scope_host(s)
-    return bool(th and sh and th == sh)
+    if not th or not sh:
+        return False
+    if th == sh:
+        return True
+    return th.endswith("." + sh)
 
 
 def _engagement_mismatch(body: dict | None) -> dict | None:
@@ -872,6 +1131,14 @@ def _apply_finding_status_transition(finding: dict, action: str) -> str | None:
 
 _REDACT_KEY_RE = re.compile(r"((?:^|[&?])(?:password|pwd)=)[^&\s]*", re.IGNORECASE)
 _REDACT_FLAG_NAMES = {"-p", "--password", "-pass", "--pass"}
+# Formato de conexión estilo impacket: DOMAIN/USER:PASSWORD[@HOST] — usado
+# por lookupsid.py/samrdump.py/GetUserSPNs.py/findDelegation.py en
+# adAuthCollectionSteps. Redacta TODO tras el ":" (incluido un @host que
+# siga): una contraseña que contenga "@" haría ambiguo dónde empieza el
+# host, y equivocarse ahí filtraría parte de la contraseña real. El host
+# real ya viaja en otros args (-dc-ip, etc.), así que no se pierde nada
+# útil para depurar.
+_REDACT_IMPACKET_CREDS_RE = re.compile(r"^([A-Za-z0-9_.$-]+/[A-Za-z0-9_.$-]+:).*$")
 
 
 def redact_args(args: list) -> list:
@@ -895,6 +1162,10 @@ def redact_args(args: list) -> list:
         if s.lower() in _REDACT_FLAG_NAMES:
             redacted.append(s)
             redact_next = True
+            continue
+        impacket_m = _REDACT_IMPACKET_CREDS_RE.match(s)
+        if impacket_m:
+            redacted.append(f"{impacket_m.group(1)}***REDACTED***")
             continue
         redacted.append(_REDACT_KEY_RE.sub(r"\1***REDACTED***", s))
     return redacted
@@ -1039,6 +1310,13 @@ def _earliest_reset_seconds() -> float:
 
 
 class Handler(BaseHTTPRequestHandler):
+    # Sin esto, un cliente que abre la conexión y nunca termina de mandar
+    # headers/body (slowloris) cuelga el hilo del thread pool indefinido —
+    # StreamRequestHandler.setup() aplica esto vía socket.settimeout()
+    # automáticamente. Bind es solo a 127.0.0.1 (sin atacante remoto), pero
+    # barato de evitar igual (otro proceso local con bug, por ejemplo).
+    timeout = 60
+
     def _apply_cors(self) -> None:
         origin = self.headers.get("Origin", "")
         if origin in CORS_ORIGINS:
@@ -1059,6 +1337,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _read_json(self) -> dict:
         length = int(self.headers.get("Content-Length", 0))
+        if length > MAX_REQUEST_BODY_BYTES:
+            raise ValueError("request_body_too_large")
         raw = self.rfile.read(length) if length else b"{}"
         return json.loads(raw or b"{}")
 
@@ -1066,7 +1346,10 @@ class Handler(BaseHTTPRequestHandler):
         return self.headers.get("Host", "") in ALLOWED_HOSTS
 
     def _auth_ok(self) -> bool:
-        return self.headers.get("X-Auditor-Token", "") == AUTH_TOKEN
+        # compare_digest en vez de == : bajo impacto real (127.0.0.1 solo,
+        # sin atacante remoto con ruta de red), pero comparación de token
+        # de auth no debería depender de eso — hardening barato.
+        return hmac.compare_digest(self.headers.get("X-Auditor-Token", ""), AUTH_TOKEN)
 
     def do_GET(self) -> None:
         if not self._host_ok():
@@ -1114,6 +1397,12 @@ class Handler(BaseHTTPRequestHandler):
             self._handle_post()
         except json.JSONDecodeError:
             self._send_json(400, {"error": "invalid_json"})
+        except ValueError as e:
+            if str(e) == "request_body_too_large":
+                self._send_json(413, {"error": "request_body_too_large"})
+                return
+            audit_log({"event": "handler_error", "path": self.path, "error": str(e)})
+            self._send_json(500, {"error": "internal_error", "detail": str(e)})
         except Exception as e:
             audit_log({"event": "handler_error", "path": self.path, "error": str(e)})
             self._send_json(500, {"error": "internal_error", "detail": str(e)})
@@ -1211,6 +1500,7 @@ class Handler(BaseHTTPRequestHandler):
             tool = body.get("tool", "")
             args = body.get("args", [])
             target = body.get("target", "")
+            source = body.get("source", "")
             mismatch = _engagement_mismatch(body)
             if mismatch:
                 audit_log({
@@ -1240,6 +1530,43 @@ class Handler(BaseHTTPRequestHandler):
                 self._send_json(403, {"error": "scope_violation", "verdict": "scope_violation"})
                 return
 
+            # El campo `target` es metadata fija que el LLM no puede pisar,
+            # pero en modo agente `args` lo construye el modelo libremente
+            # cada turno — contenido de la respuesta escaneada puede
+            # intentar manipularlo (prompt injection) para exfiltrar datos
+            # a un host ajeno mientras `target` sigue pareciendo legítimo.
+            args_ok, bad_host = args_hosts_allowed(args, scope, source)
+            if not args_ok:
+                audit_log({"event": "scope_violation_in_args", "tool": tool,
+                           "target": target, "scope": scope, "bad_host": bad_host})
+                self._send_json(403, {"error": "scope_violation", "verdict": "scope_violation",
+                                       "detail": f"args reference out-of-scope host: {bad_host}"})
+                return
+
+            # Pseudo-herramienta sin binario: conexión TCP cruda propia del
+            # bridge (curl no puede mandar Content-Length/Transfer-Encoding
+            # ambiguos de forma fiable). args = [kind, host, port, path].
+            if tool == "http-smuggle-probe":
+                kind, host_arg, port_arg, path_arg = (list(args) + ["", "", "80", "/"])[:4]
+                try:
+                    port_n = int(port_arg)
+                except (TypeError, ValueError):
+                    port_n = 80
+                payload = build_smuggling_probe(kind, host_arg, path_arg or "/")
+                probe = send_raw_probe(host_arg, port_n, payload)
+                result = {
+                    "stdout": json.dumps({
+                        "kind": kind, "timed_out": probe["timed_out"],
+                        "elapsed_ms": round(probe["elapsed_ms"], 1),
+                        "error": probe.get("error"),
+                    }),
+                    "stderr": "", "exit_code": 0, "verdict": "ok",
+                }
+                audit_log({"event": "exec", "tool": tool, "args": [kind, host_arg, str(port_n), path_arg],
+                           "target": target, "exit_code": 0, "verdict": "ok"})
+                self._send_json(200, result)
+                return
+
             # Resolve to the actual binary PATH would pick before running it,
             # so the audit log records exactly what executed (not just the
             # whitelisted name) — closes the gap between "name we approved"
@@ -1257,7 +1584,7 @@ class Handler(BaseHTTPRequestHandler):
 
             exec_args, stdout_tmp_path = rewrite_stdout_placeholder([str(a) for a in args], tool)
             cmd = [resolved] + exec_args
-            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti") else 120
+            timeout_s = exec_timeout_for(tool)
             run_cwd = None
             if tool == "bloodhound-python" and CURRENT_ENGAGEMENT_DIR is not None:
                 # JSON/zip del ingestor → evidence del engagement (no cwd del bridge).
@@ -1310,6 +1637,15 @@ class Handler(BaseHTTPRequestHandler):
                 file_content = _truncate_output(read_and_cleanup_tempfile(stdout_tmp_path))
                 if file_content:
                     result["stdout"] = f"{result['stdout']}\n{file_content}".strip() if result.get("stdout") else file_content
+            if tool == "bloodhound-python" and run_cwd:
+                # El JSON útil (aristas de ACL) vive en ficheros, no en
+                # stdout: se anexa aquí como texto sintético para que el
+                # motor JS lo consuma con el mismo pipeline probeIdx/regex
+                # que el resto de herramientas.
+                aces = collect_bloodhound_aces(Path(run_cwd))
+                ace_lines = format_bloodhound_ace_lines(aces)
+                if ace_lines:
+                    result["stdout"] = f"{result['stdout']}\n{ace_lines}".strip() if result.get("stdout") else ace_lines
             audit_log({"event": "exec", "tool": tool, "resolved_path": resolved,
                        "args": redact_args(args), "target": target,
                        "cwd": run_cwd,
@@ -1811,19 +2147,25 @@ class Handler(BaseHTTPRequestHandler):
 
         if self.path == "/findings/review":
             body = self._read_json()
-            mismatch = _engagement_mismatch(body)
             finding_id = body.get("finding_id", "")
             action = body.get("action", "")
+            req = str(body.get("engagement_dir") or "").strip()
             disk_dir = None
             findings_ref = FINDINGS
             evidence_root = CURRENT_ENGAGEMENT_DIR
-            if mismatch:
-                disk_dir = _engagement_dir_safe(str(body.get("engagement_dir") or ""))
-                if disk_dir is None:
-                    self._send_json(409, mismatch)
-                    return
-                findings_ref = _load_findings_from_dir(disk_dir)
-                evidence_root = disk_dir
+            active = CURRENT_ENGAGEMENT_DIR.name if CURRENT_ENGAGEMENT_DIR is not None else ""
+            if req:
+                if CURRENT_ENGAGEMENT_DIR is not None and req == active:
+                    findings_ref = FINDINGS
+                    evidence_root = CURRENT_ENGAGEMENT_DIR
+                    disk_dir = None
+                else:
+                    disk_dir = _engagement_dir_safe(req)
+                    if disk_dir is None:
+                        self._send_json(404, {"error": "engagement_not_found"})
+                        return
+                    findings_ref = _load_findings_from_dir(disk_dir)
+                    evidence_root = disk_dir
             elif CURRENT_SCOPE is None:
                 self._send_json(400, {"error": "no_active_engagement"})
                 return

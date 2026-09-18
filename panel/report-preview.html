@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dark Spear — PDF Report Review</title>
+<title>Dark Spear — Vista previa del informe</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
 <script src="vendor/lucide.min.js"></script>
@@ -142,6 +142,14 @@
         .pdf-doc th { background: #f1f4f8; font-weight: 600; color: #404752; }
         .pdf-doc code { font-family: "JetBrains Mono", monospace; font-size: 10px; background: #f1f4f8; padding: 1px 4px; border-radius: 3px; }
         .pdf-doc pre { font-family: "JetBrains Mono", monospace; font-size: 10px; line-height: 1.45; background: #2d3134; color: #eef1f5; padding: 12px; border-radius: 6px; overflow-x: auto; }
+        .rpt-term { background: #0d1117; border-radius: 8px; overflow: hidden; border: 1px solid rgba(0,0,0,0.25); }
+        .rpt-term-bar { display: flex; gap: 6px; padding: 8px 12px 0; }
+        .rpt-term-bar span { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .rpt-term-bar span:nth-child(1) { background: #ff5f57; }
+        .rpt-term-bar span:nth-child(2) { background: #febc2e; }
+        .rpt-term-bar span:nth-child(3) { background: #28c840; }
+        .rpt-ev { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 11px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; background: transparent; color: #d4d4d4; border: 0; border-radius: 0; padding: 10px 12px 12px; margin: 0; }
+        .rpt-sev-band { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         .report-finding-card + .report-finding-card { margin-top: 28px; padding-top: 28px; border-top: 1px solid #e0e3e7; }
         .pdf-doc .report-finding-card { font-size: 14px; line-height: 1.5; color: #181c1f; }
         .pdf-doc .report-finding-card .glass-panel {
@@ -162,9 +170,89 @@
             font-size: 32px !important;
             line-height: 40px !important;
         }
+        .rpt-finding-top { display: block; }
+        .rpt-kpi-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; }
+        @media (max-width: 720px) { .rpt-kpi-row { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .rpt-kpi { text-align: center; border: 1px solid #e0e3e7; border-top-width: 3px; border-radius: 6px; padding: 12px 6px 10px; background: #fff; }
+        .rpt-kpi .n { font-size: 28px; font-weight: 700; line-height: 1.1; margin: 0; }
+        .rpt-kpi .l { font-size: 10px; letter-spacing: 0.08em; font-weight: 700; text-transform: uppercase; color: #717783; margin: 4px 0 0; }
+        .rpt-kpi-crit { border-top-color: #ba1a1a; } .rpt-kpi-crit .n { color: #ba1a1a; }
+        .rpt-kpi-high { border-top-color: #c25400; } .rpt-kpi-high .n { color: #c25400; }
+        .rpt-kpi-med { border-top-color: #b8860b; } .rpt-kpi-med .n { color: #795f00; }
+        .rpt-kpi-low { border-top-color: #0078d4; } .rpt-kpi-low .n { color: #005faa; }
+        .rpt-kpi-info { border-top-color: #717783; } .rpt-kpi-info .n { color: #505f79; }
+        .rpt-inv-wrap { border: 1px solid #e0e3e7; border-radius: 8px; overflow: hidden; }
+        .rpt-inv { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .rpt-inv th { text-align: left; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #717783; padding: 8px 12px; border-bottom: 1px solid #e0e3e7; background: #f7fafe; font-weight: 700; }
+        .rpt-inv td { padding: 8px 12px; border-bottom: 1px solid #eef1f5; vertical-align: top; }
+        .rpt-legend { margin-top: 20px; border: 1px solid #e0e3e7; border-radius: 8px; padding: 16px; background: #fff; }
+        .rpt-glossary { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .rpt-glossary th, .rpt-glossary td { text-align: left; padding: 8px 10px; border: 1px solid #e0e3e7; vertical-align: top; }
+        .rpt-glossary th { background: #f7fafe; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: #717783; }
+        .rpt-sev-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin-top: 12px; }
+        .rpt-leg-pill { display: inline-flex; align-items: center; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; border: 1px solid currentColor; }
+        .rpt-leg-crit { color: #ba1a1a; background: #ffdad6; border-color: #ba1a1a; }
+        .rpt-leg-high { color: #c25400; background: #ffefe5; border-color: #c25400; }
+        .rpt-leg-med { color: #795f00; background: #fff4ce; border-color: #b8860b; }
+        .rpt-leg-low { color: #005faa; background: #d3e3ff; border-color: #005faa; }
+        .rpt-leg-info { color: #505f79; background: #ebeef2; border-color: #717783; }
+        .rpt-alert { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 16px; }
+        .rpt-pattern { margin: 16px 0 0; }
+        .rpt-pass { border: 1px solid #cfe9dc; border-top: 3px solid #0a8575; border-radius: 8px; padding: 16px; margin: 0 0 12px; background: #fff; }
+        .rpt-pass-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; color: #0a8575; background: #d1f5ea; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px; }
+        .rpt-impact { background: #fef2f2; border-left: 4px solid #ba1a1a; padding: 12px 14px; border-radius: 0 6px 6px 0; margin: 12px 0; }
+        .rpt-fix { background: #ecfdf5; border-left: 4px solid #0a8575; padding: 12px 14px; border-radius: 0 6px 6px 0; margin: 12px 0; }
+        .rpt-cvss-line { font-size: 13px; color: #404752; margin: 0 0 12px; line-height: 1.45; }
+        .rpt-meth { background: #f7fafe; border: 1px solid #e0e3e7; border-radius: 8px; padding: 14px 16px; margin: 0 0 12px; }
+        .rpt-gov-card { border: 1px solid #e0e3e7; border-top: 3px solid #c25400; border-radius: 8px; padding: 16px; margin: 0 0 16px; background: #fff; }
+        .rpt-gov-card.sev-critical { border-top-color: #ba1a1a; }
+        .rpt-gov-card.sev-high { border-top-color: #c25400; }
+        .rpt-gov-card.sev-medium { border-top-color: #b8860b; }
+        .rpt-gov-card.sev-low { border-top-color: #0078d4; }
+        .rpt-gov-meta { width: 100%; border-collapse: collapse; font-size: 13px; margin: 10px 0 14px; }
+        .rpt-gov-meta th, .rpt-gov-meta td { text-align: left; padding: 8px 10px; border: 1px solid #e0e3e7; vertical-align: top; }
+        .rpt-gov-meta th { width: 28%; background: #f7fafe; color: #404752; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; }
+        .rpt-plan3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+        @media (max-width: 720px) { .rpt-plan3 { grid-template-columns: 1fr; } }
+        .rpt-plan3 article { border: 1px solid #e0e3e7; border-radius: 6px; padding: 10px 12px; background: #f7fafe; }
+        .rpt-sanction { background: #fff7ed; border-left: 3px solid #c25400; padding: 8px 12px; margin: 12px 0; font-size: 12px; }
+        .rpt-gov-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 0 0 16px; }
+        .rpt-gov-table th, .rpt-gov-table td { border: 1px solid #e0e3e7; padding: 8px 10px; text-align: left; vertical-align: top; }
+        .rpt-gov-table th { background: #f7fafe; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #404752; }
+        .rpt-gdpr-dash { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(260px, 0.9fr); gap: 16px; align-items: start; }
+        @media (max-width: 900px) { .rpt-gdpr-dash { grid-template-columns: 1fr; } }
+        .rpt-gdpr-dash-main, .rpt-gdpr-dash-side { display: flex; flex-direction: column; gap: 16px; }
+        .rpt-gdpr-art-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 720px) { .rpt-gdpr-art-grid { grid-template-columns: 1fr; } }
+        .rpt-sanction-panel { background: linear-gradient(180deg, #ffffff 0%, #fff5f4 100%); }
+        .rpt-heat-wrap { display: grid; grid-template-columns: 28px 1fr; grid-template-rows: 1fr 22px; gap: 6px 8px; width: 100%; max-width: 320px; margin: 0 auto; }
+        .rpt-heat-ylab { grid-row: 1; grid-column: 1; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #717783; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .rpt-heatmap { grid-row: 1; grid-column: 2; display: flex; flex-direction: column; gap: 4px; border-left: 2px solid #c0c7d4; border-bottom: 2px solid #c0c7d4; padding: 4px 4px 8px 8px; min-height: 240px; }
+        .rpt-heat-xlab { grid-row: 2; grid-column: 2; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #717783; font-weight: 700; text-align: center; }
+        .rpt-heat-row { display: flex; flex: 1; gap: 4px; min-height: 72px; }
+        .rpt-heat-cell { flex: 1; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 72px; }
+        .rpt-heat-lab { font-size: 12px; font-weight: 700; color: #93000a; }
+        .rpt-heat-n { font-size: 13px; font-weight: 600; color: #404752; }
+        .rpt-heat-hot { box-shadow: inset 0 0 0 2px #ba1a1a; }
+        .rpt-impact-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 16px; }
+        @media (max-width: 720px) { .rpt-impact-cols { grid-template-columns: 1fr; } }
+        .rpt-impact-col { border-left: 3px solid #0078d4; padding: 12px 14px; background: #f7fafe; border-radius: 0 8px 8px 0; }
+        .rpt-impact-col-fix { border-left-color: #0a8575; background: #f3fbf8; }
+        .rpt-kc-step { border: 1px solid #e0e3e7; border-left: 3px solid #005faa; border-radius: 8px; padding: 14px 16px; margin: 0 0 12px; background: #fff; }
+        .rpt-kc-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0 0 16px; }
+        @media (max-width: 720px) { .rpt-kc-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        .rpt-kc-kpis .rpt-kpi { border-top-color: #005faa; }
+        .rpt-kc-kpis .rpt-kpi .n { color: #005faa; }
+        .rpt-premise { background: #eef5ff; border: 1px solid #cfe0f5; border-radius: 8px; padding: 14px 16px; margin: 0 0 16px; }
+        .rpt-result { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px 16px; margin: 16px 0; }
+        .rpt-mitre-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+        @media (max-width: 720px) { .rpt-mitre-grid { grid-template-columns: 1fr; } }
+        .rpt-mitre-cell { border: 1px solid #e0e3e7; border-radius: 6px; padding: 10px 12px; background: #fff; }
         @media print {
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           .report-finding-card + .report-finding-card { break-before: page; border-top: 0; }
+          .rpt-finding-top { display: block !important; }
+          .pdf-doc .report-finding-card { font-size: 12.5px; line-height: 1.4; }
         }
         .pdf-badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; }
         .pdf-badge.crit { background: rgba(186,26,26,0.12); color: #ba1a1a; }
@@ -333,7 +421,7 @@
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
 <a class="hover:text-primary" href="comprehensive-report.html" data-i18n="comp.title">Informe integral</a>
 <i data-lucide="chevron-right" class="icon-sm text-outline"></i>
-<span class="font-semibold text-primary" data-i18n="preview.title">Vista previa PDF</span>
+<span class="font-semibold text-primary" data-i18n="preview.title">Vista previa del informe</span>
 </nav>
 <h2 class="font-headline-md text-headline-md text-on-surface" data-i18n="preview.config">Configuración del informe</h2>
 <p class="font-body-sm text-body-sm text-on-surface-variant mt-xs" data-i18n="preview.configLead">Índice del informe profesional. Activa o oculta bloques en la vista previa.</p>
@@ -381,9 +469,9 @@
 <p class="font-label-md text-label-md text-on-surface-variant uppercase mb-sm" data-i18n="preview.format">Formato</p>
 <div class="relative">
 <select class="w-full appearance-none bg-surface-container-lowest border border-outline-variant/50 rounded-lg px-md py-sm pr-xl font-body-sm text-body-sm focus:outline-none focus:border-b-2 focus:border-b-[#0078D4]" id="fmt">
-<option>PDF - Professional</option>
 <option>HTML - Interactive</option>
 <option>JSON - Machine readable</option>
+<option>PDF - Professional</option>
 </select>
 <i data-lucide="chevron-down" class="icon-sm absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none"></i>
 </div>
@@ -395,7 +483,7 @@
 <div class="max-w-container-max mx-auto flex flex-col gap-lg">
 <section id="preview-list-view" class="flex flex-col gap-md">
 <div>
-<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="preview.title">Vista previa PDF</h2>
+<h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="preview.title">Vista previa del informe</h2>
 <p class="font-body-md text-on-surface-variant mt-xs" data-i18n="preview.listLead">Elige un análisis para configurar y previsualizar el informe exportable.</p>
 </div>
 <div class="relative w-full max-w-md">

@@ -17,7 +17,10 @@ import {
   sqliLoginProbeSteps,
   nosqliLoginProbeSteps,
   xssReflectionCurlSteps,
+  sstiReflectionCurlSteps,
+  graphqlIntrospectionCurlSteps,
   openRedirectCurlSteps,
+  xxeCurlSteps,
   idorCurlSteps,
   hydraDefCredsSteps,
   JWT_TOKEN_RE,
@@ -31,6 +34,10 @@ import {
   azureBlobCheckStep,
   gcsBucketCheckStep,
   ssrfImdsCurlSteps,
+  ssrfGcpImdsCurlSteps,
+  ssrfAzureImdsCurlSteps,
+  cloudEnumKeyword,
+  cloudEnumArgs,
   perimeterNmapArgs,
   ipRdapCheckStep,
   idpDiscoveryCurlSteps,
@@ -45,6 +52,7 @@ import {
   nucleiTagsForContext,
   nucleiCurlArgs,
   sqlmapCurlArgs,
+  sqlmapArjunArgs,
   subfinderArgs,
   extractSubfinderHosts,
   httpxArgsForHosts,
@@ -59,6 +67,8 @@ import {
   adCollectionSteps,
   adAuthCollectionSteps,
   adWinrmCheckSteps,
+  adFirewallCheckSteps,
+  smugglingProbeSteps,
   detectDomainController,
   extractAdDomain,
   extractAdUsersFromBlob,
@@ -339,6 +349,14 @@ function domainOsintSteps(root, host) {
     step("p1-osint-subfinder", "subfinder", subfinderArgs(root), null, {
       desc: "Enumeración pasiva de subdominios (subfinder, sin tocar el target)",
     }),
+    // cloud_enum: permutación de nombre contra AWS/Azure/GCP (buckets,
+    // storage accounts, apps) — activa pero no toca el target, solo
+    // namespaces públicos de los proveedores cloud. Se salta sin dominio
+    // real (IP) y en DVWA (skipHeavy, mismo criterio que nikto/wapiti).
+    step("p1-cloud-enum", "cloud_enum", cloudEnumArgs(cloudEnumKeyword(root)), null, {
+      desc: `cloud_enum: permutación de "${cloudEnumKeyword(root)}" contra AWS/Azure/GCP`,
+      skipIf: (c) => c.isIpTarget || isIpHost(root) || c.isDvwa,
+    }),
     step("p1-osint-dnsrecon", "dnsrecon", dnsreconArgs(root), null, {
       desc: "Enumeración DNS estándar (SOA/NS/MX/A + intento de transferencia de zona)",
     }),
@@ -485,7 +503,19 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
+    ...sstiReflectionCurlSteps(step, "p1-ssti", baseUrl, "12").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...graphqlIntrospectionCurlSteps(step, "p1-graphql", baseUrl, "12").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
     ...openRedirectCurlSteps(step, "p1-redirect", baseUrl, "12").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...xxeCurlSteps(step, "p1-xxe", baseUrl, "12").map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
@@ -498,6 +528,14 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
       skipIf: (c) => !c.hasWebStack,
     })),
     ...ssrfImdsCurlSteps(step, "p1-ssrf-imds", baseUrl, "10").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...ssrfGcpImdsCurlSteps(step, "p1-ssrf-gcp", baseUrl, "10").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
+    ...ssrfAzureImdsCurlSteps(step, "p1-ssrf-azure", baseUrl, "10").map((s) => ({
       ...s,
       skipIf: (c) => !c.hasWebStack,
     })),
@@ -835,6 +873,16 @@ function phase3Steps(baseUrl, host, cookie, ctx) {
       desc: "sqlmap --forms --crawl (descubrimiento + explotación de inyección SQL)",
       skipIf: (c) => !c.hasWebStack,
     }),
+    // sqlmap sobre el 1er (url, param) real que arjun descubrió en Fase 2
+    // (ctx.arjunParams persiste entre fases) — mismo criterio que
+    // p2-dalfox-1, pero en Fase 3 porque sqlmap es explotación con gate
+    // humano de fase, no enumeración.
+    step("p3-sqlmap-arjun-1", "sqlmap", (c) => (c.arjunParams?.[0]
+      ? sqlmapArjunArgs(c.arjunParams[0].url, c.arjunParams[0].params)
+      : null), null, {
+      desc: "sqlmap: SQLi sobre el 1er param descubierto por arjun",
+      skipIf: (c) => !c.arjunParams?.[0],
+    }),
     step("p3-curl-config-bak", "curl", ["-s", "-L", "--max-time", "15", "-H", "X-DS-Playbook: p3-curl-config-bak", baseUrl + "/config/config.inc.php.bak"], null, {
       desc: "Contenido de config.inc.php.bak",
       skipIf: (c) => !c.hasWebStack && !c.isDvwa,
@@ -852,6 +900,11 @@ function phase3Steps(baseUrl, host, cookie, ctx) {
       desc: "setup.php autenticado ( fuga de config )",
     }),
     ...adWinrmCheckSteps(step, host),
+    ...adFirewallCheckSteps(step, host),
+    ...smugglingProbeSteps(step, "p3-smuggle", baseUrl, "8").map((s) => ({
+      ...s,
+      skipIf: (c) => !c.hasWebStack,
+    })),
   ];
   return steps;
 }

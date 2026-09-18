@@ -65,6 +65,15 @@
         .glass-panel { background-color: #ffffff; border: 1px solid #D8E3F0; }
         .heatmap-cell { transition: transform 0.2s ease, box-shadow 0.2s ease; }
         .heatmap-cell:hover { transform: scale(1.02); z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        .rpt-heat-wrap { display: grid; grid-template-columns: 28px 1fr; grid-template-rows: 1fr 22px; gap: 6px 8px; width: 100%; max-width: 320px; margin: 0 auto; }
+        .rpt-heat-ylab { grid-row: 1; grid-column: 1; writing-mode: vertical-rl; transform: rotate(180deg); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #717783; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .rpt-heatmap { grid-row: 1; grid-column: 2; display: flex; flex-direction: column; gap: 4px; border-left: 2px solid #c0c7d4; border-bottom: 2px solid #c0c7d4; padding: 4px 4px 8px 8px; min-height: 240px; }
+        .rpt-heat-xlab { grid-row: 2; grid-column: 2; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #717783; font-weight: 700; text-align: center; }
+        .rpt-heat-row { display: flex; flex: 1; gap: 4px; min-height: 72px; }
+        .rpt-heat-cell { flex: 1; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 72px; }
+        .rpt-heat-lab { font-size: 12px; font-weight: 700; color: #93000a; }
+        .rpt-heat-n { font-size: 13px; font-weight: 600; color: #404752; }
+        .rpt-heat-hot { box-shadow: inset 0 0 0 2px #ba1a1a; }
         .chap-nav { background: #ebeef2; border: 1px solid rgba(192,199,212,0.55); border-radius: 10px; padding: 4px; }
         .chap-nav a { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #181c1f; }
         .chap-nav a.active { background: #0078d4; color: #ffffff; box-shadow: 0 1px 3px rgba(27,42,65,0.12); }
@@ -224,7 +233,7 @@
 </section>
 <section class="glass-panel rounded-xl p-lg flex-1">
 <h3 class="font-headline-md text-headline-md mb-md" data-i18n="gdpr.matrixTitle">Matriz de riesgos</h3>
-<div id="gdpr-risk-matrix" class="relative w-full aspect-square border-l-2 border-b-2 border-outline-variant/50 p-1 flex flex-col gap-1"></div>
+<div id="gdpr-risk-matrix" class="rpt-heat-wrap"></div>
 </section>
 </div>
 </div>

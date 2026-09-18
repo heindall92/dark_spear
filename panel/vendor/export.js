@@ -82,9 +82,24 @@
     });
   }
 
+  function readParty() {
+    if (window.DarkSpearParty && typeof DarkSpearParty.read === "function") {
+      return DarkSpearParty.read();
+    }
+    return { operator: "", role: "", email: "", org: "", orgEmail: "", classification: "", tz: "" };
+  }
+
+  function classLabel(code) {
+    if (code === "internal") return t("settings.classInternal", "Uso interno");
+    if (code === "restricted") return t("settings.classRestricted", "Restringido");
+    if (code === "confidential") return t("comp.confidential", "CONFIDENCIAL");
+    return "—";
+  }
+
   function buildPayload(extra) {
     var run = loadRun();
     var findings = normalizeFindings(extra && extra.findings ? extra.findings : loadFindings());
+    var party = readParty();
     var payload = {
       product: "Dark Spear",
       engagement: (run && run.target) || (extra && extra.target) || "—",
@@ -92,6 +107,12 @@
       model: (run && run.model) || (extra && extra.model) || "",
       endpoint: (run && run.endpoint) || "",
       generated: new Date().toISOString(),
+      organization: party.org || "",
+      organization_email: party.orgEmail || "",
+      auditor: party.operator || "",
+      auditor_role: party.role || "",
+      auditor_email: party.email || "",
+      classification: party.classification || "",
       findings: findings,
       summary: summarize(findings),
     };
@@ -179,7 +200,11 @@
       "body.ds-printing #comp-stats{display:none!important}" +
       "body.ds-printing .ds-print-target{box-shadow:none!important;border:none!important;max-width:none!important;min-height:0!important;margin:0 auto!important;background:#fff!important}" +
       "body.ds-printing .glass-panel{background:#fff!important;border:1px solid #D8E3F0!important}" +
-      "body.ds-printing .report-finding-card+ .report-finding-card{break-before:page;border-top:0}" +
+      "body.ds-printing .report-finding-card{break-before:page!important;page-break-before:always!important;break-inside:auto!important;margin-top:0!important}" +
+      "body.ds-printing #sec-04{break-before:page!important;page-break-before:always!important}" +
+      "body.ds-printing .rpt-ev{max-height:none!important;overflow:visible!important}" +
+      "body.ds-printing .rpt-finding-top{display:block!important}" +
+      "body.ds-printing .rpt-print-hide{display:none!important}" +
       "body.ds-printing .hidden-section{display:none!important}" +
       "}";
     document.head.appendChild(style);
@@ -218,7 +243,11 @@
       "\" lang=\"" + escHtml(document.documentElement.lang || "es") + "\"><head><meta charset=\"utf-8\"/>" +
       "<title>Dark Spear — Informe</title>" + collectHeadAssets() +
       "<style>@page{size:A4;margin:12mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}" +
-      "body{margin:0;background:#fff}.paper-shadow{box-shadow:none!important}</style></head>" +
+      "body{margin:0;background:#fff}.paper-shadow{box-shadow:none!important}" +
+      ".report-finding-card{break-before:page;page-break-before:always}" +
+      ".rpt-ev{max-height:none!important;overflow:visible!important}.rpt-print-hide{display:none!important}" +
+      ".rpt-finding-top{display:block!important}" +
+      ".rpt-finding-grid{display:block!important}</style></head>" +
       "<body class=\"bg-white text-on-surface\">" + clone.outerHTML + "</body></html>";
   }
 
@@ -361,13 +390,23 @@
     function kpi(label, n, cls) {
       return '<div class="ds-kpi ' + cls + '"><div>' + escHtml(label) + "</div><strong>" + n + "</strong></div>";
     }
+    var org = payload.organization || "—";
+    var auditor = [payload.auditor, payload.auditor_role].filter(Boolean).join(" · ") || "—";
     return '<header class="glass-panel rounded-xl p-lg mb-md">' +
       '<p class="font-label-md text-secondary">Dark Spear</p>' +
-      '<h1 class="font-headline-xl text-headline-xl text-on-surface">' +
+      '<p class="font-body-md text-on-surface">' + escHtml(org) + "</p>" +
+      (payload.organization_email ? '<p class="font-mono-md text-[11px] text-on-surface-variant">' + escHtml(payload.organization_email) + "</p>" : "") +
+      '<h1 class="font-headline-xl text-headline-xl text-on-surface mt-sm">' +
       escHtml(t("export.reportTitle", "Informe de hallazgos")) + "</h1>" +
       '<p class="font-body-md text-on-surface-variant mt-sm">' +
       escHtml(payload.engagement) + " · " + escHtml(payload.scope) + "</p>" +
-      '<p class="font-body-sm text-on-surface-variant">' + escHtml(payload.generated) + "</p>" +
+      '<p class="font-body-sm text-on-surface-variant">' +
+      escHtml(t("comp.coverTeam", "Equipo auditor")) + ": " + escHtml(auditor) +
+      (payload.auditor_email ? " · " + escHtml(payload.auditor_email) : "") +
+      "</p>" +
+      '<p class="font-body-sm text-on-surface-variant">' +
+      escHtml(t("comp.coverClass", "Clasificación")) + ": " + escHtml(classLabel(payload.classification)) +
+      " · " + escHtml(payload.generated) + "</p>" +
       '<div class="ds-kpis">' +
       kpi("Total", payload.summary.total, "") +
       kpi("Critical", sev.Critical, "crit") +
@@ -488,6 +527,10 @@
       "</style></head><body>" +
       "<h1>Dark Spear — Informe de hallazgos</h1>" +
       "<div class=\"meta\">" +
+      "<div><strong>Organización:</strong> " + escHtml(payload.organization || "—") + "</div>" +
+      "<div><strong>Auditor:</strong> " + escHtml(payload.auditor || "—") +
+      (payload.auditor_role ? " · " + escHtml(payload.auditor_role) : "") + "</div>" +
+      "<div><strong>Clasificación:</strong> " + escHtml(classLabel(payload.classification)) + "</div>" +
       "<div><strong>Engagement:</strong> " + escHtml(payload.engagement) + "</div>" +
       "<div><strong>Scope:</strong> " + escHtml(payload.scope) + "</div>" +
       "<div><strong>Generado:</strong> " + escHtml(payload.generated) + "</div>" +
@@ -675,6 +718,7 @@
 
   document.addEventListener("DOMContentLoaded", function () {
     bindChrome();
+    applyOperatorChrome();
     var fmtBtn = document.getElementById("btn-generate-fmt");
     var fmt = document.getElementById("fmt");
     if (fmtBtn && fmt && !document.getElementById("preview-paper")) {
@@ -682,18 +726,38 @@
         e.preventDefault();
         var v = (fmt.value || "").toLowerCase();
         if (v.indexOf("json") !== -1) run("json");
-        else if (v.indexOf("html") !== -1) run("html");
-        else run("pdf");
+        else if (v.indexOf("pdf") !== -1) run("pdf");
+        else run("html");
       });
     }
     var btnExport = document.getElementById("btn-export");
     if (btnExport && !btnExport.getAttribute("data-export")) {
-      btnExport.setAttribute("data-export", "pdf");
+      btnExport.setAttribute("data-export", "html");
     }
   });
 
+  function applyOperatorChrome() {
+    var party = readParty();
+    var first = String(party.operator || "").trim();
+    var initials = first
+      ? first.split(/\s+/).map(function (w) { return w[0]; }).join("").slice(0, 2).toUpperCase()
+      : "DS";
+    document.querySelectorAll("header .cursor-pointer").forEach(function (wrap) {
+      if (wrap.closest("a")) return;
+      if (party.avatar) {
+        wrap.innerHTML = '<img alt="" class="w-full h-full object-cover" src="' + String(party.avatar).replace(/"/g, "") + '"/>';
+        return;
+      }
+      var label = wrap.querySelector(".font-label-md");
+      if (label) label.textContent = initials;
+    });
+  }
+
   window.DarkSpearExport = {
     run: run,
+    toast: toast,
+    applyOperatorChrome: applyOperatorChrome,
+    readParty: readParty,
     json: exportJSON,
     csv: exportCSV,
     html: exportHTML,

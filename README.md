@@ -35,18 +35,31 @@ El historial de diseño técnico del motor (spec + plan de implementación por p
 
 Sin escribir un prompt ni gastar un token, contra cualquier stack (PHP clásico, Node/Express, SPA/REST, APIs JSON):
 
-- **Inyección** — SQLi y NoSQLi en login (operadores Mongo `$gt`), XSS reflejado con marcador único, open redirect, IDOR genérico contra recursos REST por ID numérico. `wapiti` corre como scanner activo (XSS/SQLi/CSRF/exec/traversal/upload/redirect/backup); `arjun` descubre parámetros GET ocultos no visibles en el HTML/JS ya crawleado y los encadena a `dalfox`, que confirma XSS real (reflejado o disparado y verificado) sobre esos parámetros — no adivinados.
+- **Inyección** — SQLi y NoSQLi en login (operadores Mongo `$gt`), XSS reflejado con marcador único, SSTI genérico (un solo payload cubre Jinja2/Twig/Freemarker/ERB/Razor/Pug, confirma solo si el motor EVALUÓ la expresión), XXE (entidad externa contra rutas típicas XML/SOAP, confirma solo con lectura real de `/etc/passwd`), open redirect, IDOR genérico contra recursos REST por ID numérico. `wapiti` corre como scanner activo (XSS/SQLi/CSRF/exec/traversal/upload/redirect/backup); `arjun` descubre parámetros GET ocultos no visibles en el HTML/JS ya crawleado y los encadena a `sqlmap`/`dalfox`, que confirman SQLi/XSS real sobre esos parámetros — no adivinados. `nuclei` corre con tags curados (`exposure,misconfig,default-login,cve`) — el tag `cve` suma miles de plantillas de CVEs conocidas, cada una con matcher propio (no aumenta falsos positivos).
 - **Autenticación y sesión** — credenciales por defecto vía `hydra` (diccionarios curados 17×25, corta al primer hit), cookies sin `Secure`/`HttpOnly`/`SameSite`, cabeceras de seguridad ausentes (HSTS, `X-Content-Type-Options`, anti-clickjacking, CSP).
 - **JWT** — crackeo offline de secretos HS256 débiles (SHA-256/HMAC-SHA256 en JS puro, diccionario curado, sin red) y bypass `alg=none` reforjando el token capturado contra endpoints protegidos.
-- **Reconocimiento activo** — sigue de verdad los hallazgos de `gobuster`/`ffuf` (no una lista fija de adivinanzas) y las rutas `Disallow` de `robots.txt`; huella de tecnología (`whatweb`), CORS mal configurado, método `TRACE` habilitado. Crawling activo con `katana` (links + parseo de JS) inventaría endpoints que un SPA solo genera al renderizar. Nikto/gobuster/ffuf/katana/wapiti/arjun se omiten solo en DVWA (ya cubierto por sondas de módulo); contra el resto de objetivos, incluida una IP de laboratorio, sí se ejecutan.
+- **APIs** — introspección GraphQL expuesta (descubrimiento de endpoint + query `__schema`), CORS mal configurado (wildcard + credentials, reflejo de `Origin` no confiable).
+- **Reconocimiento activo** — sigue de verdad los hallazgos de `gobuster`/`ffuf` (no una lista fija de adivinanzas) y las rutas `Disallow` de `robots.txt`; huella de tecnología (`whatweb`), método `TRACE` habilitado, subdomain takeover (CNAME colgante vía `httpx -cname` contra fingerprints de proveedores conocidos). Crawling activo con `katana` (links + parseo de JS) inventaría endpoints que un SPA solo genera al renderizar. Nikto/gobuster/ffuf/katana/wapiti/arjun se omiten solo en DVWA (ya cubierto por sondas de módulo); contra el resto de objetivos, incluida una IP de laboratorio, sí se ejecutan.
 - **Login web genérico** — detecta CSRF (7 nombres de campo: `_token`, `user_token`, `csrf_token`, `csrfmiddlewaretoken`, `authenticity_token`, `_csrf`, `__RequestVerificationToken`), campo de usuario/contraseña/submit reales del form y arma el POST correspondiente. Sin `<form>` de password (SPA tipo Juice Shop), cae a un POST JSON directo contra `/rest/user/login` si la firma del stack lo indica.
 - **Exposición de código y config** — `.git`/`.env`/backups accesibles, phpMyAdmin, Swagger/OpenAPI y Actuator sin proteger, source maps y métricas Prometheus, secretos (claves AWS/Google/Stripe/Slack/GitHub, claves privadas) hardcodeados en bundles JS ya servidos.
-- **Superficie cloud** — fingerprint pasivo de WAF/CDN e infraestructura AWS por cabeceras, bucket S3 público referenciado por la app, SSRF genérico hacia el Instance Metadata Service (`169.254.169.254`) con detección de credenciales IAM filtradas.
+- **Superficie cloud** — fingerprint pasivo de WAF/CDN e infraestructura por cabeceras; SSRF genérico hacia el Instance Metadata Service de AWS/GCP/Azure (`169.254.169.254`) con detección de credenciales/tokens filtrados; bucket S3, contenedor Azure Blob o bucket GCS público referenciado por la app; `cloud_enum` permuta nombre de la organización contra los tres proveedores para encontrar storage no enlazado desde la app.
+- **HTTP Request Smuggling** (Fase 3, gate humano de avance de fase) — sondas de timing CL.TE/TE.CL por conexión TCP cruda (curl no puede mandar `Content-Length`/`Transfer-Encoding` ambiguos de forma fiable). Solo candidato de timing: requiere confirmación manual con respuesta diferencial antes de darlo por explotado.
 - **Cortafuegos (caja negra)** — nmap de perímetro: puertos de gestión/BD *open* vs *filtered*, servicios que no deberían estar en 0.0.0.0/0 (SSH, RDP, SMB, MySQL, Redis, Mongo…), WAF que bloquea una sonda inofensiva, o ausencia de WAF observable en un dominio público. Cada hallazgo de puerto abierto incluye la regla ufw/iptables/Security Group para cerrarlo.
 - **Cortafuegos (caja gris)** — solo si el objetivo es el propio host (`127.0.0.1` / localhost): lectura de `ufw status`, `iptables -L` y `nft list ruleset`. Ahí sí se auditan las reglas activas del sistema. Contra un target remoto esos pasos no corren: serían el firewall de Kali, no el del cliente.
 - **OSINT** — DNS (A/AAAA/MX/NS/TXT), RDAP/WHOIS, Certificate Transparency (crt.sh), subdominios comunes, y rutas históricas indexadas en Wayback Machine.
 
 Cada hallazgo llega con ficha propia: CVSS v3.1 (vector completo), CWE, OWASP Top 10, técnica(s) MITRE ATT&CK, ISO 27001/ENS/NIS2/RGPD y narrativa + pasos de remediación en ES/EN. No hay CVSS ni MITRE «por severidad»: cada tipo tiene su catálogo.
+
+## Active Directory
+
+Contra un dominio en alcance, con o sin credenciales:
+
+- **Enumeración** (Fase 1/2) — SMB/LDAP/RPC nulo y autenticado (`netexec`, `enum4linux`, `rpcclient`, `ldapsearch`), usuarios/grupos/política de contraseñas, GPP cpassword y autologon en SYSVOL (clave AES pública de MS14-025), LAPS legible por la cuenta de auditoría, trusts de dominio.
+- **Kerberos** — AS-REP Roasting (`GetNPUsers.py`, cuentas sin preauth) y Kerberoasting (`GetUserSPNs.py`, SPNs con TGS crackeable offline).
+- **ADCS** — plantillas de certificado vulnerables vía `certipy find` (ESC1/ESC8 y el resto de la matriz conocida).
+- **Delegación** — inventario de delegación unconstrained/constrained/RBCD (`findDelegation.py`) y explotación asistida (`getST.py`, `ticketer.py`).
+- **BloodHound** — `bloodhound-python -c DCOnly` recolecta el grafo completo; dark_spear parsea las aristas de ACL peligrosas directamente a findings (sin abrir la UI): `GenericAll`/`GenericWrite`/`WriteDacl`/`WriteOwner`/`Owns`/`AddMember`/`AddSelf`/`ForceChangePassword`/`AllExtendedRights`/`WriteSPN`, **Shadow Credentials** (`AddKeyCredentialLink` — autenticar como el objetivo vía PKINIT sin tocar su contraseña) y **DCSync** (solo si el mismo principal tiene `GetChanges` **y** `GetChangesAll` sobre el dominio).
+- **Cortafuegos AD** (Fase 3, gate humano) — estado de Windows Defender Firewall en el DC vía `netexec -x netsh advfirewall show allprofiles` (no hay vía de solo lectura por RPC/LDAP).
 
 ## MITRE ATT&CK
 
@@ -127,7 +140,7 @@ Los scripts reevalúan heurísticas tras cada sonda (igual que el motor en produ
 - Dashboard, escaneos activos, vulnerabilidades y hallazgos críticos
 - Engagement activo, New Scan, aprobación de herramientas peligrosas
 - Playbook determinista (60+ sondas, sin LLM) + agente ReAct con LLM, seleccionables por engagement
-- Reporting (JSON / HTML / PDF) e informe completo de 25 capítulos con índice navegable
+- Reporting (JSON / HTML) e informe integral con portada de organización/auditor (Ajustes → Perfil), una ficha por hallazgo con evidencia en estilo terminal, KPIs por severidad, causa raíz y controles observados
 - Gobernanza: alineación RGPD, matriz de madurez/riesgo, plan de remediación, Kill Chain
 - Attack Graph, evidencia de grafo, MITRE ATT&CK (36 técnicas mapeadas a hallazgos reales), OSINT (DNS, WHOIS, crt.sh, Wayback Machine), activos
 - Perfil de usuario, centro de notificaciones, ajustes (tema e idioma)

@@ -51,6 +51,17 @@ check("sin salida -> []", niktoFindings("").length === 0);
 check("solo ruido de cabecera -> []", niktoFindings("+ The X-Frame-Options header is not present.\n").length === 0);
 check("solo referrer-policy Suggested -> []", niktoFindings("+ [013587] /: Suggested security header missing: referrer-policy. See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Referrer-Policy\n").length === 0);
 
+// Secreto real filtrado (caso visto en auditoría real de cliente): Nikto reporta
+// esto como check de "superficie" genérico -> Low, escondiendo que hay una
+// clave de API en texto plano. Debe reclasificar a severidad alta con
+// título específico, reusando el catálogo JS_SECRET_SIGNATURES.
+const leakedKeySample = `+ [750534] /webcgi/: Google API keys may now be used for Gemini API access. The key is: "AIzaSyDe0LldBAVmT9ZzViJBZa0XQvR_iYEyA-0" . See: https://trufflesecurity.com/blog/google-api-keys-werent-secrets-but-then-gemini-changed-the-rules\n`;
+const leakedKeyHits = niktoFindings(leakedKeySample);
+check("clave de Google API filtrada -> severidad High (no Low genérico)", leakedKeyHits.some((f) => f.severity === "High"));
+check("clave de Google API filtrada -> título menciona la clave, no 'superficie'", leakedKeyHits.some((f) => /Google API Key/i.test(f.title) && !/superficie/i.test(f.title)));
+check("clave de Google API filtrada -> título incluye la ruta", leakedKeyHits.some((f) => /\/webcgi\//.test(f.title)));
+check("clave de Google API filtrada -> remediation menciona rotar", leakedKeyHits.some((f) => /rotar/i.test(f.remediation)));
+
 const root = new URL("..", import.meta.url).pathname.replace(/\/$/, "");
 const code = readFileSync(`${root}/panel/vendor/finding-dossier.js`, "utf8");
 const sandbox = { window: {}, console, localStorage: { getItem: () => "es" } };

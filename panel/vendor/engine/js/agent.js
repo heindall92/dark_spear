@@ -38,7 +38,7 @@ export const PHASE_NAMES = {
 };
 
 const PHASE_TOOLS = {
-  1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
+  1: ["nmap", "whatweb", "wafw00f", "subfinder", "httpx", "cloud_enum", "testssl.sh", "semgrep", "dig", "nslookup", "dnsrecon", "ldapsearch",
       "enum4linux", "rpcclient", "smbclient", "netexec", "echo", "curl", "ufw", "iptables", "nft"],
   2: ["gobuster", "ffuf", "feroxbuster", "nikto", "wpscan", "nuclei", "katana", "wapiti", "arjun", "dalfox", "GetNPUsers.py",
       "GetUserSPNs.py", "bloodhound-python", "lookupsid.py", "samrdump.py",
@@ -357,7 +357,7 @@ async function runPlaybookSteps({
       let result;
       if (spec.id === "p1-login-post") {
         result = await execDvwaLoginPost(target, cookieFile);
-      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python", "katana", "wapiti", "arjun", "dalfox"].includes(spec.tool)) {
+      } else if (["nikto", "gobuster", "ffuf", "feroxbuster", "wpscan", "hydra", "bloodhound-python", "katana", "wapiti", "arjun", "dalfox", "cloud_enum"].includes(spec.tool)) {
         onStep(normalizeStep(null, engagementId, {
           tool: "(agent)", args: [spec.id],
           stderr: `${spec.tool} en curso (puede tardar 1–2 min)…`,
@@ -599,12 +599,20 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
       await waitForRunControl(control);
       await runPhasePlaybook();
     }
-    onStep(normalizeStep(null, engagementId, {
-      tool: "(agent)", args: [],
-      output: "Playbook PTES completado (4/4).",
-      verdict: "done",
-      phase: phaseState.current,
-    }));
+    {
+      const doneMsg = "Auditoría finalizada — playbook PTES completado (4/4).";
+      const doneId = await addStep(db, {
+        engagementId, tool: "(agent)", args: [],
+        output: doneMsg, stderr: "", exitCode: 0, verdict: "done",
+        phase: phaseState.current,
+      });
+      onStep(normalizeStep(doneId, engagementId, {
+        tool: "(agent)", args: [],
+        output: doneMsg,
+        verdict: "done",
+        phase: phaseState.current,
+      }));
+    }
     return;
   }
 
@@ -708,12 +716,20 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
         }
         continue;
       }
-      onStep(normalizeStep(null, engagementId, {
-        tool: "(agent)", args: [],
-        output: decision.reasoning || "Playbook PTES completado (4/4).",
-        verdict: "done",
-        phase: phaseState.current,
-      }));
+      {
+        const doneMsg = decision.reasoning || "Auditoría finalizada — playbook PTES completado (4/4).";
+        const doneId = await addStep(db, {
+          engagementId, tool: "(agent)", args: [],
+          output: doneMsg, stderr: "", exitCode: 0, verdict: "done",
+          phase: phaseState.current,
+        });
+        onStep(normalizeStep(doneId, engagementId, {
+          tool: "(agent)", args: [],
+          output: doneMsg,
+          verdict: "done",
+          phase: phaseState.current,
+        }));
+      }
       return;
     }
 
@@ -768,7 +784,7 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
         continue;
       }
 
-      const result = await execTool(decision.tool, decision.args, target);
+      const result = await execTool(decision.tool, decision.args, target, "agent");
       assertExecAllowed(result);
       const axisResult = await checkAndRecordAxis(db, engagementId, decision.tool, decision.args, result.stdout ?? "", { agent: true });
       axisWarning = axisResult.warn || axisResult.blocked;

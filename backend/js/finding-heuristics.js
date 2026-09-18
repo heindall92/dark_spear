@@ -15,7 +15,15 @@ import {
   SQLI_LOGIN_PROBES,
   NOSQLI_LOGIN_PROBES,
   XSS_REFLECTION_PAYLOAD,
+  sstiEvaluated,
+  GRAPHQL_PROBES,
+  graphqlFindings,
+  cloudEnumFindings,
+  adFirewallFindings,
   OPEN_REDIRECT_TEST_URL,
+  xxeConfirmed,
+  XXE_PATHS,
+  smugglingFinding,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
   IDOR_DENIED_RE,
@@ -33,6 +41,10 @@ import {
   SSRF_IMDS_PARAMS,
   SSRF_IMDS_STRONG_RE,
   SSRF_IMDS_WEAK_RE,
+  SSRF_GCP_STRONG_RE,
+  SSRF_GCP_BLOCKED_RE,
+  SSRF_AZURE_STRONG_RE,
+  SSRF_AZURE_BLOCKED_RE,
   perimeterFirewallFindings,
   wafTriggerFindings,
   missingWafFinding,
@@ -48,6 +60,7 @@ import {
   nucleiFindings,
   sqlmapFindings,
   httpxFindings,
+  subdomainTakeoverFindings,
   katanaFindings,
   wapitiFindings,
   arjunFindings,
@@ -72,6 +85,7 @@ import {
   netexecGroupsFindings,
   netexecPassPolFindings,
   bloodhoundFindings,
+  bloodhoundAceFindings,
   findDelegationFindings,
   netexecComputersFindings,
   netexecDcListFindings,
@@ -122,8 +136,14 @@ function buildProbeIndex(stepRecords) {
     if (m) push(`nosqli-login:${m[1]}`, text);
     m = /^p1-xss-(.+)$/.exec(r.id);
     if (m) push(`xss-reflect:${m[1]}`, text);
+    m = /^p1-ssti-(.+)$/.exec(r.id);
+    if (m) push(`ssti-reflect:${m[1]}`, text);
+    m = /^p1-graphql-(.+)$/.exec(r.id);
+    if (m) push(`graphql:${m[1]}`, text);
     m = /^p1-redirect-(.+)$/.exec(r.id);
     if (m) push(`open-redirect:${m[1]}`, text);
+    m = /^p1-xxe-(\d+)$/.exec(r.id);
+    if (m) push(`xxe:${m[1]}`, text);
     m = /^p1-idor-(.+)$/.exec(r.id);
     if (m) push(`idor:${m[1]}`, text);
     m = /^p3-hydra-defcreds-(.+)$/.exec(r.id);
@@ -138,6 +158,10 @@ function buildProbeIndex(stepRecords) {
     if (m) push(`jssecrets:${m[1]}`, text);
     m = /^p1-ssrf-imds-(.+)$/.exec(r.id);
     if (m) push(`ssrf-imds:${m[1]}`, text);
+    m = /^p1-ssrf-gcp-(.+)$/.exec(r.id);
+    if (m) push(`ssrf-gcp:${m[1]}`, text);
+    m = /^p1-ssrf-azure-(.+)$/.exec(r.id);
+    if (m) push(`ssrf-azure:${m[1]}`, text);
     if (r.id === "p1-s3-bucket-check") push("s3-bucket", text);
     if (r.id === "p1-azureblob-check") push("azureblob", text);
     if (r.id === "p1-gcs-bucket-check") push("gcs-bucket", text);
@@ -164,7 +188,9 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-wafw00f") push("wafw00f", text);
     if (r.id === "p2-nuclei") push("nuclei", text);
     if (r.id === "p3-sqlmap-forms") push("sqlmap-forms", text);
+    if (r.id === "p3-sqlmap-arjun-1") push("sqlmap-arjun-1", text);
     if (r.id === "p1-osint-httpx") push("httpx-hosts", text);
+    if (r.id === "p1-cloud-enum") push("cloud-enum", text);
     if (r.id === "p2-katana") push("katana", text);
     if (r.id === "p2-wapiti") push("wapiti", text);
     if (r.id === "p2-arjun") push("arjun", text);
@@ -185,6 +211,9 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-ad-getuserspns") push("ad-spn", text);
     if (r.id === "p2-ad-certipy-find") push("ad-certipy", text);
     if (r.id === "p3-ad-netexec-winrm") push("ad-winrm", text);
+    if (r.id === "p3-ad-firewall") push("ad-firewall", text);
+    m = /^p3-smuggle-(clte|tecl)$/.exec(r.id);
+    if (m) push(`smuggle:${m[1]}`, text);
     if (r.id === "p2-ad-lookupsid-null" || r.id === "p2-ad-lookupsid-auth") push("ad-lookupsid", text);
     if (r.id === "p2-ad-samrdump-null" || r.id === "p2-ad-samrdump-auth") push("ad-samrdump", text);
     if (r.id === "p2-ad-nxc-users") push("ad-nxc-users", text);
@@ -532,6 +561,13 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     if (matched) add(p.title, p.severity, p.description, p.remediation);
   });
 
+  // GraphQL: descubrimiento de endpoint + introspection.
+  GRAPHQL_PROBES.forEach(function (p) {
+    const own = probeIdx[`graphql:${p.stepId}`];
+    if (own == null) return;
+    graphqlFindings(own, p.path).forEach((f) => add(f.title, f.severity, f.description, f.remediation));
+  });
+
   // Bypass de login por SQL injection (' OR 1=1--): un login legítimo con
   // ese payload devuelve 401/error; si la app concatena SQL, se autentica
   // sin contraseña real y el servidor emite un token de sesión (JWT).
@@ -589,6 +625,23 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       );
     });
 
+  // SSTI genérico: alguna sintaxis de motor de plantillas fue EVALUADA
+  // (no solo reflejada) en el parámetro. Esto es RCE potencial, no un XSS
+  // más — severidad Critical, a diferencia del reflejo sin escapar.
+  Object.keys(probeIdx)
+    .filter((k) => k.startsWith("ssti-reflect:"))
+    .forEach(function (key) {
+      const text = probeIdx[key];
+      if (!text || !sstiEvaluated(text)) return;
+      const param = key.slice("ssti-reflect:".length);
+      add(
+        `SSTI confirmado en el parámetro ?${param}= (evaluación server-side)`,
+        "Critical",
+        `El valor enviado en ?${param}= fue EVALUADO por el motor de plantillas del servidor (no solo reflejado): la expresión aritmética de prueba se resolvió a su resultado en el cuerpo de la respuesta (CWE-1336). Esto suele escalar a ejecución remota de código dependiendo del motor (Jinja2/Twig/Freemarker/Velocity/Thymeleaf y similares tienen sandboxes conocidos con bypasses documentados). Confirmar manualmente el motor exacto antes de intentar RCE.`,
+        "Nunca pasar entrada de usuario directo al renderizado de plantillas (usar solo como variable de contexto, jamás como código de plantilla). Actualizar el motor y aplicar el sandbox/allowlist que ofrezca contra ejecución de expresiones arbitrarias.",
+      );
+    });
+
   // Open redirect genérico: Location apunta a la URL externa de prueba sin
   // validar contra una allow-list.
   Object.keys(probeIdx)
@@ -610,6 +663,19 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
         "Validar el destino de la redirección contra una allow-list de rutas/orígenes propios; no redirigir a una URL completa controlada por el usuario.",
       );
     });
+
+  // XXE: confirmado solo si la respuesta refleja /etc/passwd real (lectura
+  // de fichero local), no un eco ciego del payload sin evaluar.
+  XXE_PATHS.forEach(function (path, i) {
+    const text = probeIdx[`xxe:${i + 1}`];
+    if (!text || !xxeConfirmed(text)) return;
+    add(
+      `XXE (XML External Entity) confirmado en ${path}`,
+      "Critical",
+      `Al enviar una entidad externa DOCTYPE apuntando a file:///etc/passwd como cuerpo XML contra ${path}, la respuesta reflejó el contenido real del fichero (CWE-611): el parser XML del servidor resuelve entidades externas sin restricción, permitiendo leer ficheros arbitrarios del sistema y, dependiendo del parser/protocolo soportado, también SSRF interno o denegación de servicio (entity expansion).`,
+      "Deshabilitar la resolución de entidades externas y DTDs en el parser XML (p. ej. setFeature disallow-doctype-decl en Java, libxml_disable_entity_loader en PHP, defusedxml en Python); actualizar a una versión del parser que las deshabilite por defecto.",
+    );
+  });
 
   // IDOR genérico: recurso por ID accesible SIN NINGUNA sesión, con datos
   // de aspecto real en la respuesta (no un 401/403/404 ni el fallback SPA).
@@ -759,10 +825,28 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       add(f.title, f.severity, f.description, f.remediation));
   }
 
+  // sqlmap sobre el param GET que arjun descubrió (mismo parser genérico).
+  const sqlmapArjunText = probeIdx["sqlmap-arjun-1"];
+  if (sqlmapArjunText) {
+    sqlmapFindings(sqlmapArjunText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
   // httpx sobre subdominios de subfinder: inventario consolidado (1 finding).
   const httpxText = probeIdx["httpx-hosts"];
   if (httpxText) {
     httpxFindings(httpxText, scopeRoot(ctx.host || "", ctx.scope)).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+    // Mismo httpx (-cname agregado): candidatos a subdomain takeover.
+    subdomainTakeoverFindings(httpxText).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+
+  // cloud_enum: recursos AWS/Azure/GCP hallados por permutación de nombre
+  // (candidatos, atribución sin confirmar — ver comentario en vuln-kb.js).
+  const cloudEnumText = probeIdx["cloud-enum"];
+  if (cloudEnumText) {
+    cloudEnumFindings(cloudEnumText).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
 
@@ -878,6 +962,17 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     netexecWinrmFindings(adWinrm).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
+  const adFirewall = probeIdx["ad-firewall"];
+  if (adFirewall) {
+    adFirewallFindings(adFirewall, ctx.host || "").forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  ["clte", "tecl"].forEach(function (kind) {
+    const text = probeIdx[`smuggle:${kind}`];
+    if (!text) return;
+    const f = smugglingFinding(text, "/");
+    if (f) add(f.title, f.severity, f.description, f.remediation);
+  });
   const adLookupsid = probeIdx["ad-lookupsid"];
   if (adLookupsid) {
     lookupsidFindings(adLookupsid).forEach((f) =>
@@ -906,6 +1001,8 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adBloodhound = probeIdx["ad-bloodhound"];
   if (adBloodhound) {
     bloodhoundFindings(adBloodhound).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+    bloodhoundAceFindings(adBloodhound).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
   const adDelegation = probeIdx["ad-delegation"];
@@ -989,6 +1086,49 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
         `El parámetro ?${param}= devolvió contenido con forma de listado de categorías IMDS (ami-id/instance-id/security-credentials) al apuntarlo a 169.254.169.254 (CWE-918). No se vio una credencial completa en esta respuesta; confirmar a mano si el servidor reenvía la petición de verdad o si es solo un eco del parámetro.`,
         "Bloquear el fetch de URLs arbitrarias del lado servidor hacia rangos de metadata (169.254.169.254, fd00:ec2::254); forzar IMDSv2.",
       );
+    }
+  });
+
+  // SSRF genérico → metadata GCP/Azure: ambos exigen un header propio que
+  // un SSRF ciego no puede forjar, así que la señal realista es "la
+  // petición llegó al servicio de metadata real y fue rechazada por la
+  // nube" (no por timeout/red) — confirma SSRF interno real igual.
+  SSRF_IMDS_PARAMS.forEach(function (param) {
+    const gcpText = probeIdx[`ssrf-gcp:${param}`];
+    if (gcpText) {
+      if (SSRF_GCP_STRONG_RE.test(gcpText)) {
+        add(
+          `SSRF confirmado hacia metadata GCP vía ?${param}= (metadata real filtrada)`,
+          "Critical",
+          `El parámetro ?${param}= hizo que el servidor solicitara por sí mismo la metadata de Compute Engine (project-id/service accounts) y la app reenvió el header Metadata-Flavor sin querer (CWE-918): un atacante puede obtener tokens de la service account de la instancia.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor (allow-list de hosts); nunca reenviar headers de la petición original a un fetch server-side.",
+        );
+      } else if (SSRF_GCP_BLOCKED_RE.test(gcpText)) {
+        add(
+          `Posible SSRF hacia metadata GCP vía ?${param}= (bloqueado por falta de header, confirma alcance interno)`,
+          "Medium",
+          `El parámetro ?${param}= alcanzó el servicio real de metadata de GCP (169.254.169.254): la respuesta es el rechazo propio de GCP por falta del header Metadata-Flavor, no un timeout de red (CWE-918). Esto confirma que la app hace SSRF real hacia direcciones internas; este endpoint puntual está defendido por GCP, pero cualquier otro servicio interno sin ese mismo control queda expuesto por la misma vía.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor hacia rangos internos/link-local (169.254.169.254, metadata.google.internal).",
+        );
+      }
+    }
+    const azureText = probeIdx[`ssrf-azure:${param}`];
+    if (azureText) {
+      if (SSRF_AZURE_STRONG_RE.test(azureText)) {
+        add(
+          `SSRF confirmado hacia metadata Azure vía ?${param}= (metadata real filtrada)`,
+          "Critical",
+          `El parámetro ?${param}= hizo que el servidor solicitara por sí mismo el Instance Metadata Service de Azure y la app reenvió el header Metadata:true sin querer (CWE-918): expone suscripción, resource group y detalles de la VM.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor; nunca reenviar headers de la petición original a un fetch server-side.",
+        );
+      } else if (SSRF_AZURE_BLOCKED_RE.test(azureText)) {
+        add(
+          `Posible SSRF hacia metadata Azure vía ?${param}= (bloqueado por falta de header, confirma alcance interno)`,
+          "Medium",
+          `El parámetro ?${param}= alcanzó el IMDS real de Azure (169.254.169.254): el rechazo es el mensaje propio de Azure por falta del header Metadata:true, no un timeout de red (CWE-918). Confirma SSRF real hacia direcciones internas; este endpoint puntual está defendido, pero otro servicio interno sin ese control queda expuesto igual.`,
+          "Bloquear el fetch de URLs arbitrarias del lado servidor hacia rangos internos/link-local (169.254.169.254).",
+        );
+      }
     }
   });
 

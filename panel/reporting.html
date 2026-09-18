@@ -286,7 +286,7 @@
 <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-md shrink-0">
 <div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="report.title">Informes</h2>
-<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="report.listLead">Elige un análisis para ver el informe, exportar o generar el PDF.</p>
+<p class="font-body-md text-on-surface-variant mt-xs" data-i18n="report.listLead">Elige un análisis para abrir el informe HTML o exportar JSON.</p>
 </div>
 </div>
 <div class="relative w-full max-w-md shrink-0">
@@ -324,25 +324,21 @@
 </main>
 
 <div id="report-footer" class="absolute bottom-0 right-0 left-0 bg-white border-t border-outline-variant p-md flex flex-wrap justify-end gap-md shadow-[0_-4px_16px_rgba(27,42,65,0.05)] z-20" hidden>
+<a id="report-link-comprehensive" href="comprehensive-report.html" class="px-md py-sm rounded-lg font-label-md font-semibold bg-primary-container text-on-primary-container hover:bg-primary transition-colors flex items-center gap-xs">
+<i data-lucide="file-text" class="icon-md"></i>
+<span data-i18n="report.generatePdf">Abrir informe HTML</span>
+</a>
+<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-report-export="html">
+<i data-lucide="download" class="icon-md"></i>
+<span data-i18n="report.exportHtml">Descargar HTML</span>
+</button>
 <button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-report-export="json">
 <i data-lucide="braces" class="icon-md"></i>
 <span data-i18n="report.exportJson">Exportar JSON</span>
 </button>
-<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-report-export="html">
-<i data-lucide="code" class="icon-md"></i>
-<span data-i18n="report.exportHtml">Exportar HTML</span>
-</button>
-<button class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs" type="button" data-report-export="pdf">
-<i data-lucide="file-text" class="icon-md"></i>
-<span data-i18n="report.exportPdf">Exportar PDF</span>
-</button>
-<a id="report-link-comprehensive" href="comprehensive-report.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
-<i data-lucide="file-text" class="icon-md"></i>
-<span data-i18n="report.generatePdf">Generar informe PDF</span>
-</a>
 <a id="report-link-preview" href="report-preview.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
 <i data-lucide="file-search" class="icon-md"></i>
-<span data-i18n="report.preview">Vista previa PDF</span>
+<span data-i18n="report.preview">Vista previa del informe</span>
 </a>
 <a id="report-link-executive" href="executive-summary.html" class="px-md py-sm rounded-lg font-label-md font-semibold text-secondary border border-outline-variant hover:bg-surface-container-low transition-colors flex items-center gap-xs">
 <i data-lucide="chart-pie" class="icon-md"></i>

@@ -268,36 +268,97 @@
 </header>
 
 <main id="main-content" class="flex-1 mt-16 overflow-y-auto p-lg">
-<div class="max-w-container-max mx-auto flex flex-col gap-lg">
+<div class="max-w-container-max mx-auto flex flex-col gap-lg pb-xl">
 <div>
 <h2 class="font-headline-lg text-headline-lg text-on-surface tracking-tight" data-i18n="settings.title">Ajustes</h2>
 <p class="font-body-md text-on-surface-variant mt-xs" data-i18n="settings.lead">Apariencia, idioma y preferencias de la organización.</p>
 </div>
-<div class="glass-panel rounded-xl ds-empty">
-<div class="ds-empty-icon"><i data-lucide="settings" class="icon-lg"></i></div>
-<p class="font-headline-md text-on-surface" data-i18n="empty.title">Sin datos todavía</p>
-<p class="font-body-md text-on-surface-variant max-w-lg" data-i18n="empty.lead">Inicia un engagement desde New Scan para poblar esta vista con hallazgos reales del motor.</p>
 
-<a href="start-engagement.html" class="px-md py-sm bg-primary-container text-on-primary-container rounded-lg font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
-<i data-lucide="plus" class="icon-sm"></i>
-<span data-i18n="nav.newScan">Nuevo escaneo</span>
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-md max-w-3xl">
+<h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="palette" class="text-primary"></i><span data-i18n="settings.appearance">Apariencia e idioma</span></h3>
+<p class="font-body-sm text-on-surface-variant" data-i18n="settings.appearanceLead">Mismos interruptores que la barra lateral. Se guardan en este navegador.</p>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-on-surface-variant" data-i18n="settings.theme">Tema</span>
+<div class="flex gap-sm">
+<button type="button" id="settings-theme-light" class="px-md py-sm rounded-lg border border-outline-variant font-label-md" data-i18n="settings.light">Claro</button>
+<button type="button" id="settings-theme-dark" class="px-md py-sm rounded-lg border border-outline-variant font-label-md" data-i18n="settings.dark">Oscuro</button>
+</div>
+</div>
+<div class="flex flex-col gap-xs">
+<span class="font-label-md text-on-surface-variant" data-i18n="settings.language">Idioma</span>
+<div class="flex gap-sm">
+<button type="button" id="settings-lang-es" class="px-md py-sm rounded-lg border border-outline-variant font-label-md">ES</button>
+<button type="button" id="settings-lang-en" class="px-md py-sm rounded-lg border border-outline-variant font-label-md">EN</button>
+</div>
+</div>
+</div>
+</section>
+
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-md max-w-3xl">
+<h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="building-2" class="text-primary"></i><span data-i18n="settings.general">General</span></h3>
+<label class="font-label-md text-on-surface-variant" for="org-name" data-i18n="settings.orgName">Nombre de la organización</label>
+<input id="org-name" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" autocomplete="organization" type="text"/>
+<label class="font-label-md text-on-surface-variant" for="org-email" data-i18n="settings.email">Correo de soporte</label>
+<input id="org-email" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" autocomplete="email" type="email"/>
+<label class="font-label-md text-on-surface-variant" for="org-tz" data-i18n="settings.tz">Zona horaria</label>
+<select id="org-tz" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest">
+<option value="" selected></option>
+<option value="UTC">UTC</option>
+<option value="Europe/Madrid">Europe/Madrid</option>
+<option value="America/New_York">America/New_York</option>
+<option value="America/Mexico_City">America/Mexico_City</option>
+<option value="America/Bogota">America/Bogota</option>
+<option value="America/Santiago">America/Santiago</option>
+<option value="America/Caracas">America/Caracas</option>
+</select>
+<label class="font-label-md text-on-surface-variant" for="org-class" data-i18n="settings.classification">Clasificación por defecto de informes</label>
+<select id="org-class" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest">
+<option value="" selected></option>
+<option value="confidential">Confidencial</option>
+<option value="internal">Uso interno</option>
+<option value="restricted">Restringido</option>
+</select>
+<button type="button" id="settings-save" class="self-start px-md py-sm rounded-lg bg-primary-container text-on-primary-container font-label-md flex items-center gap-xs hover:bg-primary transition-colors">
+<i data-lucide="save" class="icon-sm"></i>
+<span data-i18n="settings.save">Guardar cambios</span>
+</button>
+</section>
+
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-md max-w-3xl">
+<h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="bell" class="text-primary"></i><span data-i18n="settings.notifications">Notificaciones</span></h3>
+<label class="flex items-center gap-sm font-body-md"><input id="notify-critical" class="rounded border-outline-variant" type="checkbox" checked/> <span data-i18n="settings.notifyCritical">Campana para hallazgos críticos</span></label>
+<label class="flex items-center gap-sm font-body-md"><input id="notify-high" class="rounded border-outline-variant" type="checkbox" checked/> <span data-i18n="settings.notifyHigh">Campana para hallazgos altos</span></label>
+<label class="flex items-center gap-sm font-body-md"><input id="notify-done" class="rounded border-outline-variant" type="checkbox" checked/> <span data-i18n="settings.notifyDone">Avisar al finalizar el engagement</span></label>
+<p class="font-body-sm text-on-surface-variant" data-i18n="settings.notifyLead">Las alertas viven en este navegador. Dark Spear no envía correo externo.</p>
+</section>
+
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-md max-w-3xl">
+<h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="user-round" class="text-primary"></i><span data-i18n="settings.profile">Perfil general</span></h3>
+<p class="font-body-sm text-on-surface-variant" data-i18n="settings.profileLead">Nombre, rol y foto del operador se editan en Perfil. Aparecen en la portada del informe HTML.</p>
+<a href="profile.html" class="self-start px-md py-sm rounded-lg border border-outline-variant font-label-md flex items-center gap-xs hover:bg-surface-container-low">
+<i data-lucide="arrow-right" class="icon-sm"></i>
+<span data-i18n="settings.openProfile">Abrir perfil del operador</span>
 </a>
-</div>
-</div>
-<div class="glass-panel rounded-xl p-lg max-w-2xl flex flex-col gap-md mt-lg">
-<label class="font-label-md text-on-surface-variant" for="org-name">Organización</label>
-<input id="org-name" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" placeholder="—" type="text"/>
-<label class="font-label-md text-on-surface-variant" for="org-email">Contacto</label>
-<input id="org-email" class="w-full rounded-lg border border-outline-variant/50 px-md py-sm bg-surface-container-lowest" placeholder="—" type="email"/>
-</div>
-<div class="glass-panel rounded-xl p-lg max-w-2xl flex flex-col gap-md mt-lg">
-<h3 class="font-headline-sm text-error" data-i18n="settings.dangerZone">Zona de riesgo</h3>
+</section>
+
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-md max-w-3xl">
+<h3 class="font-headline-md text-on-surface flex items-center gap-sm"><i data-lucide="key-round" class="text-primary"></i><span data-i18n="settings.integrations">Integraciones</span></h3>
+<p class="font-body-sm text-on-surface-variant" data-i18n="settings.integrationsLead">Las API keys del motor se gestionan al iniciar un engagement (pool cifrado). Aquí no se muestran secretos.</p>
+<a href="start-engagement.html" class="self-start px-md py-sm rounded-lg border border-outline-variant font-label-md flex items-center gap-xs hover:bg-surface-container-low">
+<i data-lucide="plus" class="icon-sm"></i>
+<span data-i18n="settings.manageKeys">Gestionar keys en Nuevo escaneo</span>
+</a>
+</section>
+
+<section class="glass-panel rounded-xl p-lg flex flex-col gap-md max-w-3xl border border-error/20">
+<h3 class="font-headline-md text-error flex items-center gap-sm"><i data-lucide="skull"></i><span data-i18n="settings.dangerZone">Zona de riesgo</span></h3>
 <p class="font-body-md text-on-surface-variant" data-i18n="settings.panicLead">Borra el pool cifrado de claves de API. No afecta hallazgos ni evidencia de ningún engagement.</p>
 <button id="panic-btn" class="self-start px-md py-sm rounded-lg bg-error-container text-on-error-container font-label-md flex items-center gap-xs hover:bg-error hover:text-on-error transition-colors">
 <i data-lucide="skull" class="icon-sm"></i>
 <span data-i18n="settings.panicButton">Borrar pool de claves (panic button)</span>
 </button>
-</div>
+</section>
 </div>
 </main>
 </div>
