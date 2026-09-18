@@ -23,6 +23,7 @@ import {
   OPEN_REDIRECT_TEST_URL,
   xxeConfirmed,
   XXE_PATHS,
+  smugglingFinding,
   IDOR_PROBES,
   IDOR_DATA_MARKER_RE,
   IDOR_DENIED_RE,
@@ -210,6 +211,8 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p2-ad-certipy-find") push("ad-certipy", text);
     if (r.id === "p3-ad-netexec-winrm") push("ad-winrm", text);
     if (r.id === "p3-ad-firewall") push("ad-firewall", text);
+    m = /^p3-smuggle-(clte|tecl)$/.exec(r.id);
+    if (m) push(`smuggle:${m[1]}`, text);
     if (r.id === "p2-ad-lookupsid-null" || r.id === "p2-ad-lookupsid-auth") push("ad-lookupsid", text);
     if (r.id === "p2-ad-samrdump-null" || r.id === "p2-ad-samrdump-auth") push("ad-samrdump", text);
     if (r.id === "p2-ad-nxc-users") push("ad-nxc-users", text);
@@ -963,6 +966,12 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     adFirewallFindings(adFirewall, ctx.host || "").forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
+  ["clte", "tecl"].forEach(function (kind) {
+    const text = probeIdx[`smuggle:${kind}`];
+    if (!text) return;
+    const f = smugglingFinding(text, "/");
+    if (f) add(f.title, f.severity, f.description, f.remediation);
+  });
   const adLookupsid = probeIdx["ad-lookupsid"];
   if (adLookupsid) {
     lookupsidFindings(adLookupsid).forEach((f) =>

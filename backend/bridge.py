@@ -77,6 +77,7 @@ ALLOWED_TOOLS = {
     "raiseChild.py", "dcomexec.py", "adscan", "findDelegation.py",
     "dnsrecon", "searchsploit",
     "ufw", "iptables", "nft",
+    "http-smuggle-probe",
 }
 
 PHASE_NAMES = {
@@ -100,7 +101,7 @@ PHASE_TOOLS = {
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
         "smbexec.py", "atexec.py", "dcomexec.py", "mssqlclient.py",
         "ntlmrelayx.py", "crackmapexec", "netexec", "ticketer.py",
-        "getST.py", "raiseChild.py"},
+        "getST.py", "raiseChild.py", "http-smuggle-probe"},
     4: {"hashcat", "john"},
 }
 
@@ -174,6 +175,79 @@ EXEC_LONG_TIMEOUT_TOOLS = ("nikto", "bloodhound-python", "wpscan", "katana", "wa
 
 def exec_timeout_for(tool: str) -> int:
     return 300 if tool in EXEC_LONG_TIMEOUT_TOOLS else 120
+
+
+# ---------------------------------------------------------------------------
+# HTTP Request Smuggling (CL.TE / TE.CL) — sondas de timing (metodología
+# PortSwigger). curl no puede mandar Content-Length y Transfer-Encoding
+# ambiguos de forma fiable (normaliza/rechaza la combinación) -> conexión
+# TCP cruda, construida a mano. Riesgo mayor que otras sondas: un desync
+# real en un front-end compartido puede afectar peticiones de OTROS
+# usuarios, no solo del que prueba -> vive en Fase 3 (mismo gate humano de
+# avance de fase que wmiexec/secretsdump), nunca en modo agente libre.
+#
+# CL.TE: el front-end confía en Content-Length (4) y solo reenvía "1\r\nA"
+# al backend; el backend confía en Transfer-Encoding: chunked, lee "1"
+# como tamaño de chunk, "A" como su único byte de datos, y se queda
+# esperando el CRLF terminador + el chunk final (0\r\n\r\n) que nunca
+# llega en esta misma petición -> cuelga hasta su propio timeout.
+#
+# TE.CL: el front-end confía en Transfer-Encoding, ve "0\r\n\r\n" (chunk
+# final) y da la petición por terminada ahí; el backend confía en
+# Content-Length (6) y espera 6 bytes exactos de cuerpo. El front-end
+# queda entonces esperando más bytes del cliente para completar lo que
+# interpreta como el inicio de una nueva petición encauzada (el "X"
+# sobrante) -> también se observa como un cuelgue desde este mismo socket.
+#
+# Es solo la sonda de timing inicial: un cuelgue es candidato, no
+# confirmación — hace falta la respuesta diferencial de seguimiento
+# (petición de sondeo tras la sospechosa) para confirmarlo manualmente,
+# igual que otros hallazgos de esta herramienta que requieren ese paso
+# (ver SSTI/CORS: "confirmar manualmente").
+def build_smuggling_probe(kind: str, host: str, path: str) -> bytes:
+    if kind == "clte":
+        body = b"1\r\nA\r\nX"
+        headers = (
+            f"POST {path} HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n"
+            "Content-Length: 4\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n"
+        ).encode()
+        return headers + body
+    if kind == "tecl":
+        body = b"0\r\n\r\nX"
+        headers = (
+            f"POST {path} HTTP/1.1\r\n"
+            f"Host: {host}\r\n"
+            "Content-Type: application/x-www-form-urlencoded\r\n"
+            f"Content-Length: {len(body)}\r\n"
+            "Transfer-Encoding: chunked\r\n"
+            "\r\n"
+        ).encode()
+        return headers + body
+    raise ValueError(f"unknown smuggling probe kind: {kind}")
+
+
+def send_raw_probe(host: str, port: int, payload: bytes, timeout: float = 8.0) -> dict:
+    """Manda `payload` crudo por TCP y mide si la respuesta llega antes de
+    `timeout` o si la conexión se queda colgada (candidato a smuggling)."""
+    start = time.monotonic()
+    try:
+        with socket.create_connection((host, port), timeout=timeout) as sock:
+            sock.sendall(payload)
+            sock.settimeout(timeout)
+            try:
+                chunk = sock.recv(4096)
+                elapsed_ms = (time.monotonic() - start) * 1000
+                return {"timed_out": False, "elapsed_ms": elapsed_ms, "response_snippet": chunk[:500]}
+            except (socket.timeout, TimeoutError):
+                elapsed_ms = (time.monotonic() - start) * 1000
+                return {"timed_out": True, "elapsed_ms": elapsed_ms, "response_snippet": b""}
+    except OSError as e:
+        elapsed_ms = (time.monotonic() - start) * 1000
+        return {"timed_out": False, "elapsed_ms": elapsed_ms, "response_snippet": b"", "error": str(e)}
 
 
 def rewrite_stdout_placeholder(args: list, tool: str) -> tuple[list, str | None]:
@@ -1362,6 +1436,30 @@ class Handler(BaseHTTPRequestHandler):
                            "target": target, "scope": scope, "bad_host": bad_host})
                 self._send_json(403, {"error": "scope_violation", "verdict": "scope_violation",
                                        "detail": f"args reference out-of-scope host: {bad_host}"})
+                return
+
+            # Pseudo-herramienta sin binario: conexión TCP cruda propia del
+            # bridge (curl no puede mandar Content-Length/Transfer-Encoding
+            # ambiguos de forma fiable). args = [kind, host, port, path].
+            if tool == "http-smuggle-probe":
+                kind, host_arg, port_arg, path_arg = (list(args) + ["", "", "80", "/"])[:4]
+                try:
+                    port_n = int(port_arg)
+                except (TypeError, ValueError):
+                    port_n = 80
+                payload = build_smuggling_probe(kind, host_arg, path_arg or "/")
+                probe = send_raw_probe(host_arg, port_n, payload)
+                result = {
+                    "stdout": json.dumps({
+                        "kind": kind, "timed_out": probe["timed_out"],
+                        "elapsed_ms": round(probe["elapsed_ms"], 1),
+                        "error": probe.get("error"),
+                    }),
+                    "stderr": "", "exit_code": 0, "verdict": "ok",
+                }
+                audit_log({"event": "exec", "tool": tool, "args": [kind, host_arg, str(port_n), path_arg],
+                           "target": target, "exit_code": 0, "verdict": "ok"})
+                self._send_json(200, result)
                 return
 
             # Resolve to the actual binary PATH would pick before running it,
