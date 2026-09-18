@@ -2699,12 +2699,15 @@ const NUCLEI_SEVERITY_MAP = {
 
 /**
  * Tags de nuclei a correr según el stack detectado por buildPlaybookContext.
- * Siempre incluye "exposure,misconfig" (bajo ruido, alto valor en cualquier
- * stack); suma tags específicos solo si aplican, para no correr miles de
+ * Siempre incluye "exposure,misconfig,default-login,cve": cada template
+ * trae su propio matcher (versión de banner, ruta específica, etc.), así
+ * que sumar "cve" no aumenta falsos positivos — solo tiempo de escaneo,
+ * por eso el bridge le da timeout largo (EXEC_LONG_TIMEOUT_TOOLS). Suma
+ * tags específicos de stack solo si aplican, para no correr miles de
  * templates irrelevantes contra cada target.
  */
 export function nucleiTagsForContext(ctx) {
-  const tags = ["exposure", "misconfig", "default-login"];
+  const tags = ["exposure", "misconfig", "default-login", "cve"];
   if (ctx.isWordpress) tags.push("wordpress", "wp-plugin");
   if (ctx.isApache) tags.push("apache");
   if (ctx.isDvwa) tags.push("php");

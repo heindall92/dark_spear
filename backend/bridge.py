@@ -166,6 +166,15 @@ STDOUT_REDIRECT_FLAGS = {
     "cloud_enum": "-l",
 }
 
+# nuclei con -tags cve corre miles de templates (cada uno con matcher
+# propio, no aumenta falsos positivos, sí tiempo de escaneo) -> comparte
+# el bucket largo con las otras herramientas que ya lo necesitaban.
+EXEC_LONG_TIMEOUT_TOOLS = ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti", "cloud_enum", "nuclei")
+
+
+def exec_timeout_for(tool: str) -> int:
+    return 300 if tool in EXEC_LONG_TIMEOUT_TOOLS else 120
+
 
 def rewrite_stdout_placeholder(args: list, tool: str) -> tuple[list, str | None]:
     flag = STDOUT_REDIRECT_FLAGS.get(tool)
@@ -1372,7 +1381,7 @@ class Handler(BaseHTTPRequestHandler):
 
             exec_args, stdout_tmp_path = rewrite_stdout_placeholder([str(a) for a in args], tool)
             cmd = [resolved] + exec_args
-            timeout_s = 300 if tool in ("nikto", "bloodhound-python", "wpscan", "katana", "wapiti", "cloud_enum") else 120
+            timeout_s = exec_timeout_for(tool)
             run_cwd = None
             if tool == "bloodhound-python" and CURRENT_ENGAGEMENT_DIR is not None:
                 # JSON/zip del ingestor → evidence del engagement (no cwd del bridge).
