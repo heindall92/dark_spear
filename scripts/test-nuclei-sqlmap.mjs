@@ -36,6 +36,7 @@ check("nuclei sin líneas válidas -> []", nucleiFindings("garbage\nmore garbage
 
 check("nucleiTagsForContext incluye exposure siempre", nucleiTagsForContext({}).includes("exposure"));
 check("nucleiTagsForContext suma wordpress si aplica", nucleiTagsForContext({ isWordpress: true }).includes("wordpress"));
+check("nucleiTagsForContext incluye cve siempre (matcher propio, no aumenta falsos positivos)", nucleiTagsForContext({}).includes("cve"));
 
 // --- sqlmap ---
 const sqlmapVulnOutput = `
