@@ -4706,6 +4706,61 @@ export function bloodhoundFindings(stdout) {
   }];
 }
 
+const BLOODHOUND_ACE_SEVERITY = {
+  GenericAll: "Critical",
+  AllExtendedRights: "Critical",
+  AddKeyCredentialLink: "Critical",
+  DCSync: "Critical",
+  Owns: "High",
+  GenericWrite: "High",
+  WriteDacl: "High",
+  WriteOwner: "High",
+  AddMember: "High",
+  AddSelf: "High",
+  ForceChangePassword: "High",
+  WriteSPN: "High",
+};
+
+const BLOODHOUND_ACE_LABEL = {
+  AddKeyCredentialLink: "Shadow Credentials",
+};
+
+/**
+ * Parsea las líneas sintéticas "DS_ACE|principal|tipo|derecho|target|tipo"
+ * que bridge.py anexa al stdout de bloodhound-python (extraídas de los JSON
+ * ya escritos en evidence/bloodhound — la misma información que BloodHound
+ * UI resaltaría al abrir el grafo, pero sin necesidad de abrirlo).
+ */
+export function bloodhoundAceFindings(stdout) {
+  const text = String(stdout || "");
+  const out = [];
+  for (const line of text.split("\n")) {
+    if (!line.startsWith("DS_ACE|")) continue;
+    const parts = line.split("|");
+    if (parts.length !== 6) continue;
+    const [, principal, principalType, right, target, targetType] = parts;
+    const severity = BLOODHOUND_ACE_SEVERITY[right];
+    if (!severity) continue;
+    const label = BLOODHOUND_ACE_LABEL[right] ? ` (${BLOODHOUND_ACE_LABEL[right]})` : "";
+    const isDcsync = right === "DCSync";
+    out.push({
+      title: `AD: ${principal} tiene ${right}${label} sobre ${target}`,
+      severity,
+      description: isDcsync
+        ? `BloodHound confirmó que ${principal} (${principalType}) tiene GetChanges Y GetChangesAll sobre el objeto dominio ${target} (CWE-269): con ambos derechos puede solicitar una réplica completa vía DRSUAPI (mimikatz lsadump::dcsync o secretsdump.py -just-dc), extrayendo los hashes NTLM de todos los usuarios del dominio, incluido krbtgt.`
+        : right === "AddKeyCredentialLink"
+        ? `BloodHound confirmó que ${principal} (${principalType}) puede escribir msDS-KeyCredentialLink en ${target} (${targetType}) (CWE-269): permite añadir una clave pública propia como credencial alternativa del objeto (Shadow Credentials) y autenticar como ${target} vía PKINIT sin conocer su contraseña ni resetearla.`
+        : `BloodHound confirmó que ${principal} (${principalType}) tiene el derecho ${right} sobre ${target} (${targetType}) (CWE-269), suficiente para tomar control del objeto (según el derecho: cambiar su contraseña, añadirlo a un grupo, modificar su ACL/propietario, o control total).`,
+      remediation: isDcsync
+        ? "Retirar GetChanges/GetChangesAll de cuentas que no sean controladores de dominio o cuentas de replicación legítimas (Azure AD Connect, etc.); auditar quién más los tiene."
+        : right === "AddKeyCredentialLink"
+        ? "Retirar el derecho de escritura sobre msDS-KeyCredentialLink del principal indicado; monitorizar el evento 5136 (modificación de atributo) sobre ese objeto."
+        : `Retirar el derecho ${right} del principal indicado sobre ${target} si no está justificado por el modelo de delegación; auditar el resto de ACLs del mismo tier.`,
+    });
+  }
+  return out;
+}
+
 /** findDelegation.py — unconstrained / constrained / RBCD inventory. */
 export function findDelegationFindings(stdout) {
   const text = String(stdout || "");

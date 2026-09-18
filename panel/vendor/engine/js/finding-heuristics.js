@@ -85,6 +85,7 @@ import {
   netexecGroupsFindings,
   netexecPassPolFindings,
   bloodhoundFindings,
+  bloodhoundAceFindings,
   findDelegationFindings,
   netexecComputersFindings,
   netexecDcListFindings,
@@ -1000,6 +1001,8 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adBloodhound = probeIdx["ad-bloodhound"];
   if (adBloodhound) {
     bloodhoundFindings(adBloodhound).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+    bloodhoundAceFindings(adBloodhound).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
   const adDelegation = probeIdx["ad-delegation"];
