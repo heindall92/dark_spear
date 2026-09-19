@@ -10,6 +10,7 @@ import re
 import socket
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -283,6 +284,23 @@ def _delete_engagement_from_disk(eng_name: str, related: bool = True) -> dict:
         except OSError:
             pass
     return {"ok": True, "deleted": deleted, "count": len(deleted), "from_disk": True}
+
+
+def _validate_bridge_target(path: str) -> str | None:
+    """Construye la URL final del proxy hacia el bridge y la valida contra
+    el host/puerto esperados usando urlparse — nunca confía en la
+    concatenación cruda. Bloquea el truco de userinfo en URL: una petición
+    a "/bridge@evil.example/exec" produciría
+    "http://127.0.0.1:8420@evil.example/exec", que urlparse resuelve con
+    hostname="evil.example" (userinfo "127.0.0.1:8420" descartado) —
+    sin esta validación el proxy conectaría (y reenviaría X-Auditor-Token)
+    a un host arbitrario elegido por quien llame al panel.
+    """
+    url = f"{BRIDGE_BASE}{path or '/'}"
+    parsed = urllib.parse.urlparse(url)
+    if parsed.hostname != BRIDGE_HOST or parsed.port != BRIDGE_PORT:
+        return None
+    return url
 
 
 def _hex_addr(ip: str, port: int) -> str:
@@ -569,7 +587,10 @@ class PanelHandler(SimpleHTTPRequestHandler):
 
     def _proxy_bridge(self) -> None:
         path = self.path[len("/bridge"):] or "/"
-        url = f"{BRIDGE_BASE}{path}"
+        url = _validate_bridge_target(path)
+        if url is None:
+            self._send_json(400, {"error": "invalid_bridge_path"})
+            return
         length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(length) if length else None
         headers = {}
