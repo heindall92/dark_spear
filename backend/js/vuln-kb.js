@@ -5266,14 +5266,42 @@ export function buildFormBody(form, targetField, payload) {
     .join("&");
 }
 
-function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, maxTime) {
+/** Host normalizado (sin protocolo/puerto/www.) de una URL o string suelto. */
+function hostOf(value) {
+  const s = String(value || "").trim().toLowerCase();
+  const noScheme = s.replace(/^https?:\/\//i, "").split("/")[0].split("?")[0].split(":")[0];
+  return noScheme.startsWith("www.") ? noScheme.slice(4) : noScheme;
+}
+
+/**
+ * True si `candidateUrl` apunta al mismo host que `root` (o a un
+ * subdominio real de root). Usado para bloquear URLs ABSOLUTAS que el
+ * TARGET controla (form.action, login action) antes de mandarles
+ * payloads o credenciales del operador — sin esto, un target hostil con
+ * <form action="https://evil.example/x"> saca tráfico (y datos) fuera de
+ * scope. Fail-closed: root vacío o sin match -> false.
+ */
+export function hostInScope(candidateUrl, root) {
+  const c = hostOf(candidateUrl);
+  const r = hostOf(root);
+  if (!c || !r) return false;
+  return c === r || c.endsWith("." + r);
+}
+
+function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, maxTime, root) {
   const textFields = form.fields.filter((f) => f.type !== "checkbox" && f.type !== "radio");
+  // form.action puede ser una URL absoluta (form que postea a otro
+  // dominio/puerto) — concatenarla ciegamente con baseUrl produce una
+  // URL malformada.
+  const isAbsolute = /^https?:\/\//i.test(form.action);
+  const url = isAbsolute ? form.action : baseUrl + form.action;
+  if (isAbsolute && !hostInScope(url, root)) {
+    // El target controla form.action, no el playbook: una URL absoluta
+    // fuera de scope no recibe payloads del motor (fail-closed).
+    return [];
+  }
   return textFields.map((field) => {
     const body = buildFormBody(form, field.name, payload);
-    // form.action puede ser una URL absoluta (form que postea a otro
-    // dominio/puerto) — concatenarla ciegamente con baseUrl produce una
-    // URL malformada.
-    const url = /^https?:\/\//i.test(form.action) ? form.action : baseUrl + form.action;
     if (form.method === "GET") {
       const dataArgs = form.fields.flatMap((f) => [
         "--data-urlencode",
@@ -5293,12 +5321,12 @@ function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, 
   });
 }
 
-export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
-  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, XSS_REFLECTION_PAYLOAD, "Sonda de XSS reflejado en formulario descubierto", maxTime);
+export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12", root = "") {
+  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, XSS_REFLECTION_PAYLOAD, "Sonda de XSS reflejado en formulario descubierto", maxTime, root);
 }
 
-export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
-  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime);
+export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12", root = "") {
+  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime, root);
 }
 
 /* ------------------------------------------------------------------------ *
