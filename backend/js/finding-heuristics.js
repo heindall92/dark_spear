@@ -110,6 +110,28 @@ import {
 } from "./vuln-kb.js";
 
 /**
+ * Silence-over-false-positive gate: a Critical/High finding with zero
+ * evidence signal (no evidence_step_ids, no evidence marker in the
+ * description) never reaches the user as a finding — it is dropped
+ * silently rather than risk reporting something unconfirmed at high
+ * severity. Medium/Low/Info stay reportable as-is: they are already
+ * informational/manually-reviewed by convention across this file.
+ * Never throws: any malformed payload fails closed (false).
+ */
+const EVIDENCE_MARKER_RE = /EVIDENCE|confirm|HTTP\s*2\d\d|HTTP\s*\d{3}/i;
+
+export function shouldReport(payload) {
+  if (!payload || typeof payload !== "object") return false;
+  const severity = payload.severity;
+  if (severity !== "Critical" && severity !== "High") {
+    return severity === "Medium" || severity === "Low" || severity === "Info";
+  }
+  const hasEvidenceIds = Array.isArray(payload.evidence_step_ids) && payload.evidence_step_ids.length > 0;
+  const hasEvidenceMarker = EVIDENCE_MARKER_RE.test(String(payload.description || ""));
+  return hasEvidenceIds || hasEvidenceMarker;
+}
+
+/**
  * Índice { clave -> texto de ESE paso } a partir de stepRecords (spec.id + su
  * propia salida). Las señales atadas a una ruta concreta (módulo DVWA, sonda
  * de exposición, CORS, TRACE) se confirman contra este texto en vez del blob

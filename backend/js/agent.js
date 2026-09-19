@@ -2,7 +2,7 @@ import { askAgent } from "./ollama.js";
 import { execTool, QuotaExhaustedError, proposeFinding, advancePhase, getStatus, scanSource } from "./bridge_client.js";
 import { checkAndRecordAxis, peekAxisAgent } from "./axis.js";
 import { stepsForPhase, buildPlaybookContext, isMeaningfulToolOutput, parseTarget, scopeRoot, isIpHost } from "./playbook.js";
-import { collectHeuristicFindings, heuristicAssetFromTarget } from "./finding-heuristics.js";
+import { collectHeuristicFindings, heuristicAssetFromTarget, shouldReport } from "./finding-heuristics.js";
 import { looksLikeSourceCode, semgrepFindings, guessSourceExtension } from "./vuln-kb.js";
 import { addStep, getSteps } from "./db.js";
 
@@ -154,6 +154,15 @@ async function execDvwaLoginPost(target, cookieFile) {
 }
 
 async function recordProposedFinding(db, engagementId, payload, seenFindings, reportedTitles, onFindingProposed, onStep, phase) {
+  if (!shouldReport(payload)) {
+    onStep(normalizeStep(null, engagementId, {
+      tool: "(agent)", args: [],
+      stderr: `Hallazgo descartado por falta de evidencia suficiente para severidad ${payload && payload.severity}: ${payload && payload.title}`,
+      verdict: "status",
+      phase,
+    }));
+    return false;
+  }
   const fp = findingFingerprint(payload.title, payload.asset);
   if (seenFindings.has(fp)) return false;
   try {
