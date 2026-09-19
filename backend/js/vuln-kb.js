@@ -4469,12 +4469,15 @@ export function certipyFindFindings(stdout) {
   if (!templates.length && !escUnique.length && !/Vulnerable Certificate Template/i.test(text)) {
     return [];
   }
-  const sev = escUnique.some((e) => /^ESC(1|4|8)$/i.test(e)) ? "Critical" : "High";
+  const sev = escUnique.some((e) => /^ESC(1|4|8|15)$/i.test(e)) ? "Critical" : "High";
+  const esc15Note = escUnique.some((e) => /^ESC15$/i.test(e))
+    ? " ESC15 (EKUwu, CVE-2024-49019) permite inyectar cualquier Application Policy (incluida Client Authentication) en un certificado emitido desde una plantilla con Schema Version 1, sin necesidad de enrollee-supplies-subject — vigente en CA con StrongCertificateBindingEnforcement no forzado (modo Compatibility)."
+    : "";
   return [{
     title: `AD: ADCS template(s) vulnerable(s)${escUnique.length ? ` (${escUnique.slice(0, 4).join(", ")})` : ""}`,
     severity: sev,
-    description: `certipy find -vulnerable -stdout detectó plantillas/ESC${templates.length ? `: ${templates.slice(0, 6).join(", ")}` : ""}${escUnique.length ? `. Clases: ${escUnique.join(", ")}` : ""}. Solo enumeración read-only; no se solicitó certificado abusivo.`,
-    remediation: "Auditar plantillas (enrollee supplies subject, overly permissive enrollment). Remediaciones ESC1–ESC8 según SpecterOps / Certified Pre-Owned. Restringir Enrollment Agents y managers.",
+    description: `certipy find -vulnerable -stdout detectó plantillas/ESC${templates.length ? `: ${templates.slice(0, 6).join(", ")}` : ""}${escUnique.length ? `. Clases: ${escUnique.join(", ")}` : ""}. Solo enumeración read-only; no se solicitó certificado abusivo.${esc15Note}`,
+    remediation: "Auditar plantillas (enrollee supplies subject, overly permissive enrollment). Remediaciones ESC1–ESC8 según SpecterOps / Certified Pre-Owned; para ESC15 forzar StrongCertificateBindingEnforcement=2 en la CA y auditar plantillas Schema Version 1. Restringir Enrollment Agents y managers.",
   }];
 }
 
