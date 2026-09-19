@@ -72,7 +72,7 @@ ALLOWED_TOOLS = {
     "GetNPUsers.py", "GetUserSPNs.py", "secretsdump.py", "wmiexec.py",
     "psexec.py", "certipy", "bloodhound-python", "ldapsearch", "enum4linux",
     "crackmapexec", "netexec", "echo",  # echo kept for manual verification
-    "ntlmrelayx.py", "smbexec.py", "atexec.py", "lookupsid.py",
+    "ntlmrelayx.py", "petitpotam.py", "smbexec.py", "atexec.py", "lookupsid.py",
     "samrdump.py", "mssqlclient.py", "ticketer.py", "getST.py",
     "raiseChild.py", "dcomexec.py", "adscan", "findDelegation.py",
     "dnsrecon", "searchsploit",
@@ -100,7 +100,7 @@ PHASE_TOOLS = {
         "searchsploit", "adscan", "certipy", "findDelegation.py"},
     3: {"sqlmap", "hydra", "secretsdump.py", "wmiexec.py", "psexec.py",
         "smbexec.py", "atexec.py", "dcomexec.py", "mssqlclient.py",
-        "ntlmrelayx.py", "crackmapexec", "netexec", "ticketer.py",
+        "ntlmrelayx.py", "petitpotam.py", "crackmapexec", "netexec", "ticketer.py",
         "getST.py", "raiseChild.py", "http-smuggle-probe"},
     4: {"hashcat", "john"},
 }
