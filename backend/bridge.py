@@ -2005,6 +2005,9 @@ class Handler(BaseHTTPRequestHandler):
                                        "detail": "send {\"confirm\": \"WIPE_KEYS\"}"})
                 return
             wiped = keystore.wipe()
+            with STATE_LOCK:
+                KEYS.clear()
+                ROTATION_STATE = None
             audit_log({"event": "keystore_panic", "wiped": wiped})
             self._send_json(200, {"ok": True, "wiped": wiped})
             return
