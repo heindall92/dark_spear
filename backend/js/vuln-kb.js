@@ -4752,7 +4752,9 @@ export function bloodhoundAceFindings(stdout) {
       description: isDcsync
         ? `BloodHound confirmó que ${principal} (${principalType}) tiene GetChanges Y GetChangesAll sobre el objeto dominio ${target} (CWE-269): con ambos derechos puede solicitar una réplica completa vía DRSUAPI (mimikatz lsadump::dcsync o secretsdump.py -just-dc), extrayendo los hashes NTLM de todos los usuarios del dominio, incluido krbtgt.`
         : right === "AddKeyCredentialLink"
-        ? `BloodHound confirmó que ${principal} (${principalType}) puede escribir msDS-KeyCredentialLink en ${target} (${targetType}) (CWE-269): permite añadir una clave pública propia como credencial alternativa del objeto (Shadow Credentials) y autenticar como ${target} vía PKINIT sin conocer su contraseña ni resetearla.`
+        ? `BloodHound confirmó que ${principal} (${principalType}) puede escribir msDS-KeyCredentialLink en ${target} (${targetType}) (CWE-269): permite añadir una clave pública propia como credencial alternativa del objeto (Shadow Credentials) y autenticar como ${target} vía PKINIT sin conocer su contraseña ni resetearla. Comando para reproducir manualmente (no se ejecutó — el motor solo detectó el ACE vía BloodHound):\n` +
+          `  1) certipy shadow auto -u '${principal}' -p '<PASSWORD>' -account '${target}' -dc-ip <DC_IP>\n` +
+          `  2) certipy auth -pfx '${target}.pfx' -dc-ip <DC_IP>`
         : `BloodHound confirmó que ${principal} (${principalType}) tiene el derecho ${right} sobre ${target} (${targetType}) (CWE-269), suficiente para tomar control del objeto (según el derecho: cambiar su contraseña, añadirlo a un grupo, modificar su ACL/propietario, o control total).`,
       remediation: isDcsync
         ? "Retirar GetChanges/GetChangesAll de cuentas que no sean controladores de dominio o cuentas de replicación legítimas (Azure AD Connect, etc.); auditar quién más los tiene."
