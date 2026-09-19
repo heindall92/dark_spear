@@ -5158,7 +5158,6 @@ export function spoolerFindings(stdout) {
  * previas; no coacciona ni relaya nada. Requiere ambas señales presentes
  * (cada una por separado ya genera su propio finding vía spoolerFindings/
  * certipyFindFindings).
- * https://research.ifcr.dk/certifried-active-directory-domain-privilege-escalation-cve-2022-26923-9e098fe298f4
  */
 export function coercionRelayEsc8Findings(spoolerStdout, certipyStdout) {
   const spoolerActive = /Spooler service enabled|Spoolss|print spooler|Spooler is running/i.test(String(spoolerStdout || ""))
