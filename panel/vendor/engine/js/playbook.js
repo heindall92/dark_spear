@@ -392,7 +392,7 @@ function phase1Steps(baseUrl, host, target, cookie, ctx = {}) {
   const needsAuthProbe = (c) => c.isDvwa || c.hasLogin;
 
   const steps = [
-    ...(ctx.webLoginUrl ? buildLoginSteps(step, ctx.webLoginUrl, ctx.webUser, ctx.webPassword, cookie) : []),
+    ...(ctx.webLoginUrl ? buildLoginSteps(step, ctx.webLoginUrl, ctx.webUser, ctx.webPassword, cookie, scopeRoot(ctx.host || "", ctx.scope || "")) : []),
     step("p1-nmap-sV", "nmap", ["-sV", "-p", portSpec(target), host], null, {
       desc: "Detección de servicios en puertos del target",
     }),
@@ -703,10 +703,11 @@ const MAX_FORM_PROBE_TARGETS = 5;
 
 function phase2FormProbeSteps(baseUrl, ctx) {
   const forms = (ctx.discoveredForms || []).slice(0, MAX_FORM_PROBE_TARGETS);
+  const root = scopeRoot(ctx.host || "", ctx.scope || "");
   const steps = [];
   forms.forEach((form, i) => {
-    steps.push(...xssFormProbeSteps(step, `p2-formxss-${i}`, baseUrl, form, ctx.cookieFile));
-    steps.push(...sqliFormProbeSteps(step, `p2-formsqli-${i}`, baseUrl, form, ctx.cookieFile));
+    steps.push(...xssFormProbeSteps(step, `p2-formxss-${i}`, baseUrl, form, ctx.cookieFile, "12", root));
+    steps.push(...sqliFormProbeSteps(step, `p2-formsqli-${i}`, baseUrl, form, ctx.cookieFile, "12", root));
   });
   return steps;
 }

@@ -97,6 +97,7 @@ import {
   ldapTrustedForDelegationFindings,
   machineAccountQuotaFindings,
   spoolerFindings,
+  coercionRelayEsc8Findings,
   lapsReadableFindings,
   domainControllerFindings,
   cloudIdentityFindings,
@@ -955,6 +956,11 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const adCertipy = probeIdx["ad-certipy"];
   if (adCertipy) {
     certipyFindFindings(adCertipy).forEach((f) =>
+      add(f.title, f.severity, f.description, f.remediation));
+  }
+  const adSpoolerForEsc8 = probeIdx["ad-spooler"];
+  if (adCertipy && adSpoolerForEsc8) {
+    coercionRelayEsc8Findings(adSpoolerForEsc8, adCertipy).forEach((f) =>
       add(f.title, f.severity, f.description, f.remediation));
   }
   const adWinrm = probeIdx["ad-winrm"];

