@@ -1651,7 +1651,7 @@ class Handler(BaseHTTPRequestHandler):
                        "cwd": run_cwd,
                        "exit_code": result["exit_code"], "verdict": result["verdict"]})
             EXEC_STEP_COUNT += 1
-            arg_preview = " ".join(str(a) for a in args[:4])
+            arg_preview = " ".join(str(a) for a in redact_args(args[:4]))
             LAST_ACTIVITY = f"{tool} {arg_preview}".strip()
             _save_engagement_meta()
             self._send_json(200, result)
