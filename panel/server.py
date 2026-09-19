@@ -501,6 +501,9 @@ class PanelHandler(SimpleHTTPRequestHandler):
                 if not eng_name:
                     self._send_json(400, {"error": "engagement_dir_required"})
                     return
+                if not self._peer_is_same_user():
+                    self._send_json(403, {"error": "forbidden"})
+                    return
                 result = _control_engagement_on_disk(eng_name, ctrl_action)
                 if bridge_listening() and not result.get("error"):
                     try:
@@ -530,6 +533,9 @@ class PanelHandler(SimpleHTTPRequestHandler):
             eng_name = str(body.get("engagement_dir") or body.get("id") or "").strip()
             if not eng_name:
                 self._send_json(400, {"error": "engagement_dir_required"})
+                return
+            if not self._peer_is_same_user():
+                self._send_json(403, {"error": "forbidden"})
                 return
             related = bool(body.get("related", True))
             # Disk first — dashboard/OSINT/MITRE leen findings desde aquí
