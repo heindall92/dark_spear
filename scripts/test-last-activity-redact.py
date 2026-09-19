@@ -33,9 +33,9 @@ preview = build_preview("hydra", hydra_args)
 check("hydra -p <valor> no queda en claro en el preview", "hunter2" not in preview)
 check("hydra: el flag -p sigue visible (solo el valor se redacta)", "-p" in preview)
 
-nxc_args = ["smb", "10.0.0.1", "-u", "admin", "--password", "hunter2"]
+nxc_args = ["--password", "hunter2", "-u", "admin"]
 preview_nxc = build_preview("netexec", nxc_args)
-check("netexec --password <valor> no queda en claro en el preview (recortado por args[:4] o redactado)",
+check("netexec --password <valor> no queda en claro en el preview (redacción real, no solo truncado por args[:4])",
       "hunter2" not in preview_nxc)
 
 plain_args = ["-s", "-I", "https://x.com"]
