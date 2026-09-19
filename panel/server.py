@@ -297,8 +297,11 @@ def _validate_bridge_target(path: str) -> str | None:
     a un host arbitrario elegido por quien llame al panel.
     """
     url = f"{BRIDGE_BASE}{path or '/'}"
-    parsed = urllib.parse.urlparse(url)
-    if parsed.hostname != BRIDGE_HOST or parsed.port != BRIDGE_PORT:
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.hostname != BRIDGE_HOST or parsed.port != BRIDGE_PORT:
+            return None
+    except ValueError:
         return None
     return url
 

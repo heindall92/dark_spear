@@ -37,6 +37,10 @@ check(
     f("@evil.example:1234/exec") is None,
 )
 check("path vacío -> URL a la raíz del bridge", f("") == "http://127.0.0.1:8420/")
+check(
+    "path malformado (.evil.example/exec) -> None, no revienta",
+    f(".evil.example/exec") is None,
+)
 
 print()
 print("RESULTADO: OK — todas pasaron" if fails == 0 else f"RESULTADO: FAIL — {fails} fallo(s)")
