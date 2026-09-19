@@ -285,6 +285,32 @@ def _delete_engagement_from_disk(eng_name: str, related: bool = True) -> dict:
     return {"ok": True, "deleted": deleted, "count": len(deleted), "from_disk": True}
 
 
+def _hex_addr(ip: str, port: int) -> str:
+    """Codifica ip:port como aparece en /proc/net/tcp (IPv4, little-endian hex)."""
+    octets = [int(o) for o in ip.split(".")]
+    hex_ip = "".join(f"{o:02X}" for o in reversed(octets))
+    return f"{hex_ip}:{port:04X}"
+
+
+def _uid_for_connection(local_ip: str, local_port: int, remote_ip: str, remote_port: int,
+                         proc_text: str) -> int | None:
+    """Busca en el texto de /proc/net/tcp la línea de esta conexión exacta
+    (local_address == nuestro socket de escucha, rem_address == el peer que
+    conectó) y devuelve el UID dueño de esa conexión, según el kernel."""
+    local_key = _hex_addr(local_ip, local_port)
+    remote_key = _hex_addr(remote_ip, remote_port)
+    for line in proc_text.splitlines()[1:]:
+        parts = line.split()
+        if len(parts) < 8:
+            continue
+        if parts[1] == local_key and parts[2] == remote_key:
+            try:
+                return int(parts[7])
+            except ValueError:
+                return None
+    return None
+
+
 class PanelHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
@@ -330,7 +356,26 @@ class PanelHandler(SimpleHTTPRequestHandler):
             pass
         return None
 
+    def _peer_is_same_user(self) -> bool:
+        """True solo si la conexión TCP entrante pertenece al mismo UID que
+        este proceso (Linux, vía /proc/net/tcp). Amenaza: otro usuario/proceso
+        en el MISMO Kali puede hablar con 127.0.0.1:8080 igual que el propio
+        panel JS — este check es la única barrera entre ambos. Falla cerrado:
+        cualquier error de lectura/parseo deniega, nunca permite por defecto.
+        """
+        try:
+            remote_ip, remote_port = self.client_address[0], self.client_address[1]
+            local_ip, local_port = self.server.server_address[0], self.server.server_address[1]
+            proc_text = Path("/proc/net/tcp").read_text(encoding="utf-8")
+            uid = _uid_for_connection(local_ip, local_port, remote_ip, remote_port, proc_text)
+            return uid is not None and uid == os.getuid()
+        except OSError:
+            return False
+
     def _serve_bridge_session(self) -> None:
+        if not self._peer_is_same_user():
+            self._send_json(403, {"error": "forbidden", "hint": "solicitud desde otro usuario/proceso local"})
+            return
         hint = "El motor no está en marcha. En otra terminal: cd backend && python3 bridge.py"
         if not bridge_listening():
             self._send_json(503, {
