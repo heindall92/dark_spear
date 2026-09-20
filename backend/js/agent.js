@@ -477,6 +477,19 @@ async function runPlaybookSteps({
 
 const MAX_CONSECUTIVE_AGENT_ERRORS = 5;
 
+/**
+ * Session watchdog / stall detector: if the freeform decision loop makes
+ * no progress (no LLM response, no phase change) for STALL_TIMEOUT_MS,
+ * the run is considered stalled. Without this, an Ollama endpoint that
+ * hangs mid-request (not a clean error, just never resolving) leaves the
+ * whole engagement stuck forever with no visible signal to the operator.
+ */
+export const STALL_TIMEOUT_MS = 8 * 60 * 1000;
+
+export function stallExceeded(lastProgressAt, now, timeoutMs = STALL_TIMEOUT_MS) {
+  return now - lastProgressAt >= timeoutMs;
+}
+
 export class AgentStoppedError extends Error {
   constructor(reason = "stopped") {
     super(reason);
@@ -639,6 +652,7 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
       }));
       const bumpAtStart = phaseState.bump || 0;
       const phaseAtStart = phaseState.current;
+      const loopStartedAt = Date.now();
       const llm = askAgent({
         model,
         systemPrompt,
@@ -653,7 +667,24 @@ export async function runAgentLoop({ db, engagementId, model, target, scope, sys
           }
         }
       })();
-      const winner = await Promise.race([llm, watch]);
+      const stall = (async () => {
+        while (true) {
+          await new Promise((r) => setTimeout(r, 5000));
+          if (stallExceeded(loopStartedAt, Date.now())) {
+            return { stalled: true };
+          }
+        }
+      })();
+      const winner = await Promise.race([llm, watch, stall]);
+      if (winner.stalled) {
+        onStep(normalizeStep(null, engagementId, {
+          tool: "(agent)", args: [],
+          stderr: `Watchdog: sin respuesta del modelo tras ${Math.round(STALL_TIMEOUT_MS / 60000)} min. Deteniendo el run (revisa el endpoint del modelo).`,
+          verdict: "agent_error",
+          phase: phaseState.current,
+        }));
+        return;
+      }
       if (winner.phaseChanged) {
         lastPlaybookPhase = 0;
         onStep(normalizeStep(null, engagementId, {
