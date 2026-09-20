@@ -190,6 +190,7 @@ function buildProbeIndex(stepRecords) {
     if (r.id === "p1-gcs-bucket-check") push("gcs-bucket", text);
     if (r.id === "p1-osint-wayback-cdx") push("wayback", text);
     if (r.id === "p1-osint-curl-head-root") push("head-root", text);
+    if (r.id === "head-root") push("head-root", text);
     if (r.id === "p1-osint-dig-txt") push("osint-txt", text);
     if (r.id === "p1-osint-dig-dmarc") push("osint-dmarc", text);
     if (r.id === "p1-osint-rdap-ip") push("osint-rdap-ip", text);
@@ -328,7 +329,7 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
     return re.test(extraText(id));
   }
 
-  function add(title, severity, description, remediation, evidenceIds = []) {
+  function add(title, severity, description, remediation, evidenceIds = [], proofLevel = "detected") {
     findings.push({
       title,
       asset: asset || "unknown",
@@ -336,6 +337,7 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
       description,
       remediation,
       evidence_step_ids: evidenceIds,
+      proofLevel,
     });
   }
 
@@ -801,6 +803,8 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
         "Critical",
         `Al reforjar el JWT capturado con header {"alg":"none"} y firma vacía, ${path} respondió HTTP 2xx en vez de 401/403 (CWE-347): el backend no verifica el algoritmo de firma antes de confiar en los claims del token, aceptando un token sin firmar con los mismos datos (rol, usuario) que el original.`,
         "Verificar siempre el algoritmo de firma en servidor con una allow-list explícita (nunca leerlo del propio token); rechazar alg=none de forma explícita; actualizar la librería JWT.",
+        [],
+        "proven",
       );
     }
   });

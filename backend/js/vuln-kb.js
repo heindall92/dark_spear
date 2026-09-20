@@ -2835,6 +2835,7 @@ export function sqlmapFindings(stdout) {
       severity: "Critical",
       description: "sqlmap confirmó al menos un punto de inyección SQL explotable durante el descubrimiento automático de formularios (--forms --crawl).",
       remediation: "Revisar el reporte completo de sqlmap (--dump-all para el detalle); migrar a consultas parametrizadas en el/los formulario(s) afectado(s).",
+      proofLevel: "proven",
     }];
   }
   const seen = new Set();
@@ -2847,6 +2848,7 @@ export function sqlmapFindings(stdout) {
       severity: "Critical",
       description: `sqlmap confirmó explotación real (no solo sospecha) del parámetro «${param}» durante el descubrimiento automático de formularios.${types[i] ? ` Tipo: ${types[i]}.` : ""}`,
       remediation: "Migrar a consultas parametrizadas/prepared statements en el punto exacto; ejecutar sqlmap --dump-all solo con autorización explícita para medir el alcance real de los datos expuestos.",
+      proofLevel: "proven",
     });
   });
   return out;

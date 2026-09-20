@@ -410,6 +410,19 @@ ROTATION_STATE: dict | None = None
 
 FINDING_SEVERITIES = {"Critical", "High", "Medium", "Low", "Info"}
 
+PROOF_LEVELS = {"proven", "detected"}
+
+
+def normalize_proof_level(value):
+    """Server-side clamp: never trust the client's proof_level blindly —
+    same defensive posture as severity validation. Missing/invalid/empty
+    always falls back to the conservative default ("detected", i.e. not
+    yet actively exploited), never to "proven"."""
+    if value in PROOF_LEVELS:
+        return value
+    return "detected"
+
+
 CURRENT_ENGAGEMENT_DIR: Path | None = None
 FINDINGS: list[dict] = []
 ENGAGEMENT_STARTED_AT: float | None = None
@@ -2098,6 +2111,7 @@ class Handler(BaseHTTPRequestHandler):
             description = body.get("description", "").strip()
             remediation = body.get("remediation", "").strip()
             evidence_step_ids = body.get("evidence_step_ids", [])
+            proof_level = normalize_proof_level(body.get("proof_level"))
             if not title or not asset or not description or not remediation:
                 self._send_json(400, {"error": "title_asset_description_remediation_required"})
                 return
@@ -2116,6 +2130,7 @@ class Handler(BaseHTTPRequestHandler):
                 "title": title, "asset": asset, "severity": severity,
                 "description": description, "remediation": remediation,
                 "evidence_step_ids": evidence_step_ids, "evidence_hashes": [],
+                "proof_level": proof_level,
                 "status": "proposed",
                 "fingerprint": _finding_fingerprint(title, asset),
                 "created_at": time.time(), "reviewed_at": None,
