@@ -158,7 +158,7 @@ async function recordProposedFinding(db, engagementId, payload, seenFindings, re
     onStep(normalizeStep(null, engagementId, {
       tool: "(agent)", args: [],
       stderr: `Hallazgo descartado por falta de evidencia suficiente para severidad ${payload && payload.severity}: ${payload && payload.title}`,
-      verdict: "status",
+      verdict: "agent_error",
       phase,
     }));
     return false;
