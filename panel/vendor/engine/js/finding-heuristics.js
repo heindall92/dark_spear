@@ -112,10 +112,14 @@ import {
 /**
  * Silence-over-false-positive gate: a Critical/High finding with zero
  * evidence signal (no evidence_step_ids, no evidence marker in the
- * description) never reaches the user as a finding — it is dropped
- * silently rather than risk reporting something unconfirmed at high
- * severity. Medium/Low/Info stay reportable as-is: they are already
- * informational/manually-reviewed by convention across this file.
+ * description, and not tagged proofLevel "proven") never reaches the
+ * user as a finding — it is dropped silently rather than risk reporting
+ * something unconfirmed at high severity. A payload with
+ * proofLevel: "proven" has already demonstrated real exploitation by
+ * its producer, so that alone is sufficient evidence regardless of
+ * evidence_step_ids/description content. Medium/Low/Info stay
+ * reportable as-is: they are already informational/manually-reviewed
+ * by convention across this file.
  * Never throws: any malformed payload fails closed (false).
  */
 const EVIDENCE_MARKER_RE = /EVIDENCE|confirm|HTTP\s*2\d\d|HTTP\s*\d{3}/i;
@@ -128,7 +132,8 @@ export function shouldReport(payload) {
   }
   const hasEvidenceIds = Array.isArray(payload.evidence_step_ids) && payload.evidence_step_ids.length > 0;
   const hasEvidenceMarker = EVIDENCE_MARKER_RE.test(String(payload.description || ""));
-  return hasEvidenceIds || hasEvidenceMarker;
+  const isProven = payload.proofLevel === "proven";
+  return hasEvidenceIds || hasEvidenceMarker || isProven;
 }
 
 /**
@@ -849,14 +854,14 @@ export function collectHeuristicFindings(blob, asset, ctx = {}, stepRecords = []
   const sqlmapText = probeIdx["sqlmap-forms"];
   if (sqlmapText) {
     sqlmapFindings(sqlmapText).forEach((f) =>
-      add(f.title, f.severity, f.description, f.remediation));
+      add(f.title, f.severity, f.description, f.remediation, f.evidence_step_ids || [], f.proofLevel));
   }
 
   // sqlmap sobre el param GET que arjun descubrió (mismo parser genérico).
   const sqlmapArjunText = probeIdx["sqlmap-arjun-1"];
   if (sqlmapArjunText) {
     sqlmapFindings(sqlmapArjunText).forEach((f) =>
-      add(f.title, f.severity, f.description, f.remediation));
+      add(f.title, f.severity, f.description, f.remediation, f.evidence_step_ids || [], f.proofLevel));
   }
 
   // httpx sobre subdominios de subfinder: inventario consolidado (1 finding).

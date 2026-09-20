@@ -53,4 +53,9 @@ check(
   shouldReport(null) === false,
 );
 
+check(
+  "Critical con proofLevel proven pero sin evidence_step_ids ni marcador en description -> true (proofLevel proven es evidencia suficiente por si sola)",
+  shouldReport({ title: "X", severity: "Critical", description: "HTTP 2xx en vez de 401/403", evidence_step_ids: [], proofLevel: "proven" }) === true,
+);
+
 process.exit(ok ? 0 : 1);

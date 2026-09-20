@@ -219,7 +219,12 @@ export function finishEngagement(engagementDir = "") {
 }
 
 export function proposeFinding(finding) {
-  return postJSON("/findings/propose", withEngagementDir(finding));
+  const payload = { ...finding };
+  if (payload.proofLevel !== undefined) {
+    payload.proof_level = payload.proofLevel;
+    delete payload.proofLevel;
+  }
+  return postJSON("/findings/propose", withEngagementDir(payload));
 }
 
 export function listFindings(engagementDir) {

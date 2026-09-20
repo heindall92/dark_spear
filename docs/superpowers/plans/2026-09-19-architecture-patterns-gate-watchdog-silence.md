@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Never name the 3 external repos (xalgorix / Aegis / Cat-ServerFullReport) that originated these pattern names, in any committed code or doc — same rule as the rest of the roadmap (see `feedback_no_external_attribution_dark_spear` memory).
+- Never name the external repos that originated these pattern names, in any committed code or doc — same rule as the rest of the roadmap (see `feedback_no_external_attribution_dark_spear` memory).
 - Follow the existing `sync-engine-js.py` requirement: after any edit to `backend/js/*.js`, run `python3 scripts/sync-engine-js.py` before committing, so `panel/vendor/` stays in sync.
 - Commit with `git commit -m "..."` WITHOUT a trailing pathspec (repo-specific gotcha — passing paths to `git commit` re-reads the working tree and breaks staged-only commits).
 - Each task ends with its own green test run and its own commit — do not batch commits across tasks.
@@ -586,4 +586,4 @@ git commit -m "feat: add session watchdog/stall detector to freeform agent decis
 
 - [ ] Run every test in `scripts/`: `for f in scripts/test-*.mjs; do node "$f" || echo "FAILED: $f"; done && for f in scripts/test-*.py; do python3 "$f" || echo "FAILED: $f"; done`
 - [ ] Confirm `panel/vendor/` reflects the latest `backend/js/` (re-run `python3 scripts/sync-engine-js.py`, check `git status` shows no diff).
-- [ ] Grep the diff for the 3 external repo names to confirm none leaked into commits: `git log --oneline -10 -p | grep -iE "xalgorix|aegis|cat-serverfullreport"` — expect no output.
+- [ ] Confirm no external-repo attribution leaked into any commit message or file in this branch (check against the project's no-attribution convention).
