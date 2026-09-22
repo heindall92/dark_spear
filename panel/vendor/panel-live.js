@@ -1328,10 +1328,17 @@
   }
 
   var maturityRadarCharts = {};
+  var maturityRadarDomains = {};
+  window.addEventListener("ds:theme", function () {
+    Object.keys(maturityRadarDomains).forEach(function (cid) {
+      if (document.getElementById(cid)) renderMaturityRadar(maturityRadarDomains[cid], cid);
+    });
+  });
   function renderMaturityRadar(domains, canvasId) {
     var id = canvasId || "maturity-radar";
     var canvas = document.getElementById(id);
     if (!canvas || typeof Chart === "undefined") return;
+    maturityRadarDomains[id] = domains;
     if (maturityRadarCharts[id]) {
       maturityRadarCharts[id].destroy();
       maturityRadarCharts[id] = null;
@@ -1366,19 +1373,39 @@
           },
         ],
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          r: {
-            min: 0,
-            max: 5,
-            ticks: { stepSize: 1, showLabelBackdrop: false },
-            pointLabels: { font: { family: "Public Sans", size: 11, weight: "600" } },
+      options: (function () {
+        var inPaper = canvas.closest && canvas.closest(".pdf-doc");
+        var dark = !inPaper && document.documentElement.classList.contains("dark");
+        var gridC = dark ? "rgba(255, 255, 255, 0.16)" : "rgba(24, 40, 70, 0.20)";
+        var angleC = dark ? "rgba(255, 255, 255, 0.22)" : "rgba(24, 40, 70, 0.28)";
+        var tickC = dark ? "#c5cdd6" : "#404752";
+        var labelC = dark ? "#e4eaf0" : "#181c1f";
+        var backdropC = dark ? "rgba(20, 26, 32, 0.85)" : "rgba(255, 255, 255, 0.85)";
+        return {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            r: {
+              min: 0,
+              max: 5,
+              grid: { color: gridC },
+              angleLines: { color: angleC },
+              ticks: {
+                stepSize: 1,
+                showLabelBackdrop: true,
+                backdropColor: backdropC,
+                color: tickC,
+                font: { size: 10 },
+              },
+              pointLabels: {
+                color: labelC,
+                font: { family: "Public Sans", size: 11, weight: "600" },
+              },
+            },
           },
-        },
-      },
+        };
+      })(),
     });
   }
 
@@ -2298,6 +2325,7 @@
         searchId: "vulns-list-search",
         titleId: "vulns-detail-title",
         subtitleId: "vulns-detail-subtitle",
+        pageTitle: tKey("vulns.title", "Vulnerabilidades"),
         ctaLabel: tKey("vulns.open", "Ver vulnerabilidades"),
         ctaIcon: "bug",
         onDetail: function (findings) { applyFindings(findings); },
@@ -2824,6 +2852,7 @@
         searchId: "assets-list-search",
         titleId: "assets-detail-title",
         subtitleId: "assets-detail-subtitle",
+        pageTitle: tKey("assets.title", "Activos"),
         ctaLabel: tKey("assets.open", "Ver activos"),
         ctaIcon: "boxes",
         scanTargetCta: true,
@@ -2895,6 +2924,7 @@
         searchId: "report-list-search",
         titleId: "report-detail-title",
         subtitleId: "report-detail-subtitle",
+        pageTitle: tKey("report.title", "Informes"),
         footerId: "report-footer",
         ctaLabel: tKey("report.open", "Abrir informe"),
         ctaIcon: "chart-column",
@@ -3161,6 +3191,7 @@
         searchId: "osint-list-search",
         titleId: "osint-detail-title",
         subtitleId: "osint-detail-subtitle",
+        pageTitle: tKey("osint.title", "OSINT"),
         ctaLabel: tKey("osint.open", "Ver OSINT"),
         ctaIcon: "binoculars",
         scanTargetCta: true,
@@ -3723,6 +3754,7 @@
         searchId: "ad-list-search",
         titleId: "ad-detail-title",
         subtitleId: "ad-detail-subtitle",
+        pageTitle: tKey("ad.title", "Active Directory"),
         ctaLabel: tKey("ad.open", "Ver Active Directory"),
         ctaIcon: "network",
         scanTargetCta: true,
@@ -4509,6 +4541,7 @@
         searchId: "metrics-list-search",
         titleId: "metrics-detail-title",
         subtitleId: "metrics-detail-subtitle",
+        pageTitle: tKey("metrics.title", "Métricas de remediación"),
         ctaLabel: tKey("metrics.open", "Ver métricas"),
         ctaIcon: "gauge",
         onDetail: function (findings) { render(findings); },
@@ -4770,24 +4803,13 @@
     var party = reportParty();
     var target = (meta && meta.target) || "—";
     var ref = "DS-" + String(scanId || target).replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48);
-    var team = partyTeam(party);
-    var method = tKey("comp.coverMethodLine", "PTES · reconocimiento, escaneo, explotación, post-explotación");
-    var rows = [
-      [tKey("comp.coverOrg", "Organización"), party.org || "—"],
-      [tKey("comp.coverOrgEmail", "Correo de la organización"), party.orgEmail || "—"],
-      [tKey("comp.coverTeam", "Equipo auditor"), team],
-      [tKey("comp.coverAuditorEmail", "Correo del auditor"), party.email || "—"],
-      [tKey("comp.coverObjective", "Objetivo auditado"), target],
-      [tKey("comp.dtScope", "Scope"), (meta && meta.scope) || target],
-      [tKey("comp.coverDate", "Fecha del informe"), new Date().toLocaleDateString()],
-      [tKey("comp.coverMethod", "Metodología"), method],
-      [tKey("comp.coverFindings", "Hallazgos"), String((findings || []).length) + " (" +
-        c.critical + " " + tKey("exec.sevCritical", "críticos") + " · " +
-        c.high + " " + tKey("exec.sevHigh", "altos") + " · " +
-        c.medium + " " + tKey("exec.sevMedium", "medios") + ")"],
-      [tKey("comp.coverRef", "Referencia"), ref],
-      [tKey("comp.coverClass", "Clasificación"), classificationLabel(party.classification)],
-    ];
+    var findingsLine = String((findings || []).length) + " (" +
+      c.critical + " " + tKey("exec.sevCritical", "críticos") + " · " +
+      c.high + " " + tKey("exec.sevHigh", "altos") + " · " +
+      c.medium + " " + tKey("exec.sevMedium", "medios") + ")";
+    var metaStrip = escapeHtml(tKey("comp.coverRef", "Referencia")) + ": " + escapeHtml(ref) +
+      "  ·  " + escapeHtml(new Date().toLocaleDateString()) +
+      "  ·  " + escapeHtml(tKey("comp.coverFindings", "Hallazgos")) + ": " + escapeHtml(findingsLine);
     return '<div class="flex justify-between items-start gap-md mb-lg">' +
       '<div class="flex items-center gap-sm"><img src="vendor/logo.png" alt="" class="w-10 h-10"/>' +
       '<div><p class="font-headline-md text-primary font-bold">Dark Spear</p>' +
@@ -4800,12 +4822,10 @@
       escapeHtml(tKey("comp.coverKicker", "Informe profesional")) + "</p>" +
       '<h3 class="font-headline-xl text-on-surface mb-xs">' +
       escapeHtml(tKey("comp.coverH1", "Informe de Auditoría de Seguridad")) + "</h3>" +
-      '<p class="font-headline-md text-on-surface-variant mb-lg">' + escapeHtml(target) + "</p>" +
-      '<dl class="report-cover-grid border-t border-outline-variant/40 pt-md">' +
-      rows.map(function (r) {
-        return "<dt>" + escapeHtml(r[0]) + "</dt><dd>" + escapeHtml(r[1]) + "</dd>";
-      }).join("") + "</dl>" +
-      '<p class="font-body-sm text-on-surface-variant mt-lg border-t border-outline-variant/30 pt-sm">' +
+      '<p class="font-headline-md text-on-surface-variant mb-md">' + escapeHtml(target) + "</p>" +
+      '<p class="report-cover-strip font-mono-md text-[12px] text-on-surface-variant border-t border-outline-variant/40 pt-sm">' +
+      metaStrip + "</p>" +
+      '<p class="font-body-sm text-on-surface-variant mt-md border-t border-outline-variant/30 pt-sm">' +
       escapeHtml(tKey("comp.coverFooter", "Confidencial — no publicar fuera del ámbito autorizado.")) +
       "</p>";
   }

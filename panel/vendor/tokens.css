@@ -521,6 +521,399 @@ html.dark .text-\[\#B93815\] {
   transform: translateX(-50%) translateY(0);
 }
 
+/* ============================================================
+   Acabado v2 — elevación, radios y microinteracción compartidos.
+   Vive aquí porque tokens.css ya se enlaza en las 31 páginas:
+   un solo punto propaga el acabado a todo el chrome uniforme.
+   ============================================================ */
+:root {
+  --ds-r-xs: 8px;
+  --ds-r-sm: 10px;
+  --ds-r-md: 14px;
+  --ds-r-lg: 18px;
+  --ds-r-xl: 22px;
+  --ds-shadow-color: 220 40% 24%;
+  --ds-shadow-xs: 0 1px 2px hsl(var(--ds-shadow-color) / 0.06);
+  --ds-shadow-sm: 0 1px 2px hsl(var(--ds-shadow-color) / 0.06),
+    0 2px 6px hsl(var(--ds-shadow-color) / 0.07);
+  --ds-shadow-md: 0 2px 4px hsl(var(--ds-shadow-color) / 0.06),
+    0 8px 20px hsl(var(--ds-shadow-color) / 0.10);
+  --ds-shadow-lg: 0 8px 16px hsl(var(--ds-shadow-color) / 0.10),
+    0 24px 48px hsl(var(--ds-shadow-color) / 0.14);
+  --ds-ring: 0 0 0 3px color-mix(in srgb, var(--ds-primary-container) 30%, transparent);
+  --ds-ease: cubic-bezier(0.4, 0, 0.2, 1);
+}
+html.dark {
+  --ds-shadow-color: 220 60% 2%;
+  --ds-shadow-xs: 0 1px 2px hsl(var(--ds-shadow-color) / 0.30);
+  --ds-shadow-sm: 0 1px 2px hsl(var(--ds-shadow-color) / 0.32),
+    0 2px 6px hsl(var(--ds-shadow-color) / 0.34);
+  --ds-shadow-md: 0 2px 4px hsl(var(--ds-shadow-color) / 0.34),
+    0 8px 20px hsl(var(--ds-shadow-color) / 0.44);
+  --ds-shadow-lg: 0 8px 16px hsl(var(--ds-shadow-color) / 0.44),
+    0 24px 48px hsl(var(--ds-shadow-color) / 0.56);
+}
+
+/* Radios: escala más redondeada y moderna, sin tocar los 31 configs Tailwind */
+.rounded { border-radius: var(--ds-r-xs) !important; }
+.rounded-md { border-radius: var(--ds-r-sm) !important; }
+.rounded-lg { border-radius: var(--ds-r-md) !important; }
+.rounded-xl { border-radius: var(--ds-r-lg) !important; }
+.rounded-2xl { border-radius: var(--ds-r-xl) !important; }
+/* pills, círculos y toggles conservan su geometría */
+.rounded-full,
+.ios-switch,
+.ios-switch-knob,
+.brand-mark { border-radius: 9999px !important; }
+.brand-mark { border-radius: 12px !important; }
+
+/* Elevación: sombras en capas en vez de shadow-sm plano */
+.shadow-sm { box-shadow: var(--ds-shadow-sm) !important; }
+.shadow,
+.shadow-md { box-shadow: var(--ds-shadow-md) !important; }
+.shadow-lg,
+.shadow-xl { box-shadow: var(--ds-shadow-lg) !important; }
+
+/* Tarjetas de cristal: borde más fino, elevación en reposo */
+.glass-panel {
+  border-radius: var(--ds-r-lg);
+  box-shadow: var(--ds-shadow-sm);
+  transition: box-shadow 0.2s var(--ds-ease), transform 0.2s var(--ds-ease),
+    border-color 0.2s var(--ds-ease);
+}
+
+/* Lift sutil en superficies accionables (enlaces-tarjeta, KPIs enlazados) */
+a.glass-panel:hover,
+[data-hover-lift]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--ds-shadow-md);
+}
+
+/* Botones: transición y feedback de pulsación coherentes en todo el panel */
+button,
+a[role="button"],
+.bg-primary-container,
+.bg-\[\#0078D4\],
+.bg-\[\#0078d4\] {
+  transition: background-color 0.18s var(--ds-ease), box-shadow 0.18s var(--ds-ease),
+    transform 0.12s var(--ds-ease), filter 0.18s var(--ds-ease);
+}
+.bg-primary-container:hover,
+.bg-\[\#0078D4\]:hover,
+.bg-\[\#0078d4\]:hover {
+  filter: brightness(1.06);
+  box-shadow: var(--ds-shadow-md);
+}
+.bg-primary-container:active,
+.bg-\[\#0078D4\]:active,
+.bg-\[\#0078d4\]:active {
+  transform: translateY(1px);
+  filter: brightness(0.98);
+}
+
+/* Foco accesible unificado: anillo suave, sin salto de layout ni borde-inferior Material */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  border-color: var(--ds-primary-container) !important;
+  border-bottom-width: 1px !important;
+  border-radius: var(--ds-r-md) !important;
+  box-shadow: var(--ds-ring) !important;
+}
+:focus-visible {
+  outline: 2px solid var(--ds-primary-container);
+  outline-offset: 2px;
+}
+/* neutraliza el efecto de esquina cuadrada del foco antiguo */
+.focus\:rounded-b-none:focus { border-radius: var(--ds-r-md) !important; }
+
+/* Enlaces de navegación: transición completa + item activo redondeado */
+[data-app-nav] a {
+  transition: background-color 0.18s var(--ds-ease), color 0.18s var(--ds-ease),
+    box-shadow 0.18s var(--ds-ease);
+  border-radius: var(--ds-r-sm) !important;
+}
+[data-app-nav] a[aria-current="page"],
+[data-app-nav] a.font-semibold {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ds-primary-container) 18%, transparent);
+}
+
+/* Filas de tabla: hover legible en todo el panel */
+tbody tr {
+  transition: background-color 0.15s var(--ds-ease);
+}
+tbody tr:hover {
+  background-color: color-mix(in srgb, var(--ds-primary-container) 5%, transparent);
+}
+
+/* Barra de búsqueda del header: acabado más suave */
+[data-app-header] input {
+  border-radius: 9999px !important;
+  transition: box-shadow 0.18s var(--ds-ease), border-color 0.18s var(--ds-ease),
+    background-color 0.18s var(--ds-ease);
+}
+
+/* Scrollbars finas y temáticas (WebKit + Firefox) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ds-outline-variant) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--ds-outline) 45%, transparent);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--ds-outline) 70%, transparent);
+}
+
+/* Avatar y campana del header: realce al pasar */
+[data-app-header] .rounded-full { transition: background-color 0.18s var(--ds-ease), transform 0.18s var(--ds-ease); }
+[data-app-header] a.rounded-full:hover,
+[data-app-header] button.rounded-full:hover { transform: translateY(-1px); }
+
+/* Centro de ayuda: acordeón con estados hover/abierto más terminados */
+.help-item {
+  overflow: hidden;
+  transition: border-color 0.2s var(--ds-ease), box-shadow 0.2s var(--ds-ease),
+    background-color 0.2s var(--ds-ease);
+}
+.help-item > summary {
+  border-radius: inherit;
+  transition: background-color 0.15s var(--ds-ease), color 0.15s var(--ds-ease);
+}
+.help-item > summary:hover {
+  background-color: color-mix(in srgb, var(--ds-primary-container) 6%, transparent);
+}
+.help-item[open] {
+  border-color: color-mix(in srgb, var(--ds-primary-container) 45%, var(--ds-outline-variant)) !important;
+  box-shadow: var(--ds-shadow-sm);
+}
+.help-item[open] > summary {
+  background-color: color-mix(in srgb, var(--ds-primary-container) 7%, transparent);
+}
+.help-item[open] > summary .help-q {
+  color: var(--ds-primary);
+}
+/* Tarjetas-tema: acento de icono al pasar */
+a[href^="#topic-"] .icon-lg { transition: transform 0.2s var(--ds-ease); }
+
+/* ============================================================
+   EXPERIMENTO · Glassmorphism en modo claro
+   Reversible: borra este bloque para volver al acabado sólido.
+   Usa html.light (mayor especificidad) para ganar a los
+   .glass-panel { background:#fff } definidos inline por página.
+   ============================================================ */
+/* Ambiente tenue detrás del contenido: da material al desenfoque */
+html.light body.bg-background,
+html.light .bg-background {
+  background:
+    radial-gradient(1200px 680px at 12% -8%, rgba(0, 120, 212, 0.10), transparent 60%),
+    radial-gradient(1100px 620px at 108% 4%, rgba(0, 168, 150, 0.09), transparent 58%),
+    linear-gradient(180deg, #eef4fb 0%, #f5f9fd 46%, #eaf1f9 100%) !important;
+}
+
+html.light .glass-panel,
+html.light .acrylic-panel {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.40)) !important;
+  backdrop-filter: blur(20px) saturate(175%);
+  -webkit-backdrop-filter: blur(20px) saturate(175%);
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: var(--ds-shadow-md),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 0 0 1px rgba(210, 226, 244, 0.35);
+}
+html.light a.glass-panel:hover,
+html.light [data-hover-lift]:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.52)) !important;
+  box-shadow: var(--ds-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+/* Superficies de tarjeta translúcidas que usan otras páginas (help, listados) */
+html.light .bg-surface-container-lowest\/80,
+html.light .bg-surface-container-lowest\/90,
+html.light .bg-surface-container-lowest\/50 {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.42)) !important;
+  backdrop-filter: blur(20px) saturate(175%);
+  -webkit-backdrop-filter: blur(20px) saturate(175%);
+  box-shadow: var(--ds-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Chrome (sidebar + header) a juego: cristal esmerilado más marcado */
+html.light [data-app-nav],
+html.light [data-app-header] {
+  background: rgba(255, 255, 255, 0.62) !important;
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+}
+
+/* ---- Glassmorphism en modo oscuro (mismo bloque reversible) ---- */
+html.dark body.bg-background,
+html.dark .bg-background {
+  background:
+    radial-gradient(1200px 680px at 12% -8%, rgba(59, 130, 246, 0.14), transparent 60%),
+    radial-gradient(1100px 620px at 108% 4%, rgba(45, 212, 191, 0.10), transparent 58%),
+    #0e1419 !important;
+}
+
+html.dark .glass-panel,
+html.dark .acrylic-panel {
+  background: linear-gradient(135deg, rgba(32, 40, 48, 0.93), rgba(22, 28, 34, 0.88)) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: var(--ds-shadow-md),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+html.dark a.glass-panel:hover,
+html.dark [data-hover-lift]:hover {
+  background: linear-gradient(135deg, rgba(40, 49, 58, 0.96), rgba(28, 35, 42, 0.92)) !important;
+  box-shadow: var(--ds-shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.11);
+}
+
+html.dark .bg-surface-container-lowest\/80,
+html.dark .bg-surface-container-lowest\/90,
+html.dark .bg-surface-container-lowest\/50 {
+  background: linear-gradient(135deg, rgba(32, 40, 48, 0.93), rgba(21, 27, 33, 0.88)) !important;
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow: var(--ds-shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+html.dark [data-app-nav],
+html.dark [data-app-header] {
+  background: rgba(18, 23, 29, 0.86) !important;
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+
+/* ---- Fix: hover que salía en blanco en modo oscuro ----
+   Las utilidades hover:bg-* de Tailwind toman el valor CLARO del config
+   y no estaban remapeadas en oscuro, provocando un flash blanco al pasar
+   el ratón por nav, botones fantasma, filas, avatar y campana. */
+html.dark .hover\:bg-surface-container-low:hover,
+html.dark .hover\:bg-surface-container:hover {
+  background-color: var(--ds-surface-container-high) !important;
+}
+html.dark .hover\:bg-surface-container-high:hover {
+  background-color: var(--ds-surface-container-highest) !important;
+}
+html.dark .hover\:bg-surface-variant:hover {
+  background-color: var(--ds-surface-variant) !important;
+}
+html.dark .hover\:bg-white:hover,
+html.dark .hover\:bg-surface-container-lowest:hover {
+  background-color: var(--ds-surface-container-high) !important;
+}
+
+/* ---- Fix: superficies translúcidas que salían claras/blancas en oscuro ----
+   Variantes de opacidad no cubiertas antes: tarjetas de Start Engagement
+   (bg-surface-container-low/40), bloques de informe (/30), aprobación de
+   herramienta (/80) y leyenda del grafo (bg-white/90). */
+html.dark .bg-surface-container-low\/30,
+html.dark .bg-surface-container-low\/40,
+html.dark .bg-surface-container-low\/60,
+html.dark .bg-surface-container-low\/70,
+html.dark .bg-surface-container-low\/80 {
+  background-color: color-mix(in srgb, var(--ds-surface-container-high) 82%, transparent) !important;
+}
+html.dark .bg-white\/90,
+html.dark .bg-white\/60,
+html.dark .bg-white\/40 {
+  background-color: var(--ds-surface) !important;
+}
+html.dark .bg-surface-container-lowest\/40,
+html.dark .bg-surface-container-lowest\/30 {
+  background-color: var(--ds-surface) !important;
+}
+html.dark .bg-surface-variant\/40 {
+  background-color: var(--ds-surface-variant) !important;
+}
+
+html.dark .bg-gradient-to-br.from-background.to-secondary-fixed {
+  background:
+    radial-gradient(1200px 680px at 12% -8%, rgba(59, 130, 246, 0.14), transparent 60%),
+    radial-gradient(1100px 620px at 108% 4%, rgba(45, 212, 191, 0.10), transparent 58%),
+    #0e1419 !important;
+}
+
+/* ---- Fix: rectángulo blanco en paneles con gráfico ----
+   backdrop-filter + un <canvas> (Chart.js) dentro dispara un artefacto de
+   composición en Chromium (bloque blanco). Quitamos el desenfoque solo en
+   paneles con lienzo — no afecta a los iconos Lucide, que son <svg>. */
+.glass-panel:has(canvas),
+.acrylic-panel:has(canvas) {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.light .glass-panel:has(canvas),
+html.light .acrylic-panel:has(canvas) {
+  background: rgba(255, 255, 255, 0.97) !important;
+}
+html.dark .glass-panel:has(canvas),
+html.dark .acrylic-panel:has(canvas) {
+  background: #191f26 !important;
+}
+
+/* El documento del informe es una hoja de papel (vista previa del PDF):
+   conserva la paleta clara aunque la app esté en oscuro. Redefinir los tokens
+   aquí hace que las utilidades internas resuelvan en claro. */
+html.dark .pdf-doc {
+  color-scheme: light;
+  --ds-background: #f7fafe;
+  --ds-surface: #ffffff;
+  --ds-surface-bright: #f7fafe;
+  --ds-surface-dim: #d7dade;
+  --ds-surface-container: #ebeef2;
+  --ds-surface-container-low: #f1f4f8;
+  --ds-surface-container-high: #e5e8ec;
+  --ds-surface-container-highest: #e0e3e7;
+  --ds-surface-container-lowest: #ffffff;
+  --ds-on-surface: #181c1f;
+  --ds-on-background: #181c1f;
+  --ds-on-surface-variant: #404752;
+  --ds-surface-variant: #e0e3e7;
+  --ds-outline: #717783;
+  --ds-outline-variant: #c0c7d4;
+  --ds-primary: #005faa;
+  --ds-primary-fixed: #d3e3ff;
+  --ds-on-primary-fixed: #001c39;
+  --ds-secondary: #505f79;
+  --ds-secondary-container: #d1e0ff;
+  --ds-secondary-fixed: #d5e3ff;
+  --ds-error: #ba1a1a;
+  --ds-error-container: #ffdad6;
+  --ds-on-error-container: #93000a;
+  --ds-tertiary: #006a5c;
+  --ds-tertiary-container: #0a8575;
+  background-color: #ffffff !important;
+  color: #181c1f;
+}
+html.dark .pdf-doc .glass-panel,
+html.dark .pdf-doc .acrylic-panel {
+  background: #ffffff !important;
+  border: 1px solid #d8e3f0 !important;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+/* transición suave del fondo para que el hover entre/salga fluido */
+[data-app-nav] a,
+[data-app-header] a,
+[data-app-header] button,
+button,
+a[role="button"] {
+  transition-property: background-color, color, box-shadow, transform, filter, border-color;
+  transition-duration: 0.18s;
+  transition-timing-function: var(--ds-ease);
+}
+
 @media print {
   [data-app-nav],
   [data-app-header],
@@ -537,5 +930,13 @@ html.dark .text-\[\#B93815\] {
     overflow: visible !important;
     height: auto !important;
     background: #fff !important;
+  }
+  .glass-panel,
+  .shadow-sm,
+  .shadow,
+  .shadow-md,
+  .shadow-lg,
+  .shadow-xl {
+    box-shadow: none !important;
   }
 }

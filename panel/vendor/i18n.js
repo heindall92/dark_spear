@@ -1788,6 +1788,7 @@
     document.documentElement.classList.add(next);
     syncPrefsUi();
     if (window.lucide) lucide.createIcons();
+    window.dispatchEvent(new CustomEvent("ds:theme", { detail: { theme: next } }));
   }
 
   function applyLang(next) {
