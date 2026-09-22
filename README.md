@@ -13,7 +13,9 @@
   <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white"/>
   <img alt="Security Tool Warning" src="https://img.shields.io/badge/WARNING-SECURITY%20TOOL-B22222?style=flat"/>
   <img alt="Interfaz ES/EN" src="https://img.shields.io/badge/UI-ES%20%2F%20EN-2E8B57?style=flat"/>
-  <a href="https://github.com/heindall92/dark_spear/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/heindall92/dark_spear?style=flat&color=2E8B57&label=Stars"/></a>
+  <img alt="60+ sondas" src="https://img.shields.io/badge/60%2B-SONDAS-CC8F00?style=flat"/>
+  <img alt="36 técnicas MITRE ATT&CK" src="https://img.shields.io/badge/36-T%C3%89CNICAS%20MITRE%20ATT%26CK-8B1142?style=flat"/>
+  <img alt="30 pantallas de panel" src="https://img.shields.io/badge/30-PANTALLAS-1A73E8?style=flat"/>
 </p>
 
 <p align="center">
@@ -47,7 +49,7 @@ No es un scanner automático ni un «auto-pwn». El diferencial es la disciplina
 
 ---
 
-## Cómo funciona
+## <img src="docs/assets/icons/route.svg" width="20" height="20" valign="middle"/> Cómo funciona
 
 El motor ofrece dos modos, seleccionables por engagement:
 
@@ -58,7 +60,7 @@ El motor ofrece dos modos, seleccionables por engagement:
 
 Cada hallazgo —propuesto por el playbook o por el LLM— pasa por revisión del operador antes de entrar al informe. Al aceptarlo, la evidencia se hashea a disco (cadena de custodia real, no un volcado del chat) y se enriquece con CVSS v3.1, CWE, OWASP, ISO 27001, ENS, NIS2, RGPD y MITRE ATT&CK.
 
-## Arquitectura
+## <img src="docs/assets/icons/layers.svg" width="20" height="20" valign="middle"/> Arquitectura
 
 Tres piezas que se integran en un solo producto, no proyectos separados:
 
@@ -70,7 +72,7 @@ Tres piezas que se integran en un solo producto, no proyectos separados:
 
 El historial de diseño técnico del motor (spec + plan de implementación por pieza, con revisión de código en cada paso) vive en `backend/docs/superpowers/`.
 
-## Qué detecta el playbook determinista
+## <img src="docs/assets/icons/bug.svg" width="20" height="20" valign="middle"/> Qué detecta el playbook determinista
 
 <details>
 <summary><b>Ver catálogo completo</b> — inyección, auth, JWT, APIs, recon, exposición de código, cloud, smuggling, firewalls, OSINT</summary>
@@ -94,7 +96,7 @@ Cada hallazgo llega con ficha propia: CVSS v3.1 (vector completo), CWE, OWASP To
 
 </details>
 
-## Active Directory
+## <img src="docs/assets/icons/server-cog.svg" width="20" height="20" valign="middle"/> Active Directory
 
 <details>
 <summary><b>Ver cobertura AD completa</b> — enumeración, Kerberos, ADCS, delegación, BloodHound, firewall</summary>
@@ -110,11 +112,11 @@ Contra un dominio en alcance, con o sin credenciales:
 
 </details>
 
-## MITRE ATT&CK
+## <img src="docs/assets/icons/target.svg" width="20" height="20" valign="middle"/> MITRE ATT&CK
 
 El panel de Attack Graph / MITRE mapea cada hallazgo a su técnica real (regex contra título y descripción, no una tabla estática) y muestra la cobertura efectiva sobre las 13 tácticas de Enterprise ATT&CK relevantes para una auditoría web no destructiva: **36 técnicas con detección propia**, desde `T1190` (Exploit Public-Facing Application) y `T1110` (Brute Force) hasta técnicas cloud como `T1552.005` (Cloud Instance Metadata API) y `T1530` (Data from Cloud Storage). Las tácticas de post-explotación destructiva (Impact, gran parte de Lateral Movement/Exfiltration) quedan deliberadamente fuera de alcance: es una auditoría autorizada, no un ejercicio de Red Team con daño real.
 
-## Arranque rápido
+## <img src="docs/assets/icons/rocket.svg" width="20" height="20" valign="middle"/> Arranque rápido
 
 Pensado para **Kali/Linux** (herramientas de pentest en el PATH). Requiere Python 3.10+ y el paquete `cryptography`.
 
@@ -184,7 +186,7 @@ node scripts/test-playbook-dvwa.mjs http://127.0.0.1:8888
 
 Los scripts reevalúan heurísticas tras cada sonda (igual que el motor en producción) y fallan si aparecen falsos positivos de directorio o si faltan hallazgos esperados.
 
-## Qué incluye
+## <img src="docs/assets/icons/list-checks.svg" width="20" height="20" valign="middle"/> Qué incluye
 
 - Dashboard, escaneos activos, vulnerabilidades y hallazgos críticos
 - Engagement activo, New Scan, aprobación de herramientas peligrosas
@@ -197,7 +199,7 @@ Los scripts reevalúan heurísticas tras cada sonda (igual que el motor en produ
 
 Tema claro/oscuro e idioma ES/EN se guardan en el navegador (`ds-theme`, `ds-lang`). El menú lateral se retrae a un rail de iconos (`ds-sidebar`).
 
-## Estructura
+## <img src="docs/assets/icons/folder-tree.svg" width="20" height="20" valign="middle"/> Estructura
 
 ```
 dark_spear/
@@ -232,12 +234,12 @@ dark_spear/
 └── 📄 LICENSE                    MIT
 ```
 
-## Atribución
+## <img src="docs/assets/icons/badge-check.svg" width="20" height="20" valign="middle"/> Atribución
 
-- Iconografía de la consola: [Lucide](https://lucide.dev) (ISC License).
+- Iconografía de la consola y de este README: [Lucide](https://lucide.dev) (ISC License).
 - Resto de UI, motor y diseño de producto: propios de este proyecto.
 
-## Aviso legal y ético
+## <img src="docs/assets/icons/shield-alert.svg" width="20" height="20" valign="middle"/> Aviso legal y ético
 
 Herramienta de uso profesional para auditorías de seguridad **autorizadas**.
 
@@ -245,11 +247,11 @@ Herramienta de uso profesional para auditorías de seguridad **autorizadas**.
 - El *scope-lock* y los gates de confirmación del motor son deliberados: no los desactives para saltarte el alcance acordado.
 - El autor no se hace responsable del uso indebido de este software fuera del alcance autorizado.
 
-## Licencia
+## <img src="docs/assets/icons/scale.svg" width="20" height="20" valign="middle"/> Licencia
 
 Distribuido bajo licencia [MIT](LICENSE) · Copyright © 2026 Yoandy Ramírez Delgado.
 
-## Mantenedor
+## <img src="docs/assets/icons/user-round.svg" width="20" height="20" valign="middle"/> Mantenedor
 
 <table>
 <tr>
