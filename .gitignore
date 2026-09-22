@@ -8,12 +8,18 @@ __pycache__/
 # Serena
 .serena/
 
-# Informe académico confidencial (no versionar)
-panel/aurora_report_2026-08-18_ES.pdf
+# Informes/PDFs (potencialmente confidenciales — nunca versionar)
+*.pdf
 
 # Cookies/sesiones de pruebas locales del playbook (nunca subir)
 backend/cookies.txt
 cookies.txt
+
+# Secretos / entorno local
+.env
+.env.*
+*.pem
+*.key
 
 # Capturas de diagnóstico manual (no son parte del producto)
 panel/.diag-screenshots/
