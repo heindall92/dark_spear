@@ -43,7 +43,7 @@ No es un scanner automático ni un «auto-pwn». El diferencial es la disciplina
 - [Atribución](#atribución)
 - [Aviso legal y ético](#aviso-legal-y-ético)
 - [Licencia](#licencia)
-- [Autor](#autor)
+- [Mantenedor](#mantenedor)
 
 ---
 
@@ -235,8 +235,16 @@ Herramienta de uso profesional para auditorías de seguridad **autorizadas**.
 
 Distribuido bajo licencia [MIT](LICENSE) · Copyright © 2026 Yoandy Ramírez Delgado.
 
-## Autor
+## Mantenedor
 
-**Yoandy Ramírez Delgado** · Pentester · eJPTv2
-
-[LinkedIn](https://www.linkedin.com/in/yoandyrd92/) · [HackTheBox](https://profile.hackthebox.com/profile/019c5812-b4ca-7315-b12f-14db6d2b42fa)
+<table>
+<tr>
+<td align="center" valign="top">
+<img src="https://avatars.githubusercontent.com/u/238087465?v=4" alt="Yoandy Ramírez Delgado" width="120"/><br/>
+<b>Yoandy Ramírez Delgado</b>: Creador y Mantenedor<br/>
+<sub>Junior Pentester · eJPTv2 · Offensive Security · AI Governance (ISO 42001) · SysAdmin</sub><br/><br/>
+<small>Pentester en formación continua, enfocado en explotación web y Active Directory. Construye Dark Spear como plataforma propia de auditoría — el motor, el catálogo de sondas y la disciplina de engagement nacen de la práctica en HackTheBox y auditorías reales, no de una demo.</small><br/><br/>
+<a href="https://www.linkedin.com/in/yoandyrd92/">LinkedIn</a> · <a href="https://github.com/heindall92">GitHub</a> · <a href="https://yoandyramirez.com">Portafolio</a> · <a href="https://profile.hackthebox.com/profile/019c5812-b4ca-7315-b12f-14db6d2b42fa">HackTheBox</a>
+</td>
+</tr>
+</table>
