@@ -15,6 +15,8 @@ El motor ofrece dos modos, seleccionables por engagement:
 - **Playbook determinista** — sin LLM, sin coste de tokens, 100 % reproducible. Recorre las 4 fases PTES y ejecuta un catálogo curado de sondas (OWASP Top 10, JWT, IDOR, credenciales por defecto, exposición de código, superficie cloud y OSINT). Los hallazgos se generan por heurística contra la evidencia *de esa sonda*, nunca contra el blob acumulado de la fase: así se evitan falsos positivos por señal cruzada entre pasos.
 - **Agente ReAct con LLM** — el loop corre en el navegador (`js/agent.js` + `js/ollama.js`) contra un pool de API keys de Ollama Cloud (cifrado, con rotación automática por cuota agotada) y decide el siguiente comando. Útil para explorar fuera del catálogo fijo. En ambos modos el servidor no confía en el cliente: el *enforcement* de alcance y de herramientas peligrosas vive en `bridge.py`.
 
+> **Estado de cada modo:** el playbook determinista es el camino validado en engagements reales — es el modo por defecto si no configuras un modelo/API key (sin key seleccionada, el motor cae automáticamente a playbook, no falla). El agente ReAct con LLM es **experimental**: no probado a fondo en producción, requiere tus propias Ollama Cloud API keys. Úsalo con esa expectativa.
+
 Cada hallazgo —propuesto por el playbook o por el LLM— pasa por revisión del operador antes de entrar al informe. Al aceptarlo, la evidencia se hashea a disco (cadena de custodia real, no un volcado del chat) y se enriquece con CVSS v3.1, CWE, OWASP, ISO 27001, ENS, NIS2, RGPD y MITRE ATT&CK.
 
 **Producto:** Dark Spear · Interfaz ES/EN · [MIT](LICENSE)
