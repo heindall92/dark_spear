@@ -6,7 +6,7 @@
 
 ## Contexto y motivación
 
-dark_spear hoy solo soporta credenciales de Active Directory (`ad-user`/`ad-password` en el panel, gateadas por `ctx.isAdTarget`, usadas exclusivamente por sondas SMB/Kerberos/netexec). No existe ningún mecanismo de login HTTP con reuso de cookie de sesión para apps web. El usuario intentó meter credenciales de una app Laravel real (`web.academyx.es`) en esos campos pensando que autenticarían el escaneo web — no tuvieron ningún efecto porque `ad-user`/`ad-password` nunca se leen en el flujo HTTP.
+dark_spear hoy solo soporta credenciales de Active Directory (`ad-user`/`ad-password` en el panel, gateadas por `ctx.isAdTarget`, usadas exclusivamente por sondas SMB/Kerberos/netexec). No existe ningún mecanismo de login HTTP con reuso de cookie de sesión para apps web. El usuario intentó meter credenciales de una app Laravel real (`app.ejemplo-cliente.com`) en esos campos pensando que autenticarían el escaneo web — no tuvieron ningún efecto porque `ad-user`/`ad-password` nunca se leen en el flujo HTTP.
 
 Sin login, el motor solo puede correr sondas de reconocimiento no autenticado (headers, DNS, robots.txt, fingerprint) — todo lo que está detrás de un login (la mayoría de vulnerabilidades reales de negocio) queda fuera del alcance de cualquier escaneo.
 
