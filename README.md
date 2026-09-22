@@ -200,22 +200,36 @@ Tema claro/oscuro e idioma ES/EN se guardan en el navegador (`ds-theme`, `ds-lan
 ## Estructura
 
 ```
-panel/                       Consola SecOps (30 páginas HTML estáticas)
-  vendor/                      Assets propios: tokens.css, i18n.js, panel-live.js, finding-dossier.js…
-    engine/js/                 Copia sincronizada de backend/js/ (scripts/sync-engine-js.py)
-backend/                      Motor Auditor
-  bridge.py                    Servidor: scope-lock, fases, exec de herramientas, keystore, findings, panel embebido
-  keystore.py                  Cifrado Fernet/PBKDF2 del pool de API keys
-  js/                          Motor (browser):
-    playbook.js                  Fases PTES + orquestación de las ~60 sondas
-    vuln-kb.js                   Catálogo de payloads/probes/heurísticas por familia
-    finding-heuristics.js        Evalúa cada sonda contra su propio paso
-    agent.js                     Loop: playbook determinista o ReAct con LLM
-    ollama.js, bridge_client.js, db.js, ui.js, axis.js, main.js
-  index.html, style.css        UI del motor
-  docs/superpowers/            Specs + planes de implementación de cada pieza
-scripts/                     start-dark-spear.sh, sync-engine-js.py, test-playbook-*.mjs
-LICENSE                      MIT
+dark_spear/
+│
+├── 🖥️  panel/                    Consola SecOps — 30 páginas HTML estáticas
+│   └── vendor/                   Assets propios
+│       ├── tokens.css              Design tokens (tema claro/oscuro)
+│       ├── i18n.js                 Textos ES/EN
+│       ├── panel-live.js           Lógica de la consola
+│       ├── finding-dossier.js      Ficha de hallazgo
+│       └── engine/js/              ⟲ copia sincronizada de backend/js/
+│                                    (scripts/sync-engine-js.py)
+│
+├── ⚙️  backend/                  Motor Auditor
+│   ├── bridge.py                 Servidor — único punto de confianza:
+│   │                              scope-lock · fases PTES · exec de
+│   │                              herramientas · keystore · findings ·
+│   │                              panel embebido
+│   ├── keystore.py               Cifrado Fernet/PBKDF2 del pool de API keys
+│   ├── js/                       Motor (corre en el navegador)
+│   │   ├── playbook.js             Fases PTES + orquestación (~60 sondas)
+│   │   ├── vuln-kb.js               Catálogo de payloads/probes/heurísticas
+│   │   ├── finding-heuristics.js    Evalúa cada sonda contra su propio paso
+│   │   ├── agent.js                 Loop: playbook determinista ↔ ReAct+LLM
+│   │   └── ollama.js, bridge_client.js, db.js, ui.js, axis.js, main.js
+│   ├── index.html, style.css     UI del motor
+│   └── docs/superpowers/         Specs + planes de implementación
+│
+├── 📜 scripts/                   start-dark-spear.sh · sync-engine-js.py
+│                                  test-playbook-*.mjs
+│
+└── 📄 LICENSE                    MIT
 ```
 
 ## Atribución
