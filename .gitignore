@@ -5,7 +5,8 @@ Thumbs.db
 __pycache__/
 *.pyc
 
-# Serena
+# Configuración local del editor (no aporta a quien clona el motor)
+.cursor/
 .serena/
 
 # Informes/PDFs (potencialmente confidenciales — nunca versionar)
