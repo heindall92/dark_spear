@@ -1,14 +1,53 @@
-# Dark Spear
+<p align="center">
+  <img src="panel/vendor/logo.png" alt="Dark Spear" width="110"/>
+</p>
 
+<h1 align="center">Dark Spear</h1>
+
+<p align="center">
+  <b><i>Auditoría de seguridad autorizada, de punta a punta — con gate humano en cada paso peligroso.</i></b>
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img alt="License MIT" src="https://img.shields.io/badge/LICENSE-MIT-4169A1?style=flat"/></a>
+  <img alt="Python 3.10+" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat&logo=python&logoColor=white"/>
+  <img alt="Security Tool Warning" src="https://img.shields.io/badge/WARNING-SECURITY%20TOOL-B22222?style=flat"/>
+  <img alt="Interfaz ES/EN" src="https://img.shields.io/badge/UI-ES%20%2F%20EN-2E8B57?style=flat"/>
+  <a href="https://github.com/heindall92/dark_spear/stargazers"><img alt="GitHub Stars" src="https://img.shields.io/github/stars/heindall92/dark_spear?style=flat&color=2E8B57&label=Stars"/></a>
+</p>
+
+<p align="center">
 
 https://github.com/user-attachments/assets/1c663f47-4240-4adf-a2bf-fd18078f3828
 
+</p>
 
-![Intro Dark Spear](panel/vendor/splash.mp4)
+> **AVISO LEGAL**: Herramienta para **auditorías de seguridad autorizadas**, uso profesional y educativo. Nunca la uses contra un sistema que no sea tuyo o para el que no tengas autorización escrita explícita. El acceso no autorizado es **ilegal**. Al usar este software aceptas responsabilidad total por tus acciones. Detalle completo en [Aviso legal y ético](#aviso-legal-y-ético).
 
 **Plataforma de auditoría de seguridad autorizada.** Un motor que recorre el pentest por fases — reconocimiento → enumeración → explotación → post-explotación, con gate humano en cada acción peligrosa — y una consola SecOps que convierte lo encontrado en un informe defendible frente al cliente.
 
 No es un scanner automático ni un «auto-pwn». El diferencial es la disciplina de engagement: *scope-lock* en el servidor, fases que se avanzan a conciencia, cada herramienta peligrosa pasa por aprobación explícita del operador, y cada hallazgo entra al informe con evidencia y hash de integridad.
+
+---
+
+## Índice
+
+- [Cómo funciona](#cómo-funciona)
+- [Arquitectura](#arquitectura)
+- [Qué detecta el playbook determinista](#qué-detecta-el-playbook-determinista)
+- [Active Directory](#active-directory)
+- [MITRE ATT&CK](#mitre-attck)
+- [Arranque rápido](#arranque-rápido)
+- [Qué incluye](#qué-incluye)
+- [Estructura](#estructura)
+- [Atribución](#atribución)
+- [Aviso legal y ético](#aviso-legal-y-ético)
+- [Licencia](#licencia)
+- [Autor](#autor)
+
+---
+
+## Cómo funciona
 
 El motor ofrece dos modos, seleccionables por engagement:
 
@@ -18,8 +57,6 @@ El motor ofrece dos modos, seleccionables por engagement:
 > **Estado de cada modo:** el playbook determinista es el camino validado en engagements reales — es el modo por defecto si no configuras un modelo/API key (sin key seleccionada, el motor cae automáticamente a playbook, no falla). El agente ReAct con LLM es **experimental**: no probado a fondo en producción, requiere tus propias Ollama Cloud API keys. Úsalo con esa expectativa.
 
 Cada hallazgo —propuesto por el playbook o por el LLM— pasa por revisión del operador antes de entrar al informe. Al aceptarlo, la evidencia se hashea a disco (cadena de custodia real, no un volcado del chat) y se enriquece con CVSS v3.1, CWE, OWASP, ISO 27001, ENS, NIS2, RGPD y MITRE ATT&CK.
-
-**Producto:** Dark Spear · Interfaz ES/EN · [MIT](LICENSE)
 
 ## Arquitectura
 
@@ -34,6 +71,9 @@ Tres piezas que se integran en un solo producto, no proyectos separados:
 El historial de diseño técnico del motor (spec + plan de implementación por pieza, con revisión de código en cada paso) vive en `backend/docs/superpowers/`.
 
 ## Qué detecta el playbook determinista
+
+<details>
+<summary><b>Ver catálogo completo</b> — inyección, auth, JWT, APIs, recon, exposición de código, cloud, smuggling, firewalls, OSINT</summary>
 
 Sin escribir un prompt ni gastar un token, contra cualquier stack (PHP clásico, Node/Express, SPA/REST, APIs JSON):
 
@@ -52,7 +92,12 @@ Sin escribir un prompt ni gastar un token, contra cualquier stack (PHP clásico,
 
 Cada hallazgo llega con ficha propia: CVSS v3.1 (vector completo), CWE, OWASP Top 10, técnica(s) MITRE ATT&CK, ISO 27001/ENS/NIS2/RGPD y narrativa + pasos de remediación en ES/EN. No hay CVSS ni MITRE «por severidad»: cada tipo tiene su catálogo.
 
+</details>
+
 ## Active Directory
+
+<details>
+<summary><b>Ver cobertura AD completa</b> — enumeración, Kerberos, ADCS, delegación, BloodHound, firewall</summary>
 
 Contra un dominio en alcance, con o sin credenciales:
 
@@ -62,6 +107,8 @@ Contra un dominio en alcance, con o sin credenciales:
 - **Delegación** — inventario de delegación unconstrained/constrained/RBCD (`findDelegation.py`) y explotación asistida (`getST.py`, `ticketer.py`).
 - **BloodHound** — `bloodhound-python -c DCOnly` recolecta el grafo completo; dark_spear parsea las aristas de ACL peligrosas directamente a findings (sin abrir la UI): `GenericAll`/`GenericWrite`/`WriteDacl`/`WriteOwner`/`Owns`/`AddMember`/`AddSelf`/`ForceChangePassword`/`AllExtendedRights`/`WriteSPN`, **Shadow Credentials** (`AddKeyCredentialLink` — autenticar como el objetivo vía PKINIT sin tocar su contraseña) y **DCSync** (solo si el mismo principal tiene `GetChanges` **y** `GetChangesAll` sobre el dominio).
 - **Cortafuegos AD** (Fase 3, gate humano) — estado de Windows Defender Firewall en el DC vía `netexec -x netsh advfirewall show allprofiles` (no hay vía de solo lectura por RPC/LDAP).
+
+</details>
 
 ## MITRE ATT&CK
 
